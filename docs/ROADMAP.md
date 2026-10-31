@@ -28,6 +28,12 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 | M21 | Testnet/security | CI typecheck, math tests and Solidity compile | Signed test transactions, adversarial tests and independent audit |
 | M22 | Mainnet release | Not implemented | Hosting rights, security audit, all gates complete and approved |
 
+## Latest engineering change (M12 preflight)
+
+- Zero minimum-output quotes are now rejected in the shared constant-product math and the read-only Ultra EVM quote API; previously, tiny expected outputs could round `minOut` down to zero.
+- Added regression tests for zero rounding, invalid fee parameters, and BigInt inputs. This strengthens quote preflight only: no pools are deployed or enabled, and swaps remain disabled pending independently verified contracts and liquidity.
+- M12 remains **Partial/Blocked** until real settlement, independent audit and authorized testnet receipts.
+
 ## Immediate execution path
 
 1. Source merged after passing CI; the dedicated Looke Neon staging database and migrations are prepared. Resolve Vercel 403 team create-project permissions, then deploy protected staging and run live smoke tests.
