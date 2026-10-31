@@ -64,6 +64,7 @@ export function NativeUniqMintLab({account}:{account:string|null}){
    return id;
  }
  async function mint(){
+   if(!account){setMessage("Connect a native Ultra testnet wallet first.");return;}
    setMessage("");setTx("");
    let id:number;
    try{id=validated();}catch(e){setMessage(e instanceof Error?e.message:"Invalid mint parameters");return;}
