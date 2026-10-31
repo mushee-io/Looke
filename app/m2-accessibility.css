@@ -1,0 +1,47 @@
+/* M2: original Looke UI usability improvements, with no changes to transaction flows. */
+:root { color-scheme: light; }
+@media (max-width: 720px) {
+  /* Keep the mobile menu usable for touch and screen magnification. */
+  .mobile-menu { min-width: 44px; min-height: 44px; }
+  .left-rail .rail-button, .left-rail .rail-create { min-width: 44px; min-height: 44px; }
+  .search-wrap { min-width: 0; }
+  .search-wrap input { min-width: 0; }
+  .section-top { gap: 12px; }
+  .section-top > div { min-width: 0; }
+  .section-top h1 { overflow-wrap: anywhere; }
+  .modal-card { overscroll-behavior: contain; }
+}
+@media (max-width: 390px) {
+  .topbar { gap: 6px; padding-inline: 9px; }
+  .brand-word { font-size: 19px; }
+  .search-wrap { padding-inline: 7px; }
+  .search-wrap input { font-size: 12px; }
+  .section-top h1 { font-size: 26px; }
+  .section-top { align-items: flex-start; }
+  .subtle-cta { flex-shrink: 0; }
+}
+@media (forced-colors: active) {
+  /* Restore affordances that backgrounds and gradients alone cannot convey. */
+  .primary-button, .nft-hero button, .feature-banner button,
+  .trade-card > button, .profile-hero button {
+    border: 1px solid ButtonText;
+    forced-color-adjust: auto;
+  }
+  .active-tab, .feed-switch .current, .rail-button.is-active {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+  .coin-avatar, .mark, .nft-moon { border: 1px solid CanvasText; }
+  .pulse-dot, .tiny-circle { border: 1px solid CanvasText; }
+  .skip-link:focus-visible { border: 2px solid Highlight; }
+}
+@media (prefers-contrast: more) {
+  :root { --muted: #55545b; --line: #66646a; }
+  .preview-notice, .section-top p, .feed-header p,
+  .coin-name small, .table-head, .eyebrow, .tiny-label,
+  .nft-card-meta span, .modal-footnote, .trade-disclaimer {
+    color: #53515a;
+  }
+  .market-row, .feed-card, .nft-card, .settings-item { border-color: #88858e; }
+  .search-wrap, .filter-group select, .trade-input { border: 1px solid #66646a; }
+}
