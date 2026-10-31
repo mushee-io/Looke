@@ -27,7 +27,7 @@ test("Executable increasing inputs increase output monotonically without drainin
 
 test("Very small outputs never produce an unsafe zero minimum",()=>{
   assert.throws(()=>minOutput(1n,1), /zero/);
-  assert.throws(()=>minOutput(2n,2000), /zero/);
+  assert.throws(()=>minOutput(1n,2000), /zero/);
   assert.equal(minOutput(1n,0),1n);
   assert.equal(minOutput(100n,2000),80n);
 });
