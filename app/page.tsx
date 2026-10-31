@@ -9,6 +9,7 @@ import {
   TrendingUp, UserRound, Wallet, X
 } from "lucide-react";
 import { coins, navFilters, posts, uniqs, type Coin, type FeedPost, type Uniq } from "@/lib/demo";
+import { parseAgeHours, parseCompactNumber } from "@/lib/demo-market.mjs";
 import { WalletConnection, type ConnectedWallet } from "@/components/WalletConnection";
 import { SocialLive, ProfileEditor } from "@/components/SocialLive";
 import { NativeUniqs } from "@/components/NativeUniqs";
@@ -162,9 +163,10 @@ export default function Looke() {
     });
     if (filter === "Gaming") set = set.filter(c => ["nova","pixel","neon"].includes(c.id));
     if (filter === "Art") set = set.filter(c => ["afterglow","orbit","pixel"].includes(c.id));
-    if (tab === "Top") set = [...set].reverse();
-    if (tab === "New") set = [...set].sort((a,b) => Number.parseFloat(a.age)-Number.parseFloat(b.age));
-    return sortDesc ? set : [...set].reverse();
+    if (tab === "Trending") return [...set].sort((a,b) => b.change - a.change);
+    if (tab === "New") return [...set].sort((a,b) => parseAgeHours(a.age) - parseAgeHours(b.age));
+    set = [...set].sort((a,b) => parseCompactNumber(b.cap) - parseCompactNumber(a.cap));
+    return sortDesc ? set : set.reverse();
   }, [search, filter, tab, sortDesc]);
   const searchPosts = posts.filter(p => [p.title,p.author,p.text].join(" ").toLowerCase().includes(search.toLowerCase()));
   const searchNfts = uniqs.filter(n => [n.title,n.creator,n.edition].join(" ").toLowerCase().includes(search.toLowerCase()));
@@ -218,10 +220,10 @@ export default function Looke() {
       <div className="preview-notice"><Info size={14}/> Product preview — all coins, prices, activity and collectibles shown are fictional. <button onClick={()=>go("settings")}>How it works <ArrowRight size={13}/></button></div>
       {selectedCoin ? <CoinDetail coin={selectedCoin} onBack={()=>setSelectedCoin(null)} onTrade={()=>setModal("trade")} saved={saved.includes(selectedCoin.id)} onSave={()=>toggle(selectedCoin.id,saved,setSaved)} /> : <>
       {page === "explore" && <section className="explore-page">
-        <div className="ticker-row"><button className="ticker-all" onClick={()=>setFilter("All")}>All <ChevronDown size={13}/></button>{["Creators","Gaming","Art","Trends"].map((tag,i)=><button key={tag} className="ticker-chip" onClick={()=>setFilter(tag as (typeof navFilters)[number])}><span className={`ticker-dot ticker-${i}`}>{["✦","◈","✳","⌁"][i]}</span>{tag}</button>)}<span className="ticker-divider"/><button className="ticker-chip" onClick={()=>openCreate("Trend coin")}><span className="ticker-dot ticker-plus">+</span> Launch a trend</button></div>
+        <div className="ticker-row"><button className="ticker-all" onClick={()=>setFilter("All")}>All <ChevronDown size={13}/></button>{["Creators","Gaming","Art","Trends"].map((tag,i)=><button key={tag} className="ticker-chip" aria-pressed={filter===tag} onClick={()=>setFilter(tag as (typeof navFilters)[number])}><span className={`ticker-dot ticker-${i}`}>{["✦","◈","✳","⌁"][i]}</span>{tag}</button>)}<span className="ticker-divider"/><button className="ticker-chip" onClick={()=>openCreate("Trend coin")}><span className="ticker-dot ticker-plus">+</span> Launch a trend</button></div>
         <div className="section-top"><div><span className="eyebrow">Discover what&apos;s moving</span><h1>Explore <span className="heading-soft">the moment.</span></h1><p>Culture, creativity, and communities — all in one place.</p></div><button className="subtle-cta" onClick={()=>openCreate()}>Create <Plus size={17}/></button></div>
         <div className="market-controls"><div className="tab-group">{["Trending","Top","New"].map(value=><button key={value} className={tab===value?"active-tab":""} aria-pressed={tab===value} onClick={()=>setTab(value as typeof tab)}>{value}</button>)}</div><div className="filter-group"><span className="tiny-label">Filter by</span><select aria-label="Filter coins" value={filter} onChange={e=>setFilter(e.target.value as typeof filter)}>{navFilters.map(f=><option key={f}>{f}</option>)}</select></div></div>
-        <div className="market-table"><div className="table-head"><span>Coin</span><button onClick={()=>setSortDesc(!sortDesc)}>Market cap <ChevronDown size={12}/></button><span>24h volume</span><span>Holders</span><span>Age</span><span>24h change</span></div>
+        <div className="market-table"><div className="table-head"><span>Coin</span><button aria-label={`Sort demo market cap ${tab==="Top" && sortDesc ? "ascending" : "descending"}`} onClick={()=>{if(tab==="Top")setSortDesc(!sortDesc);else{setTab("Top");setSortDesc(true);}}}>Market cap <ChevronDown size={12}/></button><span>24h volume</span><span>Holders</span><span>Age</span><span>24h change</span></div>
           {filteredCoins.length ? filteredCoins.map(c=><button className="market-row" key={c.id} onClick={()=>setSelectedCoin(c)}><span className="coin-name"><CoinAvatar coin={c}/><span><strong>{c.name}</strong><small>{c.ticker} <span className="verified-dot">✓</span></small></span></span><span className="numeric-cell">{c.cap}</span><span className="numeric-cell">{c.volume}</span><span className="numeric-cell">{c.holders}</span><span className="numeric-cell">{c.age}</span><span className={`percent ${c.change<0?"negative":"positive"}`}>{c.change>0?"+":""}{c.change.toFixed(2)}% <ArrowUpRight size={13}/></span></button>) : <EmptyState label="No coins match this search" hint="Try another name or category."/>}
         </div>
         <NetworkStatus /><LiveCoins /><div className="explore-bottom"><span><span className="tiny-circle"/> Market figures are illustrative, not live Ultra data.</span><button onClick={()=>go("feed")}>See creator feed <ArrowRight size={15}/></button></div>
