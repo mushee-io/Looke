@@ -16,17 +16,17 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 | M9 | Creator coins | Undeployed ERC20 factory prototype | Audit and onchain creator launch receipts |
 | M10 | Content coins | Undeployed factory kind/reference | Authenticated content attestation, liquidity |
 | M11 | Trend coins | Undeployed factory kind/reference | Governance, spam policies, liquidity |
-| M12 | Token trades | Pure BigInt quote tests | AMM/router, approvals, slippage, real swaps |
+| M12 | Token trades | Pure BigInt quote tests and allowlisted real-reserve read-only quote API | AMM/router, approvals, slippage, real swaps |
 | M13 | Live markets | Confirmed testnet factory-event indexer skeleton | Contract deployment, scheduler, real liquidity/price source |
-| M14 | Uniq NFT creation | Preview only | Native factory/mint signed transactions |
+| M14 | Uniq NFT creation | Partial: guarded authorized-factory native testnet mint lab (disabled by default) | Genuine signed mint receipts, collection launch and native factory management |
 | M15 | Uniq marketplace | Preview only | Verified resale, buy/cancel and receipts |
 | M16 | NFT creator tools | Drafts and native read-only Uniq query | Asset hosting, collections, mint controls, metadata review |
 | M17 | Fee sharing/creator revenue | Not implemented | Fee allocation specification, treasury/liability audits |
 | M18 | Portfolios and history | Partial: live UOS testnet balance, native Uniq query | Token balances, PnL, receipts, cost basis |
 | M19 | Rewards/community | Not implemented | Anti-abuse rules, audited reward accounting |
-| M20 | Indexing/backend | Partial: Postgres schema, social APIs, indexer | Production provisioning, monitoring and jobs |
+| M20 | Indexing/backend | Partial: isolated Neon staging database migrated, social APIs, indexer source | Vercel staging blocked by 403, monitoring and jobs |
 | M21 | Testnet/security | CI typecheck, math tests and Solidity compile | Signed test transactions, adversarial tests and independent audit |
-| M22 | Mainnet release | Not implemented | All gates complete and approved; staged launch and operations |
+| M22 | Mainnet release | Not implemented | Hosting rights, security audit, all gates complete and approved |
 
 ## Immediate execution path
 
