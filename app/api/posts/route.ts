@@ -5,11 +5,14 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     const sql=database();
+    const me=await currentProfile();
     const posts=await sql`
       SELECT p.id,p.text,p.created_at,u.id AS author_id,
         coalesce(u.display_name,u.handle,substr(u.evm_address,1,10)) AS author,
         u.evm_address,
-        (SELECT count(*)::int FROM looke_likes l WHERE l.post_id=p.id) AS likes
+        (SELECT count(*)::int FROM looke_likes l WHERE l.post_id=p.id) AS likes,
+        EXISTS(SELECT 1 FROM looke_likes l WHERE l.post_id=p.id AND l.profile_id=${me?.id ?? null}::uuid) AS user_liked,
+        EXISTS(SELECT 1 FROM looke_follows f WHERE f.followed_id=p.profile_id AND f.follower_id=${me?.id ?? null}::uuid) AS user_following
       FROM looke_posts p JOIN looke_profiles u ON u.id=p.profile_id
       WHERE p.moderation_status='visible' ORDER BY p.created_at DESC LIMIT 40
     `;
