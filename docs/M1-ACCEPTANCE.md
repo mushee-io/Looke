@@ -10,6 +10,7 @@ Scope: original Looke preview UI only; no live exchange or NFT purchase enableme
 - Mobile navigation toggle exposes its current expanded state to assistive technology.
 - Preview dialogs focus their first control on open, trap Tab/Shift+Tab, close on Escape, restore prior focus, and prevent background scroll.
 - Reduced-motion preference suppresses nonessential transitions/animations.
+- Explore preview tabs sort by 24-hour change (Trending), real parsed demo market cap (Top), and comparable elapsed time (New); the market-cap header toggles order. Regression tests exercise the K/M/B and time-unit parsers.
 
 ## Manual browser verification required for M1 acceptance
 
