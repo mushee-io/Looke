@@ -5,7 +5,7 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 
 | ID | Milestone | Code as of this PR | Remaining acceptance |
 |---|---|---|---|
-| M1 | Initial UI | Preview built | Merge/deploy and cross-browser review |
+| M1 | Initial UI | Original preview source built and merged into main | Staging deployment and cross-browser review |
 | M2 | Zora-inspired original design | Partial | Pixel QA, accessibility, mobile usability |
 | M3 | Authentication | Partial: EVM signature nonce/session | Provision DB; prove live login; Google/Apple/email optional |
 | M4 | Ultra wallets | Partial: EVM and native testnet connect | Test physical wallets, chain/account changes, real receipts |
@@ -30,7 +30,7 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 
 ## Immediate execution path
 
-1. Keep CI green and merge this PR after review; provision a separate TLS PostgreSQL database, apply `db/001_social.sql` and `db/002_coin_events.sql`.
+1. Source merged after passing CI; the dedicated Looke Neon staging database and migrations are prepared. Resolve Vercel 403 team create-project permissions, then deploy protected staging and run live smoke tests.
 2. Connect an actual Ultra EVM testnet wallet and native Ultra extension, obtain signed login receipts, validate post/follow/like flows with independent accounts.
 3. Confirm Ultra API client credentials and native Uniq query on staging. Create audited native factory, mint and resale flows with proper wallet consent.
 4. Audit and deploy the prototype coin factory to Ultra EVM testnet. Configure indexer against **real** address/deployment block and reconcile events with explorer receipts.
