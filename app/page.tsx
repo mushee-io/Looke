@@ -195,7 +195,7 @@ export default function Looke() {
   const closeModal = () => setModal(null);
 
   return <div className="site-shell">
-    <a className="skip-link" href="#main-content">Skip to main content</a>
+    <a className="skip-link" href="#main-content" onClick={event=>{event.preventDefault();document.getElementById("main-content")?.focus();}}>Skip to main content</a>
     <header className="topbar">
       <button className="brand" onClick={()=>go("explore")} aria-label="Looke home"><Mark/><span className="brand-word">looke<span className="brand-period">.</span></span></button>
       <div className="search-wrap"><Search size={17}/><input aria-label="Search creators, coins, posts or NFTs" placeholder="Search for creators, trends, or collections..." value={search} onChange={e=>setSearch(e.target.value)}/>{search && <button aria-label="Clear search" onClick={()=>setSearch("")}><X size={15}/></button>}</div>
