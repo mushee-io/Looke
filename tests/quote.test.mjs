@@ -24,3 +24,17 @@ test("Executable increasing inputs increase output monotonically without drainin
    assert(out>prev);assert(out<100000n);prev=out;
  }
 });
+
+test("Very small outputs never produce an unsafe zero minimum",()=>{
+  assert.throws(()=>minOutput(1n,1), /zero/);
+  assert.throws(()=>minOutput(1n,2000), /zero/);
+  assert.equal(minOutput(1n,0),1n);
+  assert.equal(minOutput(100n,2000),80n);
+});
+test("Quote inputs must be positive BigInts and fees must be within bounds",()=>{
+  assert.throws(()=>quoteExactIn(1,1000n,1000n,30),/BigInt/);
+  assert.throws(()=>quoteExactIn(-1n,1000n,1000n,30),/BigInt/);
+  assert.throws(()=>quoteExactIn(1n,1000n,1000n,-1),/Fee/);
+  assert.throws(()=>minOutput(0n,0),/positive/);
+  assert.throws(()=>minOutput(100n,-1),/Slippage/);
+});
