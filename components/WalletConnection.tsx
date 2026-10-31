@@ -11,13 +11,14 @@ type NativeWallet = {
   connect: () => Promise<{ data: { blockchainid: string } }>;
 };
 export type ConnectedWallet = { kind: "Ultra EVM" | "Ultra Native"; address: string };
-export function WalletConnection({ onConnected }: { onConnected: (wallet: ConnectedWallet) => void }) {
+export function WalletConnection({ onConnected, onAuthenticated, onLoggedOut }: { onConnected: (wallet: ConnectedWallet) => void; onAuthenticated:()=>void; onLoggedOut:()=>void }) {
   const [evm, setEvm] = useState<ConnectedWallet | null>(null);
   const [native, setNative] = useState<ConnectedWallet | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState("");
   const [networkWrong, setNetworkWrong] = useState(false);
   const [nativeReady, setNativeReady] = useState(false);
+  const [authenticated,setAuthenticated]=useState(false);
   const nativeClient = useRef<NativeWallet | null>(null);
 
   useEffect(() => {
@@ -78,6 +79,39 @@ export function WalletConnection({ onConnected }: { onConnected: (wallet: Connec
     finally { setBusy(""); }
   }
 
+  async function signIn() {
+    setError(""); setBusy("signin");
+    try {
+      if(!evm) throw new Error("Connect Ultra EVM wallet first.");
+      const p=provider();
+      if(!p) throw new Error("Wallet disconnected.");
+      const chain=await p.request({method:"eth_chainId"});
+      const accounts=await p.request({method:"eth_accounts"});
+      if(chain!==ULTRA_EVM_TESTNET.chainIdHex || !Array.isArray(accounts) ||
+        typeof accounts[0]!=="string" || accounts[0].toLowerCase()!==evm.address.toLowerCase()) {
+        throw new Error("Wallet account or chain changed. Reconnect on Ultra EVM testnet.");
+      }
+      const challengeResponse=await fetch("/api/auth/challenge",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({address:evm.address})});
+      const challenge=await challengeResponse.json() as {challengeId?:string;message?:string;error?:string};
+      if(!challengeResponse.ok || !challenge.challengeId || !challenge.message) throw new Error(challenge.error||"Cannot start sign-in. Configure Looke database.");
+      const signature=await p.request({method:"personal_sign",params:[challenge.message,evm.address]});
+      if(typeof signature!=="string") throw new Error("Wallet did not sign the challenge.");
+      const verified=await fetch("/api/auth/verify",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({challengeId:challenge.challengeId,address:evm.address,signature})});
+      const result=await verified.json() as {authenticated?:boolean;error?:string};
+      if(!verified.ok || !result.authenticated) throw new Error(result.error||"Signature verification failed.");
+      setAuthenticated(true);onAuthenticated();
+    } catch(e) {setError(e instanceof Error?e.message:"Sign-in failed.");}
+    finally {setBusy("");}
+  }
+  async function signOut() {
+    setError("");setBusy("signout");
+    try {
+      const response=await fetch("/api/auth/logout",{method:"POST"});
+      if(!response.ok) throw new Error("Could not revoke session");
+      setAuthenticated(false);onLoggedOut();
+    } catch(e) {setError(e instanceof Error?e.message:"Sign-out failed.");}
+    finally {setBusy("");}
+  }
   async function connectNative() {
     setError(""); setBusy("native");
     try {
@@ -102,6 +136,8 @@ export function WalletConnection({ onConnected }: { onConnected: (wallet: Connec
       <Wallet size={18} /> {native ? "Ultra: " + native.address : nativeReady ? "Connect Ultra Wallet (Uniqs)" : "Loading Ultra extension SDK…"}
       {native ? <CheckCircle2 size={16}/> : <ExternalLink size={16}/>}
     </button>
+    {evm && !authenticated && <button type="button" className="login-provider" disabled={!!busy} onClick={signIn}><CheckCircle2 size={17}/> Sign login challenge (no spending)</button>}
+    {authenticated && <button type="button" className="login-provider" disabled={!!busy} onClick={signOut}>Sign out of social account</button>}
     {error && <p role="alert" style={{color:"#bb2548",display:"flex",gap:8,alignItems:"center"}}><AlertCircle size={16}/>{error}</p>}
     <p className="modal-footnote">Native Ultra wallet is extension-only on testnet. Ultra EVM and native Uniq accounts are different environments; no bridge or automatic asset transfer is performed.</p>
   </div>;
