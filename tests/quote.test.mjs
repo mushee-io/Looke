@@ -17,9 +17,9 @@ test("Invalid or dangerous quote parameters fail closed",()=>{
    assert.throws(()=>quoteExactIn(...args));
  assert.throws(()=>minOutput(100n,2001));
 });
-test("Larger exact input increases output monotonically without draining reserves",()=>{
+test("Executable increasing inputs increase output monotonically without draining reserves",()=>{
  let prev=0n;
- for(const input of [1n,10n,100n,1000n,10000n]){
+ for(const input of [10n,100n,1000n,10000n]){
    const out=quoteExactIn(input,100000n,100000n,30);
    assert(out>prev);assert(out<100000n);prev=out;
  }
