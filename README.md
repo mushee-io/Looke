@@ -1,39 +1,41 @@
 # Looke
 
-**Create. Collect. Trade. On Ultra.**
+**Create · Collect · Trade — built for Ultra**
 
-Looke is a Zora-inspired social coin discovery and trading product for the **Ultra blockchain**, with an additional Ultra **Uniq NFT** launchpad and marketplace.
+Looke is an original Zora-style social coin ecosystem for Ultra, with additional native Uniq NFT features. This repository is currently **pre-release / testnet development**. No token trades, coin issuance, NFT mints, purchases or creator-earning claims are enabled in the application.
 
-## Milestone 1 — interactive frontend preview
+## Implemented source
 
-- Responsive original Looke interface inspired by the supplied Zora references: compact icon rail, Explore market tables, creator feed, discover tabs, authentication modal and profile.
-- Explore sortable *illustrative* creator/content/trend coin rows and search across content.
-- Open coin details with a sample price chart, watchlists and trade **preview** (no execution).
-- Social feed with local like/follow interactions.
-- Uniq NFT gallery and preview details.
-- Create composer for creator coins, content coins, trend coins and Uniqs; saves browser-local drafts (does **not** mint, create live listings or post to a server).
-- Saved watchlist and local drafts persist in `localStorage`.
+- Responsive Explore, creator feed, original artwork, coin-detail previews, watchlists, creator drafts and Uniq gallery (all sample prices/collections clearly labeled).
+- Ultra EVM testnet injected wallet and native Ultra Wallet extension connection.
+- Replay-resistant EIP-191 Ultra EVM challenge/response login with HttpOnly server sessions (requires PostgreSQL); creator profile editing.
+- PostgreSQL-backed social posts, likes, follows and social notifications (requires configured database and migration).
+- Ultra EVM testnet RPC status and real UOS balance lookups.
+- Server-side Ultra Uniq holdings GraphQL proxy (requires approved Ultra API credentials).
+- Solidity fixed-supply ERC-20 factory prototype for creator/content/trend coins (**unaudited, undeployed**), pure BigInt AMM quote tests and event-indexing worker (**requires audited testnet deployment and keys**).
+- GitHub CI typechecks, tests quote invariants, compiles the Solidity contracts, and runs the Next.js production build.
 
-**No real wallet connection, NFT minting, cryptocurrency trading, market prices, token issuance, orders or deployment are implemented. All displayed metrics and items are synthetic demos.**
+## Start locally
 
-## Run locally
+Node.js 22+ required.
 
-Requires Node.js 22+.
-
-```sh
-npm ci
+```bash
+npm install
 npm run dev
-```
-
-Open http://localhost:3000. To validate:
-
-```sh
 npm run typecheck
+npm run test:math
+npm run contracts:check
 npm run build
 ```
 
-## Technical scope
+Without a PostgreSQL database, the UI sample feed and local drafts still work; server-backed social APIs explicitly return 503. Without Ultra API credentials, the holdings query returns 503. With no deployed factory, the event indexer is disabled and the real coin table stays empty.
 
-Next.js App Router + React + TypeScript + CSS. `lib/demo.ts` holds synthetic sample data; browser-only UI state is intentionally not a backend. The financial transaction buttons are safe explanatory previews, not fake execution flows.
+## Real integrations (testnet first)
 
-The Ultra-specific integration requirements, security and live-readiness gates are in [docs/ULTRA_INTEGRATION.md](docs/ULTRA_INTEGRATION.md).
+1. Provision dedicated TLS PostgreSQL. Store `DATABASE_URL` securely on the server and run `db/001_social.sql`, then `db/002_coin_events.sql`. Never place secret keys in `NEXT_PUBLIC_` variables.
+2. Connect Ultra EVM wallet on chain 18881 and native Ultra Wallet extension on Ultra native testnet (distinct chains). Sign a login-only challenge for social publishing. No spending approval is requested.
+3. Request Ultra NFT GraphQL access from developers@ultra.io, then configure `ULTRA_API_BEARER_TOKEN` and `ULTRA_API_CLIENT_ID` server-side to query native Uniqs.
+4. Do not deploy the coin factory or enable financial functions until independent security review. After audited testnet deployment, configure `LOOKE_FACTORY_TESTNET_ADDRESS`, `LOOKE_FACTORY_TESTNET_DEPLOY_BLOCK` and `LOOKE_INDEXER_SECRET` and run the protected indexer through an authorized scheduler.
+5. Never treat successful compilation as proof of solvency, safety or economic operation. Record genuine signed testnet transaction receipts and independently audit contracts and fee accounting.
+
+See [M1–M22 roadmap](docs/ROADMAP.md), [Ultra boundary](docs/ULTRA_INTEGRATION.md), [signed social backend](docs/SOCIAL_BACKEND.md), [wallets](docs/WALLET_NETWORK.md), [Uniqs](docs/UNIQ_API.md), [event indexer](docs/INDEXER.md), [coin engine](docs/COIN_ENGINE.md).
