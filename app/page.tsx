@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useState, useRef, type FormEvent, type ReactNode } from "react";
 import {
   Activity, ArrowLeft, ArrowRight, ArrowUpRight, Bell, Bookmark, Check,
   ChevronDown, ChevronLeft, ChevronRight, Compass, Copy, ExternalLink,
@@ -9,6 +9,7 @@ import {
   TrendingUp, UserRound, Wallet, X
 } from "lucide-react";
 import { coins, navFilters, posts, uniqs, type Coin, type FeedPost, type Uniq } from "@/lib/demo";
+import { parseAgeHours, parseCompactNumber } from "@/lib/demo-market.mjs";
 import { WalletConnection, type ConnectedWallet } from "@/components/WalletConnection";
 import { SocialLive, ProfileEditor } from "@/components/SocialLive";
 import { NativeUniqs } from "@/components/NativeUniqs";
@@ -22,6 +23,12 @@ type Page = "explore" | "feed" | "nfts" | "activity" | "profile" | "settings";
 type ComposerType = "Content coin" | "Creator coin" | "Trend coin" | "Uniq NFT";
 type Draft = { id: string; type: ComposerType; title: string; caption: string; created: string };
 type Modal = "login" | "create" | "trade" | "nft" | null;
+
+const validPages: Page[] = ["explore", "feed", "nfts", "activity", "profile", "settings"];
+function pageFromHash(hash: string): Page {
+  const candidate = hash.replace(/^#\/?/, "");
+  return validPages.includes(candidate as Page) ? candidate as Page : "explore";
+}
 
 const sectionLabels: Record<Page, string> = {
   explore:"Explore", feed:"Feed", nfts:"NFTs", activity:"Activity", profile:"Profile", settings:"Settings"
@@ -76,6 +83,7 @@ export default function Looke() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [sortDesc, setSortDesc] = useState(true);
   const [hydrated, setHydrated] = useState(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch("/api/auth/me", { cache: "no-store" }).then(r=>r.json()).then(data=>setAuthenticated(!!data.authenticated)).catch(()=>{});
@@ -89,6 +97,57 @@ export default function Looke() {
   useEffect(() => { if (hydrated) localStorage.setItem("looke:liked", JSON.stringify(liked)); }, [liked, hydrated]);
   useEffect(() => { if (hydrated) localStorage.setItem("looke:following", JSON.stringify(following)); }, [following, hydrated]);
   useEffect(() => { if (hydrated) localStorage.setItem("looke:drafts", JSON.stringify(drafts)); }, [drafts, hydrated]);
+  useEffect(() => {
+    const syncPage = () => {
+      setPage(pageFromHash(window.location.hash));
+      setSelectedCoin(null);
+      setMenuOpen(false);
+    };
+    syncPage();
+    window.addEventListener("hashchange", syncPage);
+    window.addEventListener("popstate", syncPage);
+    return () => {
+      window.removeEventListener("hashchange", syncPage);
+      window.removeEventListener("popstate", syncPage);
+    };
+  }, []);
+  useEffect(() => {
+    if (!modal) return;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const dialog = dialogRef.current;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    dialog?.querySelector<HTMLButtonElement>("button:not([disabled])")?.focus();
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setModal(null);
+        return;
+      }
+      if (event.key !== "Tab" || !dialog) return;
+      const focusable = Array.from(dialog.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'))
+        .filter(element => element.getClientRects().length > 0);
+      if (focusable.length === 0) {
+        event.preventDefault();
+        dialog.focus();
+        return;
+      }
+      const first = focusable[0], last = focusable[focusable.length - 1];
+      if (event.shiftKey && (document.activeElement === first || !dialog.contains(document.activeElement))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (document.activeElement === last || !dialog.contains(document.activeElement))) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = originalOverflow;
+      previousFocus?.focus();
+    };
+  }, [modal]);
   useEffect(() => {
     if (!toast) return;
     const timeout = setTimeout(() => setToast(""), 3200);
@@ -104,9 +163,10 @@ export default function Looke() {
     });
     if (filter === "Gaming") set = set.filter(c => ["nova","pixel","neon"].includes(c.id));
     if (filter === "Art") set = set.filter(c => ["afterglow","orbit","pixel"].includes(c.id));
-    if (tab === "Top") set = [...set].reverse();
-    if (tab === "New") set = [...set].sort((a,b) => Number.parseFloat(a.age)-Number.parseFloat(b.age));
-    return sortDesc ? set : [...set].reverse();
+    if (tab === "Trending") return [...set].sort((a,b) => b.change - a.change);
+    if (tab === "New") return [...set].sort((a,b) => parseAgeHours(a.age) - parseAgeHours(b.age));
+    set = [...set].sort((a,b) => parseCompactNumber(b.cap) - parseCompactNumber(a.cap));
+    return sortDesc ? set : set.reverse();
   }, [search, filter, tab, sortDesc]);
   const searchPosts = posts.filter(p => [p.title,p.author,p.text].join(" ").toLowerCase().includes(search.toLowerCase()));
   const searchNfts = uniqs.filter(n => [n.title,n.creator,n.edition].join(" ").toLowerCase().includes(search.toLowerCase()));
@@ -114,7 +174,12 @@ export default function Looke() {
   function toggle<T>(value: T, existing: T[], setter: (values: T[])=>void) {
     setter(existing.includes(value) ? existing.filter(v=>v!==value) : [...existing,value]);
   }
-  function go(to: Page) { setPage(to); setSelectedCoin(null); setMenuOpen(false); }
+  function go(to: Page) {
+    setPage(to);
+    setSelectedCoin(null);
+    setMenuOpen(false);
+    if (window.location.hash !== `#${to}`) window.history.pushState(null, "", `#${to}`);
+  }
   function openCreate(type: ComposerType = "Content coin") { setComposerType(type); setDraftTitle(""); setDraftCaption(""); setModal("create"); }
   function saveDraft(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -132,13 +197,14 @@ export default function Looke() {
   const closeModal = () => setModal(null);
 
   return <div className="site-shell">
+    <a className="skip-link" href="#main-content" onClick={event=>{event.preventDefault();document.getElementById("main-content")?.focus();}}>Skip to main content</a>
     <header className="topbar">
       <button className="brand" onClick={()=>go("explore")} aria-label="Looke home"><Mark/><span className="brand-word">looke<span className="brand-period">.</span></span></button>
       <div className="search-wrap"><Search size={17}/><input aria-label="Search creators, coins, posts or NFTs" placeholder="Search for creators, trends, or collections..." value={search} onChange={e=>setSearch(e.target.value)}/>{search && <button aria-label="Clear search" onClick={()=>setSearch("")}><X size={15}/></button>}</div>
-      <div className="header-actions"><span className="network-pill"><span className="pulse-dot"/>Ultra · Preview</span><button className="text-button login-button" onClick={()=>setModal("login")}>{connectedWallet ? connectedWallet.address.slice(0,9)+"…" : "Connect"}</button><button className="primary-button signup-button" onClick={()=>setModal("login")}>{authenticated ? "Signed in" : "Sign up"} <ArrowUpRight size={14}/></button><button className="mobile-menu" aria-label="Toggle menu" onClick={()=>setMenuOpen(!menuOpen)}><Menu size={21}/></button></div>
+      <div className="header-actions"><span className="network-pill"><span className="pulse-dot"/>Ultra · Preview</span><button className="text-button login-button" onClick={()=>setModal("login")}>{connectedWallet ? connectedWallet.address.slice(0,9)+"…" : "Connect"}</button><button className="primary-button signup-button" onClick={()=>setModal("login")}>{authenticated ? "Signed in" : "Sign up"} <ArrowUpRight size={14}/></button><button className="mobile-menu" aria-label="Toggle menu" aria-controls="looke-navigation" aria-expanded={menuOpen} onClick={()=>setMenuOpen(!menuOpen)}><Menu size={21}/></button></div>
     </header>
 
-    <aside className={`left-rail ${menuOpen ? "rail-open" : ""}`}>
+    <aside id="looke-navigation" aria-label="Primary navigation" className={`left-rail ${menuOpen ? "rail-open" : ""}`}>
       <div className="rail-links">
         <NavButton icon={<Home size={21}/>} label="Explore" active={page==="explore"} onClick={()=>go("explore")}/>
         <NavButton icon={<TrendingUp size={21}/>} label="Feed" active={page==="feed"} onClick={()=>go("feed")}/>
@@ -150,14 +216,14 @@ export default function Looke() {
       <div className="rail-bottom"><NavButton icon={<Settings2 size={20}/>} label="Settings" active={page==="settings"} onClick={()=>go("settings")}/><span className="rail-wordmark">looke</span></div>
     </aside>
 
-    <main className="main-view">
+    <main id="main-content" tabIndex={-1} className="main-view">
       <div className="preview-notice"><Info size={14}/> Product preview — all coins, prices, activity and collectibles shown are fictional. <button onClick={()=>go("settings")}>How it works <ArrowRight size={13}/></button></div>
       {selectedCoin ? <CoinDetail coin={selectedCoin} onBack={()=>setSelectedCoin(null)} onTrade={()=>setModal("trade")} saved={saved.includes(selectedCoin.id)} onSave={()=>toggle(selectedCoin.id,saved,setSaved)} /> : <>
       {page === "explore" && <section className="explore-page">
-        <div className="ticker-row"><button className="ticker-all" onClick={()=>setFilter("All")}>All <ChevronDown size={13}/></button>{["Creators","Gaming","Art","Trends"].map((tag,i)=><button key={tag} className="ticker-chip" onClick={()=>setFilter(tag as (typeof navFilters)[number])}><span className={`ticker-dot ticker-${i}`}>{["✦","◈","✳","⌁"][i]}</span>{tag}</button>)}<span className="ticker-divider"/><button className="ticker-chip" onClick={()=>openCreate("Trend coin")}><span className="ticker-dot ticker-plus">+</span> Launch a trend</button></div>
+        <div className="ticker-row"><button className="ticker-all" onClick={()=>setFilter("All")}>All <ChevronDown size={13}/></button>{["Creators","Gaming","Art","Trends"].map((tag,i)=><button key={tag} className="ticker-chip" aria-pressed={filter===tag} onClick={()=>setFilter(tag as (typeof navFilters)[number])}><span className={`ticker-dot ticker-${i}`}>{["✦","◈","✳","⌁"][i]}</span>{tag}</button>)}<span className="ticker-divider"/><button className="ticker-chip" onClick={()=>openCreate("Trend coin")}><span className="ticker-dot ticker-plus">+</span> Launch a trend</button></div>
         <div className="section-top"><div><span className="eyebrow">Discover what&apos;s moving</span><h1>Explore <span className="heading-soft">the moment.</span></h1><p>Culture, creativity, and communities — all in one place.</p></div><button className="subtle-cta" onClick={()=>openCreate()}>Create <Plus size={17}/></button></div>
-        <div className="market-controls"><div className="tab-group">{["Trending","Top","New"].map(value=><button key={value} className={tab===value?"active-tab":""} onClick={()=>setTab(value as typeof tab)}>{value}</button>)}</div><div className="filter-group"><span className="tiny-label">Filter by</span><select aria-label="Filter coins" value={filter} onChange={e=>setFilter(e.target.value as typeof filter)}>{navFilters.map(f=><option key={f}>{f}</option>)}</select></div></div>
-        <div className="market-table"><div className="table-head"><span>Coin</span><button onClick={()=>setSortDesc(!sortDesc)}>Market cap <ChevronDown size={12}/></button><span>24h volume</span><span>Holders</span><span>Age</span><span>24h change</span></div>
+        <div className="market-controls"><div className="tab-group">{["Trending","Top","New"].map(value=><button key={value} className={tab===value?"active-tab":""} aria-pressed={tab===value} onClick={()=>setTab(value as typeof tab)}>{value}</button>)}</div><div className="filter-group"><span className="tiny-label">Filter by</span><select aria-label="Filter coins" value={filter} onChange={e=>setFilter(e.target.value as typeof filter)}>{navFilters.map(f=><option key={f}>{f}</option>)}</select></div></div>
+        <div className="market-table"><div className="table-head"><span>Coin</span><button aria-label={`Sort demo market cap ${tab==="Top" && sortDesc ? "ascending" : "descending"}`} onClick={()=>{if(tab==="Top")setSortDesc(!sortDesc);else{setTab("Top");setSortDesc(true);}}}>Market cap <ChevronDown size={12}/></button><span>24h volume</span><span>Holders</span><span>Age</span><span>24h change</span></div>
           {filteredCoins.length ? filteredCoins.map(c=><button className="market-row" key={c.id} onClick={()=>setSelectedCoin(c)}><span className="coin-name"><CoinAvatar coin={c}/><span><strong>{c.name}</strong><small>{c.ticker} <span className="verified-dot">✓</span></small></span></span><span className="numeric-cell">{c.cap}</span><span className="numeric-cell">{c.volume}</span><span className="numeric-cell">{c.holders}</span><span className="numeric-cell">{c.age}</span><span className={`percent ${c.change<0?"negative":"positive"}`}>{c.change>0?"+":""}{c.change.toFixed(2)}% <ArrowUpRight size={13}/></span></button>) : <EmptyState label="No coins match this search" hint="Try another name or category."/>}
         </div>
         <NetworkStatus /><LiveCoins /><div className="explore-bottom"><span><span className="tiny-circle"/> Market figures are illustrative, not live Ultra data.</span><button onClick={()=>go("feed")}>See creator feed <ArrowRight size={15}/></button></div>
@@ -173,7 +239,7 @@ export default function Looke() {
       </>}
     </main>
     {toast && <div className="toast" role="status"><Check size={16}/>{toast}</div>}
-    {modal && <div className="modal-shade" role="presentation" onMouseDown={e=>{if(e.target===e.currentTarget)closeModal();}}><div className={`modal-card ${modal==="create" ? "modal-wide" : ""}`} role="dialog" aria-modal="true" aria-label={modal === "login" ? "Log in" : modal === "create" ? "Create" : modal === "trade" ? "Trading preview" : "Uniq preview"}><button className="modal-close" onClick={closeModal} aria-label="Close dialog"><X size={18}/></button>
+    {modal && <div className="modal-shade" role="presentation" onMouseDown={e=>{if(e.target===e.currentTarget)closeModal();}}><div ref={dialogRef} tabIndex={-1} className={`modal-card ${modal==="create" ? "modal-wide" : ""}`} role="dialog" aria-modal="true" aria-label={modal === "login" ? "Log in" : modal === "create" ? "Create" : modal === "trade" ? "Trading preview" : "Uniq preview"}><button className="modal-close" onClick={closeModal} aria-label="Close dialog"><X size={18}/></button>
       {modal==="login" && <div className="login-modal"><Mark/><h2>Welcome to Looke</h2><p>One home for every creator on Ultra.</p><WalletConnection onConnected={wallet=>{setConnectedWallet(wallet);setToast("Testnet wallet connected. Sign the login challenge to activate social features.");}} onAuthenticated={()=>{setAuthenticated(true);setToast("Signed in to Looke social.");setModal(null);}} onLoggedOut={()=>{setAuthenticated(false);setToast("Signed out of Looke social.");}} /></div>}
       {modal==="create" && <form className="create-modal" onSubmit={saveDraft}><span className="eyebrow">CREATE ON LOOKE</span><h2>Something worth sharing.</h2><p>Start a draft. On-chain publication and token creation will be enabled after Ultra integration.</p><div className="composer-picks">{(["Content coin","Creator coin","Trend coin","Uniq NFT"] as ComposerType[]).map(t=><button type="button" className={composerType===t?"picked":""} key={t} onClick={()=>setComposerType(t)}>{t==="Uniq NFT"?<ImageIcon size={17}/>:t==="Creator coin"?<UserRound size={17}/>:t==="Trend coin"?<TrendingUp size={17}/>:<Sparkles size={17}/>}<span>{t}</span></button>)}</div><label className="field-label">{composerType === "Uniq NFT" ? "Collection or Uniq title" : "Title"}<input required maxLength={70} placeholder={composerType === "Uniq NFT" ? "Name your digital collectible" : "Give your idea a name"} value={draftTitle} onChange={e=>setDraftTitle(e.target.value)}/></label><label className="field-label">Description (optional)<textarea maxLength={320} rows={3} value={draftCaption} onChange={e=>setDraftCaption(e.target.value)} placeholder="Tell the world what this means..." /></label><div className="draft-note"><Info size={16}/> This saves a local draft only; no media upload, token mint, listing or blockchain transaction occurs.</div><button type="submit" className="primary-button full-button">Save draft <ArrowRight size={17}/></button></form>}
       {modal==="trade" && <div className="trade-modal"><div className="modal-bubble"><Wallet size={25}/></div><h2>Ultra trading is coming.</h2><p>Token swaps require audited Ultra-native liquidity, signed wallet transactions, and canonical balance/indexer confirmation. They are not active in this preview.</p><div className="trade-status"><span>On-chain trading</span><strong>Not enabled</strong></div><div className="trade-status"><span>Wallet connection</span><strong>Not connected</strong></div><button className="primary-button full-button" onClick={closeModal}>Back to Explore <ArrowRight size={16}/></button></div>}
