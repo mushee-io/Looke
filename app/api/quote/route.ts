@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAddress, isAddress, parseAbi } from "viem";
 import { ultraClient } from "@/lib/server/evm";
 import { ULTRA_EVM_TESTNET } from "@/lib/ultra";
+import { quoteExactIn, minOutput } from "@/lib/market/quote.mjs";
 export const dynamic="force-dynamic";
 const POOL_ABI=parseAbi([
  "function getReserves() view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast)",
@@ -44,10 +45,9 @@ export async function GET(request:NextRequest) {
     const reserveOut=is0?reserves[1]:reserves[0];
     const amount=BigInt(amountRaw);
     if(reserveIn<=0n||reserveOut<=0n)return NextResponse.json({error:"Pool is empty"},{status:422});
-    const net=amount*BigInt(10000-feeBps);
-    const expected=net*reserveOut/(reserveIn*10000n+net);
-    if(expected<=0n||expected>=reserveOut)return NextResponse.json({error:"Quote too small or non-executable"},{status:422});
-    const minOut=expected*BigInt(10000-slippageBps)/10000n;
+    // Share the test-covered preflight with other callers; fail closed on zero minimum output.
+    const expected=quoteExactIn(amount,reserveIn,reserveOut,feeBps);
+    const minOut=minOutput(expected,slippageBps);
     return NextResponse.json({
       network:"Ultra EVM Testnet",chainId:18881,pool:address,tokenIn:inAddress,
       tokenOut:is0?token1:token0,amountIn:amount.toString(),
@@ -56,5 +56,9 @@ export async function GET(request:NextRequest) {
       expiresAt:new Date(Date.now()+15000).toISOString(),
       executable:false,tradeEnabled:false,warning:"Read-only indicative quote. No swap or settlement available."
     },{headers:{"Cache-Control":"no-store"}});
-  }catch{return NextResponse.json({error:"Pool preflight failed; quote unavailable"},{status:503});}
+  }catch(error){
+    if(error instanceof RangeError)
+      return NextResponse.json({error:"Quote too small or non-executable"},{status:422});
+    return NextResponse.json({error:"Pool preflight failed; quote unavailable"},{status:503});
+  }
 }
