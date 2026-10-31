@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:math": "node --test tests/*.test.mjs",
+    "contracts:check": "node scripts/check-contracts.mjs"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",
@@ -21,6 +23,8 @@
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "typescript": "^5.9.0"
+    "typescript": "^5.9.0",
+    "@openzeppelin/contracts": "^5.4.0",
+    "solc": "^0.8.30"
   }
 }
