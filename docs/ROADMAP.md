@@ -11,7 +11,7 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 | M4 | Ultra wallets | Partial: EVM and native testnet connect | Test physical wallets, chain/account changes, real receipts |
 | M5 | Social profiles | Partial: authenticated profile editor with reserved-handle validation, public creator pages, directory, real follower/post counts and follow integration | Protected staging, multi-account acceptance, impersonation reporting/moderation, profile identity policies and mobile QA |
 | M6 | Feed/publishing | Partial: real text feed with microsecond keyset pagination, browser drafts, owner edit/delete, atomic post throttles and private report intake | Image/video uploads, operator moderation, protected staging and real multi-account/load/security testing |
-| M7 | Likes/follows/notifications | Partial: DB APIs and UI | Real-user tests and notification fanout |
+| M7 | Likes/follows/notifications | Partial: likes/follows, signed-in comments and author deletion, repost tracking/counts, shareable post links, four-type notifications with unread state | Protected staging, multi-account testing, operational moderation, repost syndication, push delivery and abuse/security review |
 | M8 | Discovery/recommendations | Preview search and filters | Personalized server-side ranking and search index |
 | M9 | Creator coins | Undeployed ERC20 factory prototype | Audit and onchain creator launch receipts |
 | M10 | Content coins | Undeployed factory kind/reference | Authenticated content attestation, liquidity |
@@ -166,3 +166,10 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 - Added draft persistence in the browser, a load-more feed, owner edit/delete UI and a report form.
 - Applied `db/004_feed_publishing.sql` to the dedicated Neon staging database; added tests for canonical cursors, text, UUIDs and report-reason validation.
 - Media uploads and operational moderator tools remain disabled/pending. See `docs/M6-FEED_PUBLISHING.md` for staging acceptance gates. No live trading, NFT minting or market activity enabled.
+
+## M7 comments, reposts and notification read state (1 November 2026)
+
+- Added comment/repost data model, bounded text and identifier validation, rate limiting, author-only comment removal and share-link resolution.
+- Added real feed counts and controls for commenting, repost tracking and sharing; notification API now includes comments and reposts alongside likes and follows, with server-persisted read state.
+- Applied `db/005_social_interactions.sql` to the isolated Looke staging database. Added focused regression tests and `docs/M7-SOCIAL_INTERACTIONS.md` acceptance guidance.
+- No background push, full follower-feed repost syndication or live moderation operations yet. M7 is partially implemented until real-wallet/staging, scaling, abuse and security verification succeed.
