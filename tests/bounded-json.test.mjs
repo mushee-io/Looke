@@ -85,3 +85,16 @@ test("accepts explicit identity encoding", async () => {
   req.headers.set("content-encoding", "Identity");
   assert.deepEqual(await parseBoundedJson(req), {});
 });
+
+test("rejects JSON nesting deeper than 32 containers", async () => {
+  const deep = '{"value":'.repeat(32) + 'null' + '}'.repeat(32);
+  await assert.rejects(parseBoundedJson(request(deep)), /nesting too deep/);
+});
+test("accepts nested JSON at the 32-container boundary", async () => {
+  const boundary = '{"value":'.repeat(31) + 'null' + '}'.repeat(31);
+  assert.ok(await parseBoundedJson(request(boundary)));
+});
+test("counts nested arrays as containers", async () => {
+  const deep = '{"value":' + '['.repeat(32) + '0' + ']'.repeat(32) + '}';
+  await assert.rejects(parseBoundedJson(request(deep)), /nesting too deep/);
+});
