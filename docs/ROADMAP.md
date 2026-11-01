@@ -12,7 +12,7 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 | M5 | Social profiles | Partial: authenticated profile editor with reserved-handle validation, public creator pages, directory, real follower/post counts and follow integration | Protected staging, multi-account acceptance, impersonation reporting/moderation, profile identity policies and mobile QA |
 | M6 | Feed/publishing | Partial: real text feed with microsecond keyset pagination, browser drafts, owner edit/delete, atomic post throttles and private report intake | Image/video uploads, operator moderation, protected staging and real multi-account/load/security testing |
 | M7 | Likes/follows/notifications | Partial: likes/follows, signed-in comments and author deletion, repost tracking/counts, shareable post links, four-type notifications with unread state | Protected staging, multi-account testing, operational moderation, repost syndication, push delivery and abuse/security review |
-| M8 | Discovery/recommendations | Preview search and filters | Personalized server-side ranking and search index |
+| M8 | Discovery/recommendations | Partial: indexed public creator/post full-text search; real Trending, For You (follow boost), Following and Latest feeds; tests and staging search indexes | Protected deployment, multi-account acceptance, moderation/anti-manipulation safeguards, search pagination and scale QA |
 | M9 | Creator coins | Undeployed ERC20 factory prototype | Audit and onchain creator launch receipts |
 | M10 | Content coins | Undeployed factory kind/reference | Authenticated content attestation, liquidity |
 | M11 | Trend coins | Undeployed factory kind/reference | Governance, spam policies, liquidity |
@@ -173,3 +173,10 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 - Added real feed counts and controls for commenting, repost tracking and sharing; notification API now includes comments and reposts alongside likes and follows, with server-persisted read state.
 - Applied `db/005_social_interactions.sql` to the isolated Looke staging database. Added focused regression tests and `docs/M7-SOCIAL_INTERACTIONS.md` acceptance guidance.
 - No background push, full follower-feed repost syndication or live moderation operations yet. M7 is partially implemented until real-wallet/staging, scaling, abuse and security verification succeed.
+
+## M8 public search and transparent discovery (1 November 2026)
+
+- Added `/api/discovery/search` for parameterized indexed public full-text search with strict query limits, and `/api/discovery/feed` for real engagement- and recency-based Trending, cold-start-safe For You and strict authenticated Following results.
+- Wired real discovery to the Explore sitewide search, and working four-mode feed navigation. Fictional preview social posts are separated and explicitly labelled.
+- Applied public-only full-text search indexes to Looke's isolated Neon staging database (`db/006_discovery.sql`). Added regression tests for query validation, modes, ranking time decay and following boost.
+- See `docs/M8-DISCOVERY.md`: anti-manipulation, moderation, full production search/performance verification and protected staging are still required. M8 remains **partial**, not production-accepted.
