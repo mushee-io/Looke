@@ -8,7 +8,7 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 | M1 | Initial UI | Original preview source built and merged into main | Staging deployment and cross-browser review |
 | M2 | Zora-inspired original design | Partial: original Looke UI plus narrow-screen touch targets, forced-colors and increased-contrast CSS (PR pending verification) | Browser/device pixel QA, screen-reader and accessibility audit, mobile usability acceptance |
 | M3 | Authentication | Partial: EVM signed challenge/session; active session inventory, global revocation; production trusted-IP HMAC rate-limiting source and staging migration; strict challenge and JSON validation | Protected Vercel staging, real-wallet/multi-IP verification, WAF policy, independent security review and optional Google/Apple/email providers |
-| M4 | Ultra wallets | Partial: EVM and native testnet connect | Test physical wallets, chain/account changes, real receipts |
+| M4 | Ultra wallets | Partial: verified EVM/native testnet connection, explicit disconnect, account/chain change monitoring even with dialog closed, native RPC health API, regression tests | Physical MetaMask/Ultra extension acceptance, protected HTTPS staging, genuine signed wallet receipts and security review |
 | M5 | Social profiles | Partial: SQL and editor | DB migration, identity integrity, moderation |
 | M6 | Feed/publishing | Partial: verified-session text posts | Database, media upload, moderation and scale |
 | M7 | Likes/follows/notifications | Partial: DB APIs and UI | Real-user tests and notification fanout |
@@ -152,3 +152,12 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 - Require platform-verified Vercel client IP and a separate server-only secret in production; missing or invalid prerequisites fail closed with 503. Exhausted buckets return 429. Existing per-address challenge throttling is retained.
 - Includes regression tests for forwarded IP spoofing rejection, invalid addresses and HMAC scope isolation; does **not** replace a deployed Vercel WAF policy or proven live login. See `docs/M3-RATE_LIMITS.md`.
 - M3 remains incomplete until real production-shaped acceptance, protected deployment and independent review.
+
+## M4 wallet lifecycle hardening (1 November 2026)
+
+- Validate the EVM account and 18881 chain again after wallet authorization, and both before and after EIP-191 login signing.
+- Validate native Ultra Wallet's `getChainId()` separately from its `blockchainid` account name, and require selected native account and testnet network consistency.
+- Monitor EVM and native wallet account/chain/disconnect events across the entire app, including while the connect dialog is closed; recheck on focus/visibility return.
+- Support explicit EVM connection forget and native SDK trust revocation, without conflating wallet connection with the server's separate login session.
+- Add read-only native Ultra RPC identity/height endpoint, wallet validation regression tests and manual acceptance checklist (`docs/M4-WALLET-ACCEPTANCE.md`).
+- Still require protected staging, independent physical testnet wallet tests, security assessment and genuine explorer receipts before M4 is accepted. Trading and public minting remain disabled.
