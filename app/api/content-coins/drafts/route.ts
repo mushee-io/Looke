@@ -23,8 +23,8 @@ export async function GET() {
      WHERE profile_id=${owner.id}::uuid AND moderation_status='visible'
      ORDER BY created_at DESC,id DESC LIMIT 40`,
    sql`SELECT d.post_id,d.name,d.symbol,d.supply_tokens::text AS supply_tokens,
-       d.metadata_uri,d.content_ref,d.source_text_hash,d.ref_version,
-       d.created_at,d.updated_at,p.text AS post_text,p.moderation_status
+       d.metadata_uri,d.content_ref,d.source_text_hash,d.source_edited_at,d.ref_version,
+       d.created_at,d.updated_at,p.text AS post_text,p.edited_at AS current_edited_at,p.moderation_status
      FROM looke_content_coin_drafts d JOIN looke_posts p ON p.id=d.post_id
      WHERE d.profile_id=${owner.id}::uuid
      ORDER BY d.updated_at DESC LIMIT ${MAX_CONTENT_DRAFTS}`,
@@ -32,11 +32,12 @@ export async function GET() {
   const drafts=rows.map(row=>{
    const current=row.moderation_status==="visible" &&
      contentSnapshotIsCurrent({textHash:row.source_text_hash,contentRef:row.content_ref},
-       row.post_id,owner.evm_address,row.post_text);
+       row.post_id,owner.evm_address,row.post_text,row.current_edited_at);
    return {
      postId:row.post_id,name:row.name,symbol:row.symbol,
      supplyTokens:row.supply_tokens,metadataURI:row.metadata_uri,
      contentRef:row.content_ref,sourceTextHash:row.source_text_hash,
+     sourceEditedAt:row.source_edited_at,
      refVersion:row.ref_version,createdAt:row.created_at,updatedAt:row.updated_at,
      sourceCurrent:current,
      status:current?"valid_offchain_snapshot":"stale_or_hidden_source",
@@ -69,7 +70,7 @@ export async function POST(request:Request) {
   const sql=database();
   const result=await sql.begin(async tx=>{
    await tx`SELECT pg_advisory_xact_lock(hashtext(${owner.id}::text||':content-drafts'))`;
-   const posts=await tx`SELECT id,text FROM looke_posts
+   const posts=await tx`SELECT id,text,edited_at FROM looke_posts
       WHERE id=${input.postId}::uuid AND profile_id=${owner.id}::uuid
         AND moderation_status='visible' FOR SHARE`;
    if(!posts.length)return {status:"not_owner"} as const;
@@ -80,16 +81,17 @@ export async function POST(request:Request) {
       WHERE profile_id=${owner.id}::uuid`;
     if(Number(count[0]?.count??0)>=MAX_CONTENT_DRAFTS)return {status:"limit"} as const;
    }
-   const snapshot=contentSnapshot(input.postId,owner.evm_address,posts[0].text);
+   const snapshot=contentSnapshot(input.postId,owner.evm_address,posts[0].text,posts[0].edited_at);
    const rows=await tx`INSERT INTO looke_content_coin_drafts(
-      post_id,profile_id,creator_address,source_text_hash,content_ref,ref_version,
+      post_id,profile_id,creator_address,source_text_hash,source_edited_at,content_ref,ref_version,
       name,symbol,supply_tokens,metadata_uri
     ) VALUES (
       ${input.postId}::uuid,${owner.id}::uuid,${snapshot.creatorAddress},
-      ${snapshot.textHash},${snapshot.contentRef},${snapshot.version},
+      ${snapshot.textHash},${posts[0].edited_at??null},${snapshot.contentRef},${snapshot.version},
       ${input.name},${input.symbol},${input.supplyTokens},${input.metadataURI}
     ) ON CONFLICT(post_id) DO UPDATE SET
       creator_address=excluded.creator_address,source_text_hash=excluded.source_text_hash,
+      source_edited_at=excluded.source_edited_at,
       content_ref=excluded.content_ref,ref_version=excluded.ref_version,
       name=excluded.name,symbol=excluded.symbol,supply_tokens=excluded.supply_tokens,
       metadata_uri=excluded.metadata_uri,updated_at=now()
