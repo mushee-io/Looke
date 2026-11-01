@@ -181,7 +181,7 @@ export function TrendGovernance({authenticated,onRequireLogin}:{
        </p>
        <p style={{fontSize:11,color:"#9a93a3",overflowWrap:"anywhere"}}>Trend ref: {p.trendRef}</p>
        <div style={{display:"flex",gap:9,flexWrap:"wrap",marginTop:12}}>
-         <button type="button" className="subtle-cta" disabled={busy||p.isOwner||!p.evidenceCurrent||new Date(p.createdAt).getTime()+14*86400_000<=Date.now()}
+         <button type="button" className="subtle-cta" disabled={busy||p.isOwner||(!p.viewerEndorsed&&new Date(p.createdAt).getTime()+14*86400_000<=Date.now())}
            aria-pressed={p.viewerEndorsed} onClick={()=>void endorse(p)}>
            <ThumbsUp size={14}/> {p.viewerEndorsed?"Remove endorsement":"Endorse (nonbinding)"}
          </button>
@@ -202,7 +202,7 @@ export function TrendGovernance({authenticated,onRequireLogin}:{
        </div>}
      </article>)}
    <p style={{fontSize:11,color:"#8b8894",marginTop:15}}>
-     Endorsements expire as a proposal's 14-day endorsement window closes. Only authorized moderation and independently audited onchain controls can permit future issuance; no automated token launch is configured.
+     New endorsements close after a proposal's 14-day window; existing endorsements are not automatically deleted. Only authorized moderation and independently audited onchain controls can permit future issuance; no automated token launch is configured.
    </p>
  </section>;
 }
