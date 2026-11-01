@@ -7,7 +7,7 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 |---|---|---|---|
 | M1 | Initial UI | Original preview source built and merged into main | Staging deployment and cross-browser review |
 | M2 | Zora-inspired original design | Partial: original Looke UI plus narrow-screen touch targets, forced-colors and increased-contrast CSS (PR pending verification) | Browser/device pixel QA, screen-reader and accessibility audit, mobile usability acceptance |
-| M3 | Authentication | Partial: EVM signature nonce/session; strict host, address, chain, nonce and validity-window challenge binding; canonical challenge ID checks (source PR pending CI) | Provision DB; prove live login with genuine wallets; rate-limit by IP; Google/Apple/email optional |
+| M3 | Authentication | Partial: EVM signature nonce/session; strict host, address, chain, nonce and validity-window challenge binding; canonical challenge ID checks; bounded object-shaped JSON request parsing (PR pending CI) | Provision DB; prove live login with genuine wallets; rate-limit by IP; Google/Apple/email optional |
 | M4 | Ultra wallets | Partial: EVM and native testnet connect | Test physical wallets, chain/account changes, real receipts |
 | M5 | Social profiles | Partial: SQL and editor | DB migration, identity integrity, moderation |
 | M6 | Feed/publishing | Partial: verified-session text posts | Database, media upload, moderation and scale |
@@ -113,3 +113,9 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 - Require an exact `application/json` media type (optionally with a UTF-8 charset parameter) for the bounded authentication JSON parser; reject prefix lookalikes such as `application/jsonp` and unsupported parameters.
 - Add regression coverage for accepted UTF-8 variants and rejected misleading content types. This is source-only input hardening; successful CI and protected staging acceptance remain separate gates.
 - M3 remains partial pending independent wallet sign-in, production edge rate limiting, Vercel staging access and security review. No trading, minting or spending is enabled.
+
+## M3 top-level authentication JSON shape (1 November 2026)
+
+- Require a non-null, non-array JSON object from the shared bounded authentication/session JSON parser. Reject primitive and array top-level payloads before route-specific field validation.
+- Add regression coverage for null, arrays, booleans, numbers, strings, empty objects and nested objects.
+- This is source-only input validation, not proof of live authentication. Require passing CI, protected staging, genuine wallet sign-in, database-backed session acceptance, production IP rate limiting and independent security review before M3 completion. Trading, minting and irreversible spending remain disabled.
