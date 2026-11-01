@@ -58,3 +58,9 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 - Added pure regression tests for cross-host replay, wallet mismatch, chain alteration, malformed nonce, excessive expiry and injected lines.
 - This does not replace origin checking, database-backed one-time consumption, production edge rate limiting, genuine wallet signing tests or an external security review.
 - Deployment and live login verification remain blocked by staging hosting permissions and genuine test-wallet acceptance.
+
+## M3 challenge freshness hardening (1 November 2026)
+
+- Verify a persisted signed challenge is within its issue/expiry window, permitting no more than 30 seconds of clock skew in either direction. Existing database expiry and single-use consumption remain authoritative and stricter.
+- Add regression tests for stale and future-issued challenges, boundary clock skew, and non-finite timestamps.
+- Source tests and CI do **not** establish live authentication. Protected staging deployment, independent EVM wallet sign-in, session persistence checks, rate limiting at the edge and security review remain required.
