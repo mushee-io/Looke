@@ -98,3 +98,18 @@ test("counts nested arrays as containers", async () => {
   const deep = '{"value":' + '['.repeat(32) + '0' + ']'.repeat(32) + '}';
   await assert.rejects(parseBoundedJson(request(deep)), /nesting too deep/);
 });
+
+test("rejects prototype-sensitive keys at any nesting level", async () => {
+  for (const key of ["__proto__", "constructor", "prototype"]) {
+    for (const body of [
+      JSON.stringify({ [key]: "malicious" }),
+      JSON.stringify({ data: [{ [key]: { polluted: true } }] })
+    ]) {
+      await assert.rejects(parseBoundedJson(request(body)), /Forbidden JSON property/);
+    }
+  }
+});
+test("accepts ordinary JSON keys and preserves object data", async () => {
+  assert.deepEqual(await parseBoundedJson(request('{"profile":{"name":"Looke","enabled":true}}')),
+    { profile: { name: "Looke", enabled: true } });
+});
