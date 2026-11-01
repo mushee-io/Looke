@@ -89,7 +89,7 @@ export function NativeUniqMarketplace({account}:{account:string|null}){
   </div>
   <p style={{fontSize:12,color:"#777",lineHeight:1.65,margin:"12px 0 18px"}}>
    Discover real resale entries on <strong>Ultra Native Testnet</strong>, crosschecked against
-   the current owner&apos;s <code>token.b</code> holdings. These are **not guaranteed executable offers**:
+   the current owner&apos;s <code>token.b</code> holdings. These are <strong>not guaranteed executable offers</strong>:
    prices and ownership can change between blockchain reads. Buying, resale listings and cancellation are disabled.
   </p>
   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,flexWrap:"wrap",margin:"13px 0"}}>
