@@ -23,8 +23,11 @@ export async function POST(request:Request,{params}:{params:Promise<{id:string}>
       FROM looke_trend_proposals WHERE id=${id}::uuid FOR SHARE`;
     if(!proposal.length)return "missing";
     if(!body.endorse){
-      await tx`DELETE FROM looke_trend_endorsements
-        WHERE proposal_id=${id}::uuid AND voter_id=${me.id}::uuid`;
+      const removed=await tx`DELETE FROM looke_trend_endorsements
+        WHERE proposal_id=${id}::uuid AND voter_id=${me.id}::uuid
+        RETURNING proposal_id`;
+      if(removed.length)await tx`INSERT INTO looke_trend_endorsement_events(
+        proposal_id,voter_id,action) VALUES(${id}::uuid,${me.id}::uuid,'removed')`;
       return "removed";
     }
     if(proposal[0].proposer_id===me.id)return "self";
@@ -33,11 +36,14 @@ export async function POST(request:Request,{params}:{params:Promise<{id:string}>
     const existing=await tx`SELECT 1 FROM looke_trend_endorsements
       WHERE proposal_id=${id}::uuid AND voter_id=${me.id}::uuid`;
     if(existing.length)return "already";
-    const recent=await tx`SELECT count(*)::int AS count FROM looke_trend_endorsements
-      WHERE voter_id=${me.id}::uuid AND created_at>now()-interval '24 hours'`;
+    const recent=await tx`SELECT count(*)::int AS count FROM looke_trend_endorsement_events
+      WHERE voter_id=${me.id}::uuid AND action='endorsed'
+        AND created_at>now()-interval '24 hours'`;
     if(Number(recent[0]?.count??0)>=TREND_MAX_ENDORSEMENTS_24H)return "rate_limited";
-    await tx`INSERT INTO looke_trend_endorsements(proposal_id,voter_id)
-      VALUES(${id}::uuid,${me.id}::uuid) ON CONFLICT DO NOTHING`;
+    const inserted=await tx`INSERT INTO looke_trend_endorsements(proposal_id,voter_id)
+      VALUES(${id}::uuid,${me.id}::uuid) ON CONFLICT DO NOTHING RETURNING proposal_id`;
+    if(inserted.length)await tx`INSERT INTO looke_trend_endorsement_events(
+      proposal_id,voter_id,action) VALUES(${id}::uuid,${me.id}::uuid,'endorsed')`;
     return "endorsed";
   });
   if(result==="missing")return NextResponse.json({error:"Proposal unavailable"},{status:404,headers});
