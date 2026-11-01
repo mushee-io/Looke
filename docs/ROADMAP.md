@@ -7,7 +7,7 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 |---|---|---|---|
 | M1 | Initial UI | Original preview source built and merged into main | Staging deployment and cross-browser review |
 | M2 | Zora-inspired original design | Partial: original Looke UI plus narrow-screen touch targets, forced-colors and increased-contrast CSS (PR pending verification) | Browser/device pixel QA, screen-reader and accessibility audit, mobile usability acceptance |
-| M3 | Authentication | Partial: EVM signed challenge/session, strict context and bounded JSON input, active session inventory, global sign-out, reload-safe login state, EVM account/chain change handling | Protected staging; genuine wallet/database acceptance; production IP rate limiting, OAuth/email if required, independent security review |
+| M3 | Authentication | Partial: EVM signed challenge/session; session inventory and global revocation; production trusted-IP HMAC rate-limit implementation; strict challenge and JSON validation | Apply migration 003, deploy staging, verify genuine wallets/IP limits, enable Vercel WAF, independent security review, optional Google/Apple/email |
 | M4 | Ultra wallets | Partial: EVM and native testnet connect | Test physical wallets, chain/account changes, real receipts |
 | M5 | Social profiles | Partial: SQL and editor | DB migration, identity integrity, moderation |
 | M6 | Feed/publishing | Partial: verified-session text posts | Database, media upload, moderation and scale |
@@ -145,3 +145,10 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 - Restored signed-in session state from `/api/auth/me` into the wallet modal on reload. The active social account is separate from the connected wallet; account/chain changes invalidate stale local EVM connection state.
 - Added regression tests for safe session metadata and invalid values. No trading, NFT minting, mainnet or irreversible spending was enabled.
 - M3 remains **partial** until protected staging, independent real-wallet/session tests, edge IP rate limiting and security review. Google/Apple/email providers are not implemented.
+
+## M3 trusted-IP production throttling (1 November 2026)
+
+- Added server-side HMAC-hashed IP buckets in PostgreSQL (`db/003_auth_rate_limits.sql`) for login challenge and signature verification endpoints.
+- Require platform-verified Vercel client IP and a separate server-only secret in production; missing or invalid prerequisites fail closed with 503. Exhausted buckets return 429. Existing per-address challenge throttling is retained.
+- Includes regression tests for forwarded IP spoofing rejection, invalid addresses and HMAC scope isolation; does **not** replace a deployed Vercel WAF policy or proven live login. See `docs/M3-RATE_LIMITS.md`.
+- M3 remains incomplete until real production-shaped acceptance, protected deployment and independent review.
