@@ -28,5 +28,16 @@ CREATE TABLE IF NOT EXISTS looke_trend_endorsements (
 );
 CREATE INDEX IF NOT EXISTS looke_trend_endorsements_voter_time
   ON looke_trend_endorsements(voter_id,created_at DESC);
+-- Private, append-only action history prevents unendorse/re-endorse quota bypass.
+CREATE TABLE IF NOT EXISTS looke_trend_endorsement_events (
+  id BIGSERIAL PRIMARY KEY,
+  proposal_id UUID NOT NULL REFERENCES looke_trend_proposals(id) ON DELETE CASCADE,
+  voter_id UUID NOT NULL REFERENCES looke_profiles(id) ON DELETE CASCADE,
+  action VARCHAR(12) NOT NULL CHECK(action IN ('endorsed','removed')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS looke_trend_endorsement_events_rate
+  ON looke_trend_endorsement_events(voter_id,action,created_at DESC);
+-- No public route exposes individual voter records or event history.
 -- Nomination and endorsement signals are mutable social database records,
 -- not sybil-resistant votes, onchain governance authority or issuance approvals.
