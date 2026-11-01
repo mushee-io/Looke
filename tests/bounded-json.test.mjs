@@ -51,3 +51,13 @@ test("accepts exact-boundary declared length", async () => {
   req.headers.set("content-length", "2");
   assert.deepEqual(await parseBoundedJson(req, 2), {});
 });
+
+test("accepts JSON with a UTF-8 charset parameter", async () => {
+  assert.deepEqual(await parseBoundedJson(request("{}", "application/json; charset=UTF-8")), {});
+  assert.deepEqual(await parseBoundedJson(request("{}", "Application/JSON; charset=\"utf-8\"")), {});
+});
+test("rejects misleading JSON media types and unsupported charset parameters", async () => {
+  for (const type of ["application/jsonp", "application/json-seq", "application/jsonx", "application/json; charset=iso-8859-1", "application/json; arbitrary=yes", "text/json"]) {
+    await assert.rejects(parseBoundedJson(request("{}", type)), /application\\/json/);
+  }
+});
