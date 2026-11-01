@@ -188,3 +188,9 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 - Added isolated Ganache EVM runtime tests for the unaudited Solidity factory (one creator coin per EVM wallet, 18-decimal fixed supply, ownership, duplicate and invalid-parameter reverts). CI verification is required before merge.
 - Applied `db/007_creator_coin_drafts.sql` to the dedicated Neon staging database. See `docs/M9-CREATOR_COINS.md` for remaining deployment, metadata/identity, independent audit and signed testnet receipt gates.
 - M9 remains **partial**; no publicly enabled token issuer, creator earnings, active swaps, testnet deployment evidence or mainnet launch.
+
+## M3 prototype-sensitive authentication JSON keys (1 November 2026)
+
+- Reject `__proto__`, `constructor` and `prototype` keys at every object level, including objects nested in arrays, in the shared bounded authentication JSON parser. Preserve normal object keys and existing 32-container nesting and 16 KiB body limits.
+- Added regression coverage for top-level and nested forbidden properties and benign JSON compatibility. This replays the reviewed source from PR #23 onto current main without overwriting concurrent M5–M9 roadmap work.
+- M3 remains partial until protected staging, genuine wallet/session acceptance, production edge/WAF checks and independent security review. CI success alone does not establish live authentication. No public trading, minting, spending or mainnet activity is enabled.
