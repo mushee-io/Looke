@@ -76,3 +76,9 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 - Extracted the Ultra EVM login challenge message into a deterministic, validated formatter shared by the challenge issuance endpoint.
 - Added regression coverage that generates a real-format challenge and checks acceptance by the verification parser, plus malformed host/nonce/address/timestamp rejection.
 - This is source-level hardening only. Protected staging deployment, real wallet signatures, rate limiting at the edge and independent security review are still required; M3 remains partial.
+
+## M3 canonical UTC timestamp validation (1 November 2026)
+
+- Reject impossible calendar dates and non-round-tripping UTC timestamps in persisted login challenges before signature verification; do not rely on permissive `Date.parse` normalization.
+- Add Node regression tests for canonical dates, invalid calendar dates and the five-minute challenge window boundary.
+- This is source-only defense in depth. CI, genuine wallet acceptance, protected staging deployment, edge rate limiting and independent review are still required; M3 remains partial. No transaction or spending capabilities are enabled.
