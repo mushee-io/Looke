@@ -5,6 +5,7 @@ import path from "node:path";
 import solc from "solc";
 import ganache from "ganache";
 import {contentSnapshot} from "../lib/content-coin.mjs";
+import {trendReference} from "../lib/trend-coin.mjs";
 import {
   createPublicClient,createWalletClient,custom,defineChain,
   encodeAbiParameters,keccak256,parseEventLogs,zeroHash,zeroAddress
@@ -183,6 +184,54 @@ test("M9 factory enforces creator-only uniqueness, fixed supply and valid inputs
    assert.equal(await publicClient.readContract({
      address:factory,abi:compiled.factory.abi,functionName:"coinCount"
    }),5n);
+
+   // M11: Trend is kind=2 with a stable global topic reference, not a creator-owned post.
+   const trend=trendReference("Ultra Games");
+   await assert.rejects(publicClient.simulateContract({
+     address:factory,abi:compiled.factory.abi,functionName:"createCoin",
+     args:["Wrong Trend","BAD",2,zeroHash,200n,uri],account:creator
+   }),Error);
+   const trendArgs=["Ultra Gaming","GAMES",2,trend.trendRef,2000n,uri];
+   const trendHash=await wallet.writeContract({
+     address:factory,abi:compiled.factory.abi,functionName:"createCoin",
+     args:trendArgs,account:creator,gas:6_000_000n
+   });
+   const trendReceipt=await publicClient.waitForTransactionReceipt({hash:trendHash});
+   assert.equal(trendReceipt.status,"success");
+   const trendEvents=parseEventLogs({
+     abi:compiled.factory.abi,logs:trendReceipt.logs,eventName:"CoinCreated"
+   });
+   assert.equal(trendEvents.length,1);
+   const ev=trendEvents[0].args;
+   assert.equal(ev.creator.toLowerCase(),creator.toLowerCase());
+   assert.equal(ev.kind,2);
+   assert.equal(ev.contentRef,trend.trendRef);
+   assert.equal(ev.supply,2000n*10n**18n);
+   assert.equal(await publicClient.readContract({
+     address:ev.coin,abi:compiled.token.abi,functionName:"totalSupply"
+   }),2000n*10n**18n);
+   const trendKey=keccak256(encodeAbiParameters(
+     [{type:"address"},{type:"uint8"},{type:"bytes32"}],[creator,2,trend.trendRef]
+   ));
+   assert.equal((await publicClient.readContract({
+     address:factory,abi:compiled.factory.abi,functionName:"coinFor",args:[trendKey]
+   })).toLowerCase(),ev.coin.toLowerCase());
+   await assert.rejects(publicClient.simulateContract({
+     address:factory,abi:compiled.factory.abi,functionName:"createCoin",
+     args:trendArgs,account:creator
+   }),Error);
+
+   // Blocking issue: the current permissionless factory allows ANOTHER wallet
+   // to mint for the same trendRef; there is no binding governance approval.
+   const copiedTrend=await wallet.writeContract({
+     address:factory,abi:compiled.factory.abi,functionName:"createCoin",
+     args:["Fake Trend","FAKE",2,trend.trendRef,10n,uri],
+     account:another,gas:6_000_000n
+   });
+   assert.equal((await publicClient.waitForTransactionReceipt({hash:copiedTrend})).status,"success");
+   assert.equal(await publicClient.readContract({
+     address:factory,abi:compiled.factory.abi,functionName:"coinCount"
+   }),7n);
  } finally {
    await provider.disconnect();
  }
