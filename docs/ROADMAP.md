@@ -7,7 +7,7 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 |---|---|---|---|
 | M1 | Initial UI | Original preview source built and merged into main | Staging deployment and cross-browser review |
 | M2 | Zora-inspired original design | Partial: original Looke UI plus narrow-screen touch targets, forced-colors and increased-contrast CSS (PR pending verification) | Browser/device pixel QA, screen-reader and accessibility audit, mobile usability acceptance |
-| M3 | Authentication | Partial: EVM signature nonce/session | Provision DB; prove live login; Google/Apple/email optional |
+| M3 | Authentication | Partial: EVM signature nonce/session; strict host, address, chain, nonce and validity-window challenge binding (PR pending CI) | Provision DB; prove live login with genuine wallets; rate-limit by IP; Google/Apple/email optional |
 | M4 | Ultra wallets | Partial: EVM and native testnet connect | Test physical wallets, chain/account changes, real receipts |
 | M5 | Social profiles | Partial: SQL and editor | DB migration, identity integrity, moderation |
 | M6 | Feed/publishing | Partial: verified-session text posts | Database, media upload, moderation and scale |
@@ -51,3 +51,10 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 - Forced-colors mode restores visible borders and selected states; increased-contrast preference strengthens text and control boundaries.
 - Verification gate: run CI (typecheck, tests, contract compile, build), then manually test at 320/360/390/768px, 200% text zoom, Windows High Contrast, macOS increased contrast, VoiceOver/NVDA, keyboard focus and actual mobile devices. These tests are **not** claimed as complete by source-only changes.
 - No live trading, minting, spending or mainnet actions are introduced.
+
+## M3 login challenge hardening (1 November 2026)
+
+- Verification now rejects persisted challenges whose signed domain, address, chain, nonce, timestamp format or expiry window does not match the request context, before signature verification and consumption.
+- Added pure regression tests for cross-host replay, wallet mismatch, chain alteration, malformed nonce, excessive expiry and injected lines.
+- This does not replace origin checking, database-backed one-time consumption, production edge rate limiting, genuine wallet signing tests or an external security review.
+- Deployment and live login verification remain blocked by staging hosting permissions and genuine test-wallet acceptance.
