@@ -278,3 +278,9 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 - Bound total enumerable JSON properties/array entries to 2,048 in the shared authentication parser, in addition to the existing 16 KiB byte, 32-container-depth and 2,048-container limits. This covers broad scalar-only objects that evade container-count checks.
 - Add boundary regression tests for 2,048 accepted and 2,049 rejected scalar properties. Source-level defense in depth only; CI must pass before merge.
 - M3 remains partial pending protected Vercel staging, genuine wallet and database-session acceptance, production WAF/rate-limiting checks and independent security review. No trading, minting, mainnet or irreversible spending enabled.
+
+## M3 canonical UTF-8 authentication JSON (1 November 2026)
+
+- Explicitly reject UTF-8 BOM-prefixed authentication JSON before decoding. The platform decoder otherwise strips the BOM, permitting an ambiguous noncanonical wire representation.
+- Add regression tests for BOM rejection, malformed UTF-8 rejection and valid Unicode acceptance. This is source-level request hardening only; CI must pass before merge.
+- M3 remains partial pending protected Vercel staging, genuine independent wallet signatures and database sessions, production WAF/rate-limit verification and independent security review. No public trading, minting, mainnet or irreversible spending enabled.
