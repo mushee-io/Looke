@@ -1,0 +1,12 @@
+export type TrendTopic={topic:string;slug:string};
+export type TrendProposal=TrendTopic & {name:string;symbol:string;supplyTokens:number;metadataURI:string};
+export const TREND_CHAIN_ID:number;
+export const TREND_MIN_POSTS:number;
+export const TREND_MIN_AUTHORS:number;
+export const TREND_MAX_NOMINATIONS_30D:number;
+export const TREND_MAX_ENDORSEMENTS_24H:number;
+export function normalizeTrendTopic(value:unknown):TrendTopic;
+export function normalizeTrendProposal(value:unknown):TrendProposal;
+export function trendReference(value:string):TrendTopic & {topicHash:`0x${string}`;trendRef:`0x${string}`;chainId:number;kind:2;version:string};
+export function trendEvidenceEligible(posts:number,authors:number):boolean;
+export function checkedTrendId(value:unknown):string;
