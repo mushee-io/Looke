@@ -217,3 +217,8 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 - Added market source/status listing, same-block reserve and token metadata snapshots, 30-event confirmed history readout and a 30-second refreshing Explore dashboard. No configured/verified pool means no live data is shown. Refined `/api/coins` to fail closed without a factory and canonical indexed checkpoint.
 - Added `db/010_market_indexing.sql` and applied it only to dedicated Looke Neon staging. Added pure tests for finality windows, block hashes, raw swap values and direction safety.
 - Trading remains disabled. The current unaudited factory and unknown pools have no real verified swap/issuance evidence; protected Vercel staging, an authorized scheduler, external contract verification and a tested reorg runbook remain incomplete. See `docs/M13-LIVE_MARKETS.md`.
+
+## M3 authentication JSON prototype-key protection (1 November 2026)
+
+- Reject `__proto__`, `constructor` and `prototype` keys at any nested object level in bounded authentication JSON. Add regression tests for nested arrays and benign data.
+- Source-only hardening: protected Vercel staging, real wallet/session acceptance, edge/WAF policy and independent security review remain required. No trading, minting, mainnet or spending enabled.
