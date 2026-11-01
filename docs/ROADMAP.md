@@ -7,7 +7,7 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 |---|---|---|---|
 | M1 | Initial UI | Original preview source built and merged into main | Staging deployment and cross-browser review |
 | M2 | Zora-inspired original design | Partial: original Looke UI plus narrow-screen touch targets, forced-colors and increased-contrast CSS (PR pending verification) | Browser/device pixel QA, screen-reader and accessibility audit, mobile usability acceptance |
-| M3 | Authentication | Partial: EVM signature nonce/session; strict host, address, chain, nonce and validity-window challenge binding; canonical challenge ID checks; bounded object-shaped JSON request parsing; encoded-body rejection; 32-level JSON nesting guard (PR pending CI) | Provision DB; prove live login with genuine wallets; rate-limit by IP; Google/Apple/email optional |
+| M3 | Authentication | Partial: EVM signed challenge/session, strict context and bounded JSON input, active session inventory, global sign-out, reload-safe login state, EVM account/chain change handling | Protected staging; genuine wallet/database acceptance; production IP rate limiting, OAuth/email if required, independent security review |
 | M4 | Ultra wallets | Partial: EVM and native testnet connect | Test physical wallets, chain/account changes, real receipts |
 | M5 | Social profiles | Partial: SQL and editor | DB migration, identity integrity, moderation |
 | M6 | Feed/publishing | Partial: verified-session text posts | Database, media upload, moderation and scale |
@@ -137,3 +137,11 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 - PR #15 initial quality run #76 failed in `npm run test:math` because the new rejection test used 32 object containers, which is the permitted maximum. Corrected rejection coverage to 33 containers and acceptance coverage to exactly 32 containers.
 - The iterative parser's limit remains unchanged. Require a new successful GitHub CI run before merging; source-level checks are not evidence of live wallet authentication.
 - Protected staging, genuine wallet/session testing, production edge rate limiting and independent security review remain M3 release gates. No trading, minting, spending or mainnet actions enabled.
+
+## M3 session management and wallet-state consistency (1 November 2026)
+
+- Added authenticated session inventory (`GET /api/auth/sessions`) that returns only creation/expiry times and current-session flags. Bearer cookies and token hashes remain server-side; API responses are non-cacheable.
+- Added Origin-protected `DELETE /api/auth/sessions` to revoke all server sessions for the signed-in profile and clear the HttpOnly cookie. The UI requires explicit second confirmation and does not claim success if database revocation fails.
+- Restored signed-in session state from `/api/auth/me` into the wallet modal on reload. The active social account is separate from the connected wallet; account/chain changes invalidate stale local EVM connection state.
+- Added regression tests for safe session metadata and invalid values. No trading, NFT minting, mainnet or irreversible spending was enabled.
+- M3 remains **partial** until protected staging, independent real-wallet/session tests, edge IP rate limiting and security review. Google/Apple/email providers are not implemented.
