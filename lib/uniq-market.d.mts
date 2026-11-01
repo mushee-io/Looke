@@ -20,4 +20,4 @@ export function validateMarketIntent(intent:"buy"|"cancel"|"list",account:string
  walletOwnershipVerified:false;contractExecutionSimulationVerified:false;
  feesFullyVerified:false;executionEnabled:false;
 };
-export function nextMarketCursor(rows:ResaleRow[],more:boolean,nextKey:unknown):string|null;
+export function nextMarketCursor(rows:Array<{token_id:string|number}>,more:boolean,nextKey:unknown):string|null;
