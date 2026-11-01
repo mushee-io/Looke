@@ -5,13 +5,13 @@ import {cleanPostText,checkedReportReason,checkedPostUuid} from "../lib/post-con
 
 const ID="6a7bdd63-66c2-41a2-9973-112233445566";
 test("public feed cursor is stable across encoding and decoding",()=>{
-  const cursor=encodeFeedCursor("2026-11-01T15:28:00.000Z",ID);
-  assert.deepEqual(decodeFeedCursor(cursor),{createdAt:"2026-11-01T15:28:00.000Z",id:ID});
-  assert.equal(encodeFeedCursor(...["2026-11-01T15:28:00.000Z",ID]),cursor);
+  const cursor=encodeFeedCursor("2026-11-01T15:28:00.123456Z",ID);
+  assert.deepEqual(decodeFeedCursor(cursor),{createdAt:"2026-11-01T15:28:00.123456Z",id:ID});
+  assert.equal(encodeFeedCursor(...["2026-11-01T15:28:00.123456Z",ID]),cursor);
 });
 test("reject malformed and oversized cursor input",()=>{
-  for(const cursor of ["","invalid","?".repeat(900),Buffer.from('["2026-02-30T10:00:00.000Z","'+ID+'"]').toString("base64url"),
-    Buffer.from('["2026-11-01T15:28:00.000Z","../passwd"]').toString("base64url"),
+  for(const cursor of ["","invalid","?".repeat(900),Buffer.from('["2026-02-30T10:00:00.000000Z","'+ID+'"]').toString("base64url"),
+    Buffer.from('["2026-11-01T15:28:00.123456Z","../passwd"]').toString("base64url"),
     Buffer.from('{"id":"x"}').toString("base64url")]){
       assert.throws(()=>decodeFeedCursor(cursor),RangeError);
   }
