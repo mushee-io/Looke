@@ -131,3 +131,9 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 - Limit nested JSON objects/arrays to 32 container levels after bounded UTF-8 parsing, using an iterative traversal to avoid recursive stack exhaustion. This is a defense-in-depth limit on shared authentication/session request parsing.
 - Added tests for the boundary, excessive nested objects and excessive nested arrays. Verify CI before merging.
 - M3 remains partial: genuine wallet signature/session acceptance, protected staging, IP-based edge rate limiting and independent security review are still outstanding. No trading, minting, spending or mainnet actions enabled.
+
+## M3 nesting boundary CI repair (1 November 2026)
+
+- PR #15 initial quality run #76 failed in `npm run test:math` because the new rejection test used 32 object containers, which is the permitted maximum. Corrected rejection coverage to 33 containers and acceptance coverage to exactly 32 containers.
+- The iterative parser's limit remains unchanged. Require a new successful GitHub CI run before merging; source-level checks are not evidence of live wallet authentication.
+- Protected staging, genuine wallet/session testing, production edge rate limiting and independent security review remain M3 release gates. No trading, minting, spending or mainnet actions enabled.
