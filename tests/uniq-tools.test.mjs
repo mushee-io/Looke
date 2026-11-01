@@ -18,16 +18,16 @@ test("strict revision prevents missing expectedRevision and unsafe races",()=>{
   assert.throws(()=>checkedDraftRevision(x),RangeError);
 });
 test("editing uses all M14 validation rules and rejects invented/unknown fields",()=>{
- const edited=normalizeCollectionEdit({...c,expectedRevision:2});
+ const edited=normalizeCollectionEdit({name:c.name,description:c.description,imageURI:c.imageURI,nativeAccount:c.nativeAccount,factoryId:c.factoryId,expectedRevision:2});
  assert.equal(edited.name,c.name);
  assert.equal(edited.expectedRevision,2);
- const item=normalizeUniqItemEdit({...one,editionLimit:"100",expectedRevision:1});
+ const item=normalizeUniqItemEdit({collectionId:one.collectionId,name:one.name,description:one.description,imageURI:one.imageURI,editionLimit:"100",expectedRevision:1});
  assert.equal(item.editionLimit,100);
- for(const x of [{...c,expectedRevision:0},{...c,expectedRevision:1,allowMint:true},
-   {...c,expectedRevision:1,imageURI:"https://malicious.example/img"}])
+ for(const x of [{name:c.name,description:c.description,imageURI:c.imageURI,nativeAccount:c.nativeAccount,factoryId:c.factoryId,expectedRevision:0},{name:c.name,description:c.description,imageURI:c.imageURI,nativeAccount:c.nativeAccount,factoryId:c.factoryId,expectedRevision:1,allowMint:true},
+   {name:c.name,description:c.description,imageURI:"https://malicious.example/img",nativeAccount:null,factoryId:null,expectedRevision:1}])
   assert.throws(()=>normalizeCollectionEdit(x),RangeError);
- for(const x of [{...one,editionLimit:"0",expectedRevision:1},
-   {...one,editionLimit:"100",expectedRevision:1,gasKey:"bad"}])
+ for(const x of [{collectionId:one.collectionId,name:one.name,description:one.description,imageURI:one.imageURI,editionLimit:"0",expectedRevision:1},
+   {collectionId:one.collectionId,name:one.name,description:one.description,imageURI:one.imageURI,editionLimit:"100",expectedRevision:1,gasKey:"bad"}])
   assert.throws(()=>normalizeUniqItemEdit(x),RangeError);
 });
 test("export is deterministic and hashes exact canonical metadata bytes",()=>{
