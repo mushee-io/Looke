@@ -10,7 +10,7 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 | M3 | Authentication | Partial: EVM signed challenge/session; active session inventory, global revocation; production trusted-IP HMAC rate-limiting source and staging migration; strict challenge and JSON validation | Protected Vercel staging, real-wallet/multi-IP verification, WAF policy, independent security review and optional Google/Apple/email providers |
 | M4 | Ultra wallets | Partial: EVM and native testnet connect | Test physical wallets, chain/account changes, real receipts |
 | M5 | Social profiles | Partial: authenticated profile editor with reserved-handle validation, public creator pages, directory, real follower/post counts and follow integration | Protected staging, multi-account acceptance, impersonation reporting/moderation, profile identity policies and mobile QA |
-| M6 | Feed/publishing | Partial: verified-session text posts | Database, media upload, moderation and scale |
+| M6 | Feed/publishing | Partial: real text feed with microsecond keyset pagination, browser drafts, owner edit/delete, atomic post throttles and private report intake | Image/video uploads, operator moderation, protected staging and real multi-account/load/security testing |
 | M7 | Likes/follows/notifications | Partial: DB APIs and UI | Real-user tests and notification fanout |
 | M8 | Discovery/recommendations | Preview search and filters | Personalized server-side ranking and search index |
 | M9 | Creator coins | Undeployed ERC20 factory prototype | Audit and onchain creator launch receipts |
@@ -159,3 +159,10 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 - Hardened handle normalization and reserved creator names, and linked real social posts and saved profiles to public pages.
 - Added regression tests and `docs/M5-CREATOR_PROFILES.md` acceptance guide. No token issuance, NFT minting or creator-earnings claims are enabled.
 - Staging deployment, real multi-account tests and moderation remain required; M5 is not yet production accepted.
+
+## M6 feed and author publishing controls (1 November 2026)
+
+- Implemented deterministic keyset-pagination source and atomically rate-limited signed-in text publishing, owner-only edits/deletion, and private abuse report intake (no automatic removals).
+- Added draft persistence in the browser, a load-more feed, owner edit/delete UI and a report form.
+- Applied `db/004_feed_publishing.sql` to the dedicated Neon staging database; added tests for canonical cursors, text, UUIDs and report-reason validation.
+- Media uploads and operational moderator tools remain disabled/pending. See `docs/M6-FEED_PUBLISHING.md` for staging acceptance gates. No live trading, NFT minting or market activity enabled.
