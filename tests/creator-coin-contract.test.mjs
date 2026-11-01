@@ -4,6 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import solc from "solc";
 import ganache from "ganache";
+import {contentSnapshot} from "../lib/content-coin.mjs";
 import {
   createPublicClient,createWalletClient,custom,defineChain,
   encodeAbiParameters,keccak256,parseEventLogs,zeroHash,zeroAddress
@@ -119,6 +120,69 @@ test("M9 factory enforces creator-only uniqueness, fixed supply and valid inputs
    assert.equal(await publicClient.readContract({
      address:factory,abi:compiled.factory.abi,functionName:"coinCount"
    }),2n);
+
+   // M10: nonzero post contentRef and kind=1 are required for content coins.
+   // This local Ganache test proves keying and fixed supply only; the current
+   // permissionless factory does not check offchain post ownership.
+   const contentPost="ed827d1a-a415-4b6a-8a5c-d47ec09dd931";
+   const snap=contentSnapshot(contentPost,creator,"My original Ultra post");
+   await assert.rejects(publicClient.simulateContract({
+     address:factory,abi:compiled.factory.abi,functionName:"createCoin",
+     args:["Invalid Content","BAD",1,zeroHash,100n,uri],account:creator
+   }),Error);
+   const contentArgs=["My Post","POST",1,snap.contentRef,500n,uri];
+   const contentHash=await wallet.writeContract({
+     address:factory,abi:compiled.factory.abi,functionName:"createCoin",
+     args:contentArgs,account:creator,gas:6_000_000n
+   });
+   const contentReceipt=await publicClient.waitForTransactionReceipt({hash:contentHash});
+   assert.equal(contentReceipt.status,"success");
+   const contentEvents=parseEventLogs({abi:compiled.factory.abi,
+     logs:contentReceipt.logs,eventName:"CoinCreated"});
+   assert.equal(contentEvents.length,1);
+   assert.equal(contentEvents[0].args.kind,1);
+   assert.equal(contentEvents[0].args.contentRef,snap.contentRef);
+   assert.equal(contentEvents[0].args.creator.toLowerCase(),creator.toLowerCase());
+   assert.equal(contentEvents[0].args.supply,500n*10n**18n);
+   assert.equal(await publicClient.readContract({
+     address:contentEvents[0].args.coin,abi:compiled.token.abi,
+     functionName:"balanceOf",args:[creator]
+   }),500n*10n**18n);
+   const contentKey=keccak256(encodeAbiParameters(
+     [{type:"address"},{type:"uint8"},{type:"bytes32"}],[creator,1,snap.contentRef]
+   ));
+   assert.equal((await publicClient.readContract({
+     address:factory,abi:compiled.factory.abi,functionName:"coinFor",args:[contentKey]
+   })).toLowerCase(),contentEvents[0].args.coin.toLowerCase());
+   await assert.rejects(publicClient.simulateContract({
+     address:factory,abi:compiled.factory.abi,functionName:"createCoin",
+     args:contentArgs,account:creator
+   }),Error);
+   const newSnap=contentSnapshot("ed827d1a-a415-4b6a-8a5c-d47ec09dd932",
+     creator,"A different post");
+   const secondContentHash=await wallet.writeContract({
+     address:factory,abi:compiled.factory.abi,functionName:"createCoin",
+     args:["Other Post","POST2",1,newSnap.contentRef,100n,uri],
+     account:creator,gas:6_000_000n
+   });
+   assert.equal((await publicClient.waitForTransactionReceipt({
+     hash:secondContentHash
+   })).status,"success");
+
+   // Current unaudited factory cannot bind the ref to a Looke post author:
+   // another wallet can copy the reference and deploy a different token.
+   // This is a security gate, NOT a successful ownership-attestation test.
+   const copiedHash=await wallet.writeContract({
+     address:factory,abi:compiled.factory.abi,functionName:"createCoin",
+     args:["Copied Ref","COPY",1,snap.contentRef,5n,uri],
+     account:another,gas:6_000_000n
+   });
+   assert.equal((await publicClient.waitForTransactionReceipt({
+     hash:copiedHash
+   })).status,"success");
+   assert.equal(await publicClient.readContract({
+     address:factory,abi:compiled.factory.abi,functionName:"coinCount"
+   }),5n);
  } finally {
    await provider.disconnect();
  }
