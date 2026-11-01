@@ -6,7 +6,7 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 | ID | Milestone | Code as of this PR | Remaining acceptance |
 |---|---|---|---|
 | M1 | Initial UI | Original preview source built and merged into main | Staging deployment and cross-browser review |
-| M2 | Zora-inspired original design | Partial | Pixel QA, accessibility, mobile usability |
+| M2 | Zora-inspired original design | Partial: original Looke UI plus narrow-screen touch targets, forced-colors and increased-contrast CSS (PR pending verification) | Browser/device pixel QA, screen-reader and accessibility audit, mobile usability acceptance |
 | M3 | Authentication | Partial: EVM signature nonce/session | Provision DB; prove live login; Google/Apple/email optional |
 | M4 | Ultra wallets | Partial: EVM and native testnet connect | Test physical wallets, chain/account changes, real receipts |
 | M5 | Social profiles | Partial: SQL and editor | DB migration, identity integrity, moderation |
@@ -43,3 +43,11 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 - EVM and native Ultra accounts are distinct; no unverified atomic Uniq-to-coin settlement.
 - UI uses original Looke assets and conventions; do not copy Zora code/artwork or misrepresent their branding.
 - Deployment secrets and third-party credentials remain on server-side secret storage.
+
+## M2 accessibility implementation note (31 October 2026)
+
+- Added `app/m2-accessibility.css` and loaded it after the original stylesheet to preserve the existing visual identity.
+- Mobile controls gain 44px touch targets; 390px and smaller layouts receive narrower header and typography adjustments.
+- Forced-colors mode restores visible borders and selected states; increased-contrast preference strengthens text and control boundaries.
+- Verification gate: run CI (typecheck, tests, contract compile, build), then manually test at 320/360/390/768px, 200% text zoom, Windows High Contrast, macOS increased contrast, VoiceOver/NVDA, keyboard focus and actual mobile devices. These tests are **not** claimed as complete by source-only changes.
+- No live trading, minting, spending or mainnet actions are introduced.

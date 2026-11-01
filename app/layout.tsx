@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./m2-accessibility.css";
 
 export const metadata: Metadata = {
   title: "Looke — Create. Collect. Trade. On Ultra.",
