@@ -29,6 +29,8 @@ test("content snapshot is deterministic, domain separated and bound to author, p
  assert.notEqual(contentSnapshot("ed827d1a-a415-4b6a-8a5c-d47ec09dd932",a,"Hello Ultra").contentRef,first.contentRef);
  assert.equal(contentSnapshotIsCurrent(first,id,a,"Hello Ultra"),true);
  assert.equal(contentSnapshotIsCurrent(first,id,a,"Hello Ultra edited"),false);
+ assert.equal(contentSnapshotIsCurrent(first,id,a,"Hello Ultra",new Date("2026-11-01T17:00:00Z")),false);
+ assert.notEqual(first.contentRef,contentSnapshot(id,a,"Hello Ultra",new Date("2026-11-01T17:00:00Z")).contentRef);
  assert.equal(contentSnapshotIsCurrent(null,id,a,"Hello Ultra"),false);
 });
 test("content binding rejects empty posts and invalid creator identity",()=>{
