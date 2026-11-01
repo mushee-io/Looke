@@ -2,7 +2,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Heart, Plus, Send, UserRound, Wallet, Loader2, Check } from "lucide-react";
 
-type LivePost = {id:string;text:string;author:string;author_id:string;evm_address:string;created_at:string;likes:number;user_liked?:boolean;user_following?:boolean};
+type LivePost = {id:string;text:string;author:string;author_handle?:string|null;author_id:string;evm_address:string;created_at:string;likes:number;user_liked?:boolean;user_following?:boolean};
 async function jsonOrError(response: Response) {
   const data = await response.json();
   if(!response.ok) throw new Error(data?.error ?? "Request failed");
@@ -57,7 +57,7 @@ export function SocialLive({ authenticated, onRequireLogin }: { authenticated: b
     :posts.length?posts.map(post=><article key={post.id} style={{border:"1px solid #eee",borderRadius:14,padding:16,marginTop:12}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
         <span style={{display:"inline-flex",width:32,height:32,alignItems:"center",justifyContent:"center",background:"#f1f1f1",borderRadius:99}}><UserRound size={17}/></span>
-        <div style={{flex:1,minWidth:0}}><strong>{post.author}</strong><div style={{fontSize:11,opacity:.62}}>{new Date(post.created_at).toLocaleString()}</div></div>
+        <div style={{flex:1,minWidth:0}}>{post.author_handle?<a href={'/creators/'+encodeURIComponent(post.author_handle)} style={{fontWeight:700,textDecoration:'underline'}}>{post.author}</a>:<strong>{post.author}</strong>}<div style={{fontSize:11,opacity:.62}}>{new Date(post.created_at).toLocaleString()}</div></div>
         <button type="button" onClick={()=>void interact(post,"follow")} style={{fontSize:12,padding:8}}><Plus size={13}/> {post.user_following?"Following":"Follow"}</button>
       </div>
       <p style={{whiteSpace:"pre-wrap",overflowWrap:"anywhere",lineHeight:1.55}}>{post.text}</p>
@@ -71,16 +71,19 @@ export function ProfileEditor({authenticated,onLogin}:{authenticated:boolean;onL
   const [bio,setBio]=useState("");
   const [notice,setNotice]=useState("");
   const [busy,setBusy]=useState(false);
+  const [publicHandle,setPublicHandle]=useState("");
   useEffect(()=>{
-    if(!authenticated)return;
+    if(!authenticated){setPublicHandle("");return;}
     fetch("/api/profile",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{
-      if(d?.profile){setHandle(d.profile.handle||"");setDisplayName(d.profile.display_name||"");setBio(d.profile.bio||"");}
+      if(d?.profile){setHandle(d.profile.handle||"");setPublicHandle(d.profile.handle||"");setDisplayName(d.profile.display_name||"");setBio(d.profile.bio||"");}
     }).catch(()=>{});
   },[authenticated]);
   async function save(e:FormEvent<HTMLFormElement>){
     e.preventDefault();setBusy(true);setNotice("");
     try{
-      await jsonOrError(await fetch("/api/profile",{method:"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify({handle,displayName,bio})}));
+      const result=await jsonOrError(await fetch("/api/profile",{method:"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify({handle,displayName,bio})}));
+      setPublicHandle(result.profile?.handle||"");
+      setHandle(result.profile?.handle||handle);
       setNotice("Creator profile saved.");
     }catch(e){setNotice(e instanceof Error?e.message:"Could not save profile");}
     finally{setBusy(false);}
@@ -88,7 +91,9 @@ export function ProfileEditor({authenticated,onLogin}:{authenticated:boolean;onL
   if(!authenticated)return <p style={{fontSize:13,opacity:.7,margin:"20px 0"}}>Sign in with an Ultra EVM testnet wallet to activate your persistent creator profile. <button onClick={onLogin}>Sign in</button></p>;
   return <form onSubmit={save} style={{border:"1px solid #eee",borderRadius:16,padding:20,margin:"24px 0",display:"grid",gap:12}}>
     <strong>Edit your on-platform creator profile</strong>
+    {publicHandle&&<a href={"/creators/"+encodeURIComponent(publicHandle)} style={{fontSize:12,fontWeight:700,textDecoration:"underline"}}>View your public creator profile (@{publicHandle})</a>}
     <label>Handle <input required pattern="[a-z][a-z0-9_]{2,29}" maxLength={30} value={handle} onChange={e=>setHandle(e.target.value)} placeholder="yourhandle"/></label>
+    <small style={{color:"#888"}}>3–30 lowercase characters, starting with a letter. Admin, official and other reserved handles are unavailable.</small>
     <label>Display name <input maxLength={80} value={displayName} onChange={e=>setDisplayName(e.target.value)} placeholder="Your name"/></label>
     <label>Bio <textarea maxLength={280} rows={3} value={bio} onChange={e=>setBio(e.target.value)} placeholder="Tell creators about yourself"/></label>
     <button className="primary-button" disabled={busy} type="submit"><Check size={15}/> Save creator profile</button>

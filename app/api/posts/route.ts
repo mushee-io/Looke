@@ -7,7 +7,7 @@ export async function GET() {
     const sql=database();
     const me=await currentProfile();
     const posts=await sql`
-      SELECT p.id,p.text,p.created_at,u.id AS author_id,
+      SELECT p.id,p.text,p.created_at,u.id AS author_id,u.handle AS author_handle,
         coalesce(u.display_name,u.handle,substr(u.evm_address,1,10)) AS author,
         u.evm_address,
         (SELECT count(*)::int FROM looke_likes l WHERE l.post_id=p.id) AS likes,
