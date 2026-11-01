@@ -110,3 +110,14 @@ test("rejects prototype-sensitive keys in nested authentication payloads", async
 test("accepts ordinary nested authentication properties", async () => {
   assert.deepEqual(await parseBoundedJson(request('{"profile":{"name":"Looke"}}')), { profile: { name: "Looke" } });
 });
+
+
+test("accepts JSON within the 2048-container budget", async () => {
+  const body = JSON.stringify({ items: Array.from({ length: 2046 }, () => []) });
+  const result = await parseBoundedJson(request(body));
+  assert.equal(result.items.length, 2046);
+});
+test("rejects wide JSON structures above the container budget", async () => {
+  const body = JSON.stringify({ items: Array.from({ length: 2047 }, () => []) });
+  await assert.rejects(parseBoundedJson(request(body)), /JSON structure too complex/);
+});
