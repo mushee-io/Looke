@@ -88,3 +88,9 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 - Added a pure canonical UUID-shape validator and wired it into the wallet signature verification endpoint before database lookup. Previously a permissive 36-character hex-and-hyphen pattern could admit malformed UUID strings.
 - Added Node regression tests for valid mixed-case identifiers and malformed lengths, separators, characters and input types.
 - This is input validation, not proof of live wallet authentication or a replacement for one-time database consumption. Require passing CI, protected staging, independent wallet testing, production edge rate limiting and security review before M3 acceptance.
+
+## M3 PR #9 typecheck repair (1 November 2026)
+
+- Initial PR #9 CI failed during `npm run typecheck`: the pure JavaScript UUID validator does not provide TypeScript control-flow narrowing for an `unknown` challenge ID used in parameterized SQL.
+- Added an explicit `typeof payload.challengeId === "string"` guard before the canonical UUID validation, preserving strict runtime rejection while narrowing the SQL argument safely.
+- Repair committed to the existing PR branch; passing full CI is required before merge. Protected staging, genuine wallet signature tests, production rate limiting and independent review remain outstanding.
