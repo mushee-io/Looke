@@ -71,3 +71,17 @@ test("accepts empty and nested JSON objects", async () => {
   assert.deepEqual(await parseBoundedJson(request("{}")), {});
   assert.deepEqual(await parseBoundedJson(request('{"data":{"items":[1,2]}}')), { data: { items: [1, 2] } });
 });
+
+test("rejects compressed or ambiguous encoded authentication bodies before reading", async () => {
+  for (const encoding of ["gzip", "br", "deflate", "identity, gzip", ""]) {
+    const req = request("{}");
+    req.headers.set("content-encoding", encoding);
+    await assert.rejects(parseBoundedJson(req), /Unsupported Content-Encoding/);
+    assert.equal(req.body.locked, false);
+  }
+});
+test("accepts explicit identity encoding", async () => {
+  const req = request("{}");
+  req.headers.set("content-encoding", "Identity");
+  assert.deepEqual(await parseBoundedJson(req), {});
+});

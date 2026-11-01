@@ -7,7 +7,7 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 |---|---|---|---|
 | M1 | Initial UI | Original preview source built and merged into main | Staging deployment and cross-browser review |
 | M2 | Zora-inspired original design | Partial: original Looke UI plus narrow-screen touch targets, forced-colors and increased-contrast CSS (PR pending verification) | Browser/device pixel QA, screen-reader and accessibility audit, mobile usability acceptance |
-| M3 | Authentication | Partial: EVM signature nonce/session; strict host, address, chain, nonce and validity-window challenge binding; canonical challenge ID checks; bounded object-shaped JSON request parsing (PR pending CI) | Provision DB; prove live login with genuine wallets; rate-limit by IP; Google/Apple/email optional |
+| M3 | Authentication | Partial: EVM signature nonce/session; strict host, address, chain, nonce and validity-window challenge binding; canonical challenge ID checks; bounded object-shaped JSON request parsing; encoded-body rejection (PR pending CI) | Provision DB; prove live login with genuine wallets; rate-limit by IP; Google/Apple/email optional |
 | M4 | Ultra wallets | Partial: EVM and native testnet connect | Test physical wallets, chain/account changes, real receipts |
 | M5 | Social profiles | Partial: SQL and editor | DB migration, identity integrity, moderation |
 | M6 | Feed/publishing | Partial: verified-session text posts | Database, media upload, moderation and scale |
@@ -119,3 +119,9 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 - Require a non-null, non-array JSON object from the shared bounded authentication/session JSON parser. Reject primitive and array top-level payloads before route-specific field validation.
 - Add regression coverage for null, arrays, booleans, numbers, strings, empty objects and nested objects.
 - This is source-only input validation, not proof of live authentication. Require passing CI, protected staging, genuine wallet sign-in, database-backed session acceptance, production IP rate limiting and independent security review before M3 completion. Trading, minting and irreversible spending remain disabled.
+
+## M3 reject encoded authentication request bodies (1 November 2026)
+
+- Reject Content-Encoding other than explicit identity in the bounded authentication/session JSON parser before reading the body. This prevents ambiguity about whether the 16 KiB streamed limit applies to encoded or decoded bytes; upstream reverse proxies must still enforce their own limits.
+- Add regression tests for gzip, Brotli, deflate, combined and empty encodings, and accepted identity encoding. This does not constitute a decompression-bomb defense at the edge.
+- M3 remains partial pending protected staging, genuine independent wallet sign-in, session persistence, IP-based rate limiting and independent security review. No trading, minting, mainnet or irreversible spending enabled.
