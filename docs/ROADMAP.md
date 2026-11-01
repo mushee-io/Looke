@@ -101,3 +101,9 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 - Added regression tests for accepted JSON, invalid content type, oversize UTF-8 input, malformed and empty JSON.
 - This is defense in depth, not a substitute for upstream edge limits, production IP-based rate limiting, protected staging, genuine wallet-signature acceptance or security review. M3 remains partial and all spending/minting/trading remain disabled.
 - Verify GitHub CI before merge; no live staging validation claimed.
+
+## M3 declared JSON body-length preflight (1 November 2026)
+
+- Reject malformed or oversized declared `Content-Length` before consuming authentication JSON request streams; continue enforcing the streamed 16 KiB byte cap even when the header understates the body.
+- Add tests for oversized declarations, malformed declarations, false low declarations and exact-boundary requests. This is defense in depth, not an IP-based rate limiter or proof of live wallet login.
+- Acceptance remains blocked on protected Vercel staging permissions, genuine independent wallet sign-in, database-backed sessions, production edge rate limiting and security review. No trading, minting or spending is enabled.
