@@ -5,9 +5,13 @@ import { database } from "@/lib/server/database";
 import { challengeMatchesRequest } from "@/lib/auth-challenge.mjs";
 import { validChallengeId } from "@/lib/challenge-id.mjs";
 import { SESSION_COOKIE, SESSION_SECONDS, tokenHash, parseJson, validOrigin } from "@/lib/server/session";
+import { checkAuthRateLimit } from "@/lib/server/auth-rate-limit";
 export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
   if (!validOrigin(request)) return NextResponse.json({error:"Invalid origin"}, {status:403});
+  const rate = await checkAuthRateLimit(request, "verify");
+  if (rate === "limited") return NextResponse.json({error:"Too many verification attempts; try later"},{status:429,headers:{"Retry-After":"600"}});
+  if (rate !== "allowed") return NextResponse.json({error:"Authentication rate limiting unavailable"},{status:503});
   try {
     const payload = await parseJson(request) as { challengeId?: unknown; address?: unknown; signature?: unknown };
     if (typeof payload?.address !== "string" || !isAddress(payload.address) ||
