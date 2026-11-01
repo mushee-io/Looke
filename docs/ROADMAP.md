@@ -259,3 +259,9 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 - Added read-only public aggregate community stats without identifying public wallets/leaderboards. Users can explicitly save and reconcile private, non-redeemable snapshots of the most recent 14 *completed* UTC days; SHA-256 covers aggregate score evidence, not a fully audited underlying source-event trace.
 - Applied `db/014_participation_snapshots.sql` only to the isolated Looke Neon staging project with strict `review_status='unverified'` and no asset/claim fields. Unit tests check caps, invalid events, UTC boundaries, age gates and score non-redeemability. The new dashboard is integrated into Activity and Profile.
 - **M19 partial only:** wallet farms/engagement rings remain possible, no verified unique humans, independently audited event ledger, operator appeals, claim contracts, token payouts, production staging or user distribution evidence. See `docs/M19-COMMUNITY_REWARDS.md`.
+
+
+## M3 authentication prototype-key defense (1 November 2026)
+
+- Reject `__proto__`, `constructor`, and `prototype` keys in all nested bounded authentication JSON objects and arrays, with regression tests for malicious and ordinary keys.
+- Source-only security hardening. CI, protected staging, genuine wallet/session testing, production WAF and independent security review remain mandatory. No live trading, minting, mainnet or irreversible spending is enabled.
