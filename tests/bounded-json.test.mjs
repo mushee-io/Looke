@@ -13,10 +13,10 @@ test("rejects missing JSON content type", async () => {
   await assert.rejects(parseBoundedJson(request("{}", "text/plain")), /application\/json/);
 });
 test("rejects bodies above the byte limit", async () => {
-  await assert.rejects(parseBoundedJson(request(JSON.stringify({ value: "x".repeat(200) }), 64)), /too large/);
+  await assert.rejects(parseBoundedJson(request(JSON.stringify({ value: "x".repeat(200) })), 64), /too large/);
 });
 test("counts UTF-8 bytes rather than characters", async () => {
-  await assert.rejects(parseBoundedJson(request(JSON.stringify({ value: "🦊".repeat(20) }), 64)), /too large/);
+  await assert.rejects(parseBoundedJson(request(JSON.stringify({ value: "🦊".repeat(20) })), 64), /too large/);
 });
 test("rejects malformed JSON", async () => {
   await assert.rejects(parseBoundedJson(request("{invalid")), SyntaxError);
