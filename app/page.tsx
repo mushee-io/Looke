@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useRef, type FormEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef, type FormEvent, type ReactNode } from "react";
 import {
   Activity, ArrowLeft, ArrowRight, ArrowUpRight, Bell, Bookmark, Check,
   ChevronDown, ChevronLeft, ChevronRight, Compass, Copy, ExternalLink,
@@ -18,6 +18,7 @@ import { EvmPortfolio } from "@/components/EvmPortfolio";
 import { Notifications } from "@/components/Notifications";
 import { NetworkStatus } from "@/components/NetworkStatus";
 import { NativeUniqMintLab } from "@/components/NativeUniqMintLab";
+import { WalletLifecycleMonitor } from "@/components/WalletLifecycleMonitor";
 import { AccountSecurity } from "@/components/AccountSecurity";
 
 type Page = "explore" | "feed" | "nfts" | "activity" | "profile" | "settings";
@@ -86,6 +87,10 @@ export default function Looke() {
   const [sortDesc, setSortDesc] = useState(true);
   const [hydrated, setHydrated] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
+  // Keep the main-page connection in sync even while the connect modal is closed.
+  const handleWalletInvalidated = useCallback((kind: ConnectedWallet["kind"]) => {
+    setConnectedWallet(current => current?.kind === kind ? null : current);
+  }, []);
 
   useEffect(() => {
     fetch("/api/auth/me", { cache: "no-store" }).then(r=>r.json()).then(data=>{setAuthenticated(!!data.authenticated);setAuthenticatedAddress(data.authenticated && typeof data.profile?.evm_address === "string" ? data.profile.evm_address : null);}).catch(()=>{});
@@ -199,6 +204,7 @@ export default function Looke() {
   const closeModal = () => setModal(null);
 
   return <div className="site-shell">
+    <WalletLifecycleMonitor wallet={connectedWallet} onInvalidated={handleWalletInvalidated}/>
     <a className="skip-link" href="#main-content" onClick={event=>{event.preventDefault();document.getElementById("main-content")?.focus();}}>Skip to main content</a>
     <header className="topbar">
       <button className="brand" onClick={()=>go("explore")} aria-label="Looke home"><Mark/><span className="brand-word">looke<span className="brand-period">.</span></span></button>
@@ -242,7 +248,7 @@ export default function Looke() {
     </main>
     {toast && <div className="toast" role="status"><Check size={16}/>{toast}</div>}
     {modal && <div className="modal-shade" role="presentation" onMouseDown={e=>{if(e.target===e.currentTarget)closeModal();}}><div ref={dialogRef} tabIndex={-1} className={`modal-card ${modal==="create" ? "modal-wide" : ""}`} role="dialog" aria-modal="true" aria-label={modal === "login" ? "Log in" : modal === "create" ? "Create" : modal === "trade" ? "Trading preview" : "Uniq preview"}><button className="modal-close" onClick={closeModal} aria-label="Close dialog"><X size={18}/></button>
-      {modal==="login" && <div className="login-modal"><Mark/><h2>Welcome to Looke</h2><p>One home for every creator on Ultra.</p><WalletConnection authenticated={authenticated} sessionAddress={authenticatedAddress} onConnected={wallet=>{setConnectedWallet(wallet);setToast("Testnet wallet connected. Sign the login challenge to activate social features.");}} onAuthenticated={address=>{setAuthenticated(true);setAuthenticatedAddress(address);setToast("Signed in to Looke social.");setModal(null);}} onLoggedOut={()=>{setAuthenticated(false);setAuthenticatedAddress(null);setToast("Signed out of Looke social.");}} onDisconnected={kind=>setConnectedWallet(current=>current?.kind===kind?null:current)} /></div>}
+      {modal==="login" && <div className="login-modal"><Mark/><h2>Welcome to Looke</h2><p>One home for every creator on Ultra.</p><WalletConnection authenticated={authenticated} sessionAddress={authenticatedAddress} activeWallet={connectedWallet} onConnected={wallet=>{setConnectedWallet(wallet);setToast("Testnet wallet connected. Sign the login challenge to activate social features.");}} onAuthenticated={address=>{setAuthenticated(true);setAuthenticatedAddress(address);setToast("Signed in to Looke social.");setModal(null);}} onLoggedOut={()=>{setAuthenticated(false);setAuthenticatedAddress(null);setToast("Signed out of Looke social.");}} onDisconnected={handleWalletInvalidated} /></div>}
       {modal==="create" && <form className="create-modal" onSubmit={saveDraft}><span className="eyebrow">CREATE ON LOOKE</span><h2>Something worth sharing.</h2><p>Start a draft. On-chain publication and token creation will be enabled after Ultra integration.</p><div className="composer-picks">{(["Content coin","Creator coin","Trend coin","Uniq NFT"] as ComposerType[]).map(t=><button type="button" className={composerType===t?"picked":""} key={t} onClick={()=>setComposerType(t)}>{t==="Uniq NFT"?<ImageIcon size={17}/>:t==="Creator coin"?<UserRound size={17}/>:t==="Trend coin"?<TrendingUp size={17}/>:<Sparkles size={17}/>}<span>{t}</span></button>)}</div><label className="field-label">{composerType === "Uniq NFT" ? "Collection or Uniq title" : "Title"}<input required maxLength={70} placeholder={composerType === "Uniq NFT" ? "Name your digital collectible" : "Give your idea a name"} value={draftTitle} onChange={e=>setDraftTitle(e.target.value)}/></label><label className="field-label">Description (optional)<textarea maxLength={320} rows={3} value={draftCaption} onChange={e=>setDraftCaption(e.target.value)} placeholder="Tell the world what this means..." /></label><div className="draft-note"><Info size={16}/> This saves a local draft only; no media upload, token mint, listing or blockchain transaction occurs.</div><button type="submit" className="primary-button full-button">Save draft <ArrowRight size={17}/></button></form>}
       {modal==="trade" && <div className="trade-modal"><div className="modal-bubble"><Wallet size={25}/></div><h2>Ultra trading is coming.</h2><p>Token swaps require audited Ultra-native liquidity, signed wallet transactions, and canonical balance/indexer confirmation. They are not active in this preview.</p><div className="trade-status"><span>On-chain trading</span><strong>Not enabled</strong></div><div className="trade-status"><span>Wallet connection</span><strong>Not connected</strong></div><button className="primary-button full-button" onClick={closeModal}>Back to Explore <ArrowRight size={16}/></button></div>}
       {modal==="nft" && selectedNft && <div className="nft-modal"><Art name={selectedNft.art}/><span className="eyebrow">UNIQ CONCEPT · NOT ON CHAIN</span><h2>{selectedNft.title}</h2><p>{selectedNft.creator} · {selectedNft.edition}</p><p className="modal-footnote">This is sample gallery art, not an existing Ultra Uniq. Minting and purchasing require wallet and contract integration.</p><button className="primary-button full-button" onClick={()=>openCreate("Uniq NFT")}>Make your own draft <Plus size={16}/></button></div>}
