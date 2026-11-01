@@ -152,3 +152,9 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 - Require platform-verified Vercel client IP and a separate server-only secret in production; missing or invalid prerequisites fail closed with 503. Exhausted buckets return 429. Existing per-address challenge throttling is retained.
 - Includes regression tests for forwarded IP spoofing rejection, invalid addresses and HMAC scope isolation; does **not** replace a deployed Vercel WAF policy or proven live login. See `docs/M3-RATE_LIMITS.md`.
 - M3 remains incomplete until real production-shaped acceptance, protected deployment and independent review.
+
+## M3 prototype-sensitive JSON key guard (1 November 2026)
+
+- The shared bounded authentication JSON parser now rejects `__proto__`, `constructor` and `prototype` keys at any nesting level, before route-specific processing or downstream object merging.
+- Added regression tests for root and nested keys plus ordinary JSON compatibility. This is defense in depth; it does not replace schema validation or secure downstream merge logic.
+- CI must pass before merge. M3 remains partial pending protected staging, genuine wallet/session testing, trusted edge/WAF controls and independent security review. No trading, minting, mainnet actions or irreversible spending are enabled.
