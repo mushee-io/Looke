@@ -4,10 +4,14 @@ import { formatLoginChallenge } from "@/lib/login-challenge.mjs";
 import { getAddress, isAddress } from "viem";
 import { database } from "@/lib/server/database";
 import { parseJson, validOrigin } from "@/lib/server/session";
+import { checkAuthRateLimit } from "@/lib/server/auth-rate-limit";
 
 export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
   if (!validOrigin(request)) return NextResponse.json({ error: "Invalid origin" }, { status: 403 });
+  const rate = await checkAuthRateLimit(request, "challenge");
+  if (rate === "limited") return NextResponse.json({ error: "Too many login requests; try later" }, { status: 429, headers: { "Retry-After": "600" } });
+  if (rate !== "allowed") return NextResponse.json({ error: "Authentication rate limiting unavailable" }, { status: 503 });
   try {
     const input = await parseJson(request) as { address?: unknown };
     if (typeof input?.address !== "string" || !isAddress(input.address)) return NextResponse.json({error:"Invalid EVM address"}, {status:400});
