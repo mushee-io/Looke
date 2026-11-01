@@ -14,3 +14,7 @@ Official sources:
 https://developers.ultra.io/blockchain/contracts/nft-contract/nft-actions/issue.b
 https://developers.ultra.io/products/ultra-wallet-sdk/signing
 https://explorer.testnet.ultra.io/
+
+## M14 restriction update (1 November 2026)
+
+The restricted testnet lab now requires a read-only `factory.b` and `authmintrs.a` check for the exact selected factory ID and native Ultra account, matching the claimed manager/authorized-minter role, plus a short review expiry and renewed wallet/factory state check before calling `signTransaction`. It remains off by default. This does not itself prove completed issuance, NFT provenance, or irreversibility. Use the separate NFTs-page Creator Studio for **offchain** draft metadata and SHA-256 manifests. Full release gates: `docs/M14-UNIQ_CREATION.md`.
