@@ -23,3 +23,7 @@ Official docs:
 - https://developers.ultra.io/tutorials/Ultra-EVM/Resources
 - https://developers.ultra.io/products/ultra-wallet-sdk/getting-started
 - https://developers.ultra.io/products/nft-api/authentication
+
+## M4 wallet lifecycle hardening
+
+See `docs/M4-WALLET-ACCEPTANCE.md`. The app now checks native chain identity independently, monitors wallet connection validity outside the modal and supports explicit disconnect. A native RPC status endpoint returns only verified testnet chain information. This remains source-only until device testing on protected HTTPS staging.
