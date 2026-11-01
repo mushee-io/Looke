@@ -173,3 +173,8 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 - Added real feed counts and controls for commenting, repost tracking and sharing; notification API now includes comments and reposts alongside likes and follows, with server-persisted read state.
 - Applied `db/005_social_interactions.sql` to the isolated Looke staging database. Added focused regression tests and `docs/M7-SOCIAL_INTERACTIONS.md` acceptance guidance.
 - No background push, full follower-feed repost syndication or live moderation operations yet. M7 is partially implemented until real-wallet/staging, scaling, abuse and security verification succeed.
+
+## M3 prototype-sensitive JSON key guard (1 November 2026)
+
+- The bounded authentication JSON parser rejects `__proto__`, `constructor`, and `prototype` at every nesting level before route-specific processing. Regression tests cover nested arrays, malicious keys and ordinary JSON.
+- Source-level defense in depth only; protected staging, genuine wallet/session acceptance, edge/WAF verification and independent security review remain required. No live trading, minting or irreversible spending enabled.
