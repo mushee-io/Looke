@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
 import { verifyMessage, getAddress, isAddress } from "viem";
 import { database } from "@/lib/server/database";
+import { challengeMatchesRequest } from "@/lib/auth-challenge.mjs";
 import { SESSION_COOKIE, SESSION_SECONDS, tokenHash, parseJson, validOrigin } from "@/lib/server/session";
 export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
@@ -17,6 +18,7 @@ export async function POST(request: Request) {
     const sql = database();
     const challenges = await sql`SELECT id, message, evm_address FROM looke_challenges WHERE id=${payload.challengeId} AND evm_address=${address} AND consumed_at IS NULL AND expires_at > now() LIMIT 1`;
     if (!challenges.length) return NextResponse.json({error:"Challenge expired or already used"}, {status:401});
+    if (!challengeMatchesRequest(challenges[0].message, new URL(request.url).host, address)) return NextResponse.json({error:"Challenge origin or context mismatch"}, {status:401});
     const valid = await verifyMessage({ address: getAddress(address), message: challenges[0].message, signature: payload.signature as `0x${string}` });
     if (!valid) return NextResponse.json({error:"Signature verification failed"}, {status:401});
     const consumed = await sql`UPDATE looke_challenges SET consumed_at=now() WHERE id=${payload.challengeId} AND consumed_at IS NULL AND expires_at > now() RETURNING id`;
