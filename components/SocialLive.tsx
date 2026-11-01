@@ -1,10 +1,11 @@
 "use client";
 import { useEffect, useState, type FormEvent } from "react";
 import { Heart, Plus, Send, UserRound, Wallet, Loader2, Check, Pencil, Trash2, Flag } from "lucide-react";
+import { PostInteractions } from "@/components/PostInteractions";
 
 type LivePost = {
   id:string;text:string;author:string;author_handle?:string|null;author_id:string;
-  created_at:string;edited_at?:string|null;likes:number;is_owner?:boolean;
+  created_at:string;edited_at?:string|null;likes:number;comments:number;reposts:number;is_owner?:boolean;user_reposted?:boolean;
   user_liked?:boolean;user_following?:boolean;
 };
 type FeedResult={posts:LivePost[];nextCursor:string|null};
@@ -47,7 +48,18 @@ export function SocialLive({ authenticated, onRequireLogin }:{authenticated:bool
    try {
      const path="/api/posts"+(next?"?cursor="+encodeURIComponent(next):"");
      const data=await jsonOrError(await fetch(path,{cache:"no-store"})) as FeedResult;
-     setPosts(current=>append ? [...current,...data.posts.filter(x=>!current.some(p=>p.id===x.id))] : data.posts);
+     let list=data.posts;
+     if(!append && typeof window!=="undefined") {
+       const requested=new URLSearchParams(window.location.search).get("post");
+       if(requested && /^[a-f\d]{8}-(?:[a-f\d]{4}-){3}[a-f\d]{12}$/i.test(requested) &&
+          !list.some(p=>p.id.toLowerCase()===requested.toLowerCase())) {
+         try {
+           const single=await jsonOrError(await fetch("/api/posts/"+encodeURIComponent(requested),{cache:"no-store"}));
+           list=[single.post as LivePost,...list];
+         }catch {/* Missing or moderated shared post: show the public feed only. */}
+       }
+     }
+     setPosts(current=>append ? [...current,...list.filter(x=>!current.some(p=>p.id===x.id))] : list);
      setCursor(data.nextCursor);
      setUnavailable(false);
    }catch(e){
@@ -188,6 +200,8 @@ export function SocialLive({ authenticated, onRequireLogin }:{authenticated:bool
       <button className="subtle-cta" type="submit" disabled={mutationBusy}>Submit report</button>
       <button type="button" onClick={()=>setReportId(null)}>Cancel</button>
     </form>}
+    <PostInteractions post={post} authenticated={authenticated} onRequireLogin={onRequireLogin}
+      onChanged={()=>fetchFeed()} onNotice={setNotice}/>
    </article>):<p style={{fontSize:13,opacity:.65,marginTop:14}}>No public posts yet. Be the first creator.</p>}
   {cursor&&!unavailable&&<button className="subtle-cta" style={{marginTop:16}} disabled={loadingMore} onClick={()=>void fetchFeed(cursor,true)}>
     {loadingMore?"Loading…":"Load more posts"}
