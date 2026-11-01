@@ -1,5 +1,5 @@
 "use client";
-import {useEffect,useState,type FormEvent} from "react";
+import {useEffect,useRef,useState,type FormEvent} from "react";
 import {Wallet,Layers3,RefreshCw,ExternalLink,Activity,ShieldAlert,ArrowRight,ArrowLeft} from "lucide-react";
 import {formatUnits} from "viem";
 
@@ -51,22 +51,24 @@ export function PortfolioHub({evmAddress,nativeAccount}:{
  const [nativeBusy,setNativeBusy]=useState(false);
  const [nativePages,setNativePages]=useState<(string|null)[]>([null]);
  const [nativeIndex,setNativeIndex]=useState(0);
- const [viewedEvm,setViewedEvm]=useState("");
- const [viewedNative,setViewedNative]=useState("");
+ const evmGeneration=useRef(0);
+ const nativeGeneration=useRef(0);
  const nativeCursor=nativePages[nativeIndex]??null;
 
- useEffect(()=>{if(evmAddress!==null){setEvm(evmAddress);setAssets(null);setHistory(null);setViewedEvm("");}},[evmAddress]);
- useEffect(()=>{if(nativeAccount!==null){setNative(nativeAccount);setNfts(null);setViewedNative("");setNativePages([null]);setNativeIndex(0);}},[nativeAccount]);
+ useEffect(()=>{if(evmAddress!==null){setEvm(evmAddress);setAssets(null);setHistory(null);evmGeneration.current++;}},[evmAddress]);
+ useEffect(()=>{if(nativeAccount!==null){setNative(nativeAccount);setNfts(null);nativeGeneration.current++;setNativePages([null]);setNativeIndex(0);}},[nativeAccount]);
 
  async function loadEvm(account:string){
   if(!account.trim()){setEvmError("Enter an Ultra EVM testnet address.");return;}
+  const generation=++evmGeneration.current;
   setEvmBusy(true);setEvmError("");setHistoryError("");
-  setAssets(null);setHistory(null);setViewedEvm(account);
+  setAssets(null);setHistory(null);
   const encoded=encodeURIComponent(account.trim());
   const [a,h]=await Promise.allSettled([
    json<Assets>("/api/portfolio/assets?address="+encoded),
    json<History>("/api/portfolio/activity?address="+encoded)
   ]);
+  if(generation!==evmGeneration.current)return;
   if(a.status==="fulfilled")setAssets(a.value);
   else setEvmError(a.reason instanceof Error?a.reason.message:"EVM balances unavailable");
   if(h.status==="fulfilled")setHistory(h.value);
@@ -75,14 +77,16 @@ export function PortfolioHub({evmAddress,nativeAccount}:{
  }
  async function loadNative(account:string,cursor:string|null){
   if(!account.trim()){setNativeError("Enter a native Ultra testnet account.");return;}
-  setNativeBusy(true);setNativeError("");setNfts(null);setViewedNative(account);
+  const generation=++nativeGeneration.current;
+  setNativeBusy(true);setNativeError("");setNfts(null);
   try{
    const q=new URLSearchParams({account:account.trim()});
    if(cursor)q.set("cursor",cursor);
    const result=await json<NativePage>("/api/portfolio/native?"+q);
-   setNfts(result);
-  }catch(e){setNativeError(e instanceof Error?e.message:"Native Uniq holdings unavailable");}
-  finally{setNativeBusy(false);}
+   if(generation===nativeGeneration.current)setNfts(result);
+  }catch(e){if(generation===nativeGeneration.current)
+   setNativeError(e instanceof Error?e.message:"Native Uniq holdings unavailable");}
+  finally{if(generation===nativeGeneration.current)setNativeBusy(false);}
  }
  useEffect(()=>{if(evmAddress)void loadEvm(evmAddress);},[evmAddress]);
  useEffect(()=>{if(nativeAccount)void loadNative(nativeAccount,null);},[nativeAccount]);
@@ -120,7 +124,7 @@ export function PortfolioHub({evmAddress,nativeAccount}:{
     <strong style={{fontSize:14}}><Wallet size={17} style={{display:"inline",verticalAlign:"middle"}}/> Ultra EVM assets (18881)</strong>
     <form onSubmit={submitEvm} style={{margin:"13px 0",display:"grid",gap:10}}>
      <label style={{fontSize:12,fontWeight:700}}>Public EVM wallet address
-      <input style={inputStyle} value={evm} placeholder="0x…" onChange={e=>{setEvm(e.target.value);setAssets(null);setHistory(null);}} required/>
+      <input style={inputStyle} value={evm} placeholder="0x…" onChange={e=>{evmGeneration.current++;setEvm(e.target.value);setAssets(null);setHistory(null);setEvmBusy(false);}} required/>
      </label>
      <button type="submit" className="subtle-cta" disabled={evmBusy}>
       <RefreshCw size={14}/> {evmBusy?"Reading testnet…":"Load EVM balances and confirmed transfers"}
@@ -152,7 +156,7 @@ export function PortfolioHub({evmAddress,nativeAccount}:{
     <form onSubmit={submitNative} style={{margin:"13px 0",display:"grid",gap:10}}>
      <label style={{fontSize:12,fontWeight:700}}>Public native testnet account
       <input style={inputStyle} value={native} placeholder="nativeacct11" required maxLength={12}
-       onChange={e=>{setNative(e.target.value);setNfts(null);setNativePages([null]);setNativeIndex(0);}}/>
+       onChange={e=>{nativeGeneration.current++;setNative(e.target.value);setNfts(null);setNativeBusy(false);setNativePages([null]);setNativeIndex(0);}}/>
      </label>
      <button type="submit" className="subtle-cta" disabled={nativeBusy}>
       <RefreshCw size={14}/> {nativeBusy?"Reading token.b…":"Load native Uniqs"}
