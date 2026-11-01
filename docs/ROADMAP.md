@@ -238,3 +238,8 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 - Added deterministic, sorted per-collection export with exact JSON/UTF-8 SHA-256 metadata fingerprints, planned edition totals, revision numbers and private repeatable-read snapshot; new NFTs-page Creator Tools supports edit, refresh and download.
 - Applied `db/012_uniq_creator_tools.sql` revision columns and item `updated_at` only to dedicated Looke Neon staging; verified table structure. Tests cover unsafe input, edition caps, ownership-bound bundle shape, revision and hash determinism.
 - M16 is **partial**: no live metadata pinning, native wallet/EVM association, actual NFT management, signed testnet issuance, protected staging or external audit. See `docs/M16-NFT_CREATOR_TOOLS.md`.
+
+## M3 authentication JSON prototype-key protection (1 November 2026)
+
+- Reject `__proto__`, `constructor` and `prototype` keys at every nested object level in bounded authentication JSON. Include regression tests for nested arrays and benign data.
+- This is source-only hardening, not proof of live authentication. Protected Vercel staging, real wallet/session acceptance, production edge/WAF policy and independent security review remain required. No trading, minting, mainnet or spending enabled.
