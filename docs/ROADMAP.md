@@ -265,3 +265,10 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 
 - Reject `__proto__`, `constructor`, and `prototype` keys in all nested bounded authentication JSON objects and arrays, with regression tests for malicious and ordinary keys.
 - Source-only security hardening. CI, protected staging, genuine wallet/session testing, production WAF and independent security review remain mandatory. No live trading, minting, mainnet or irreversible spending is enabled.
+
+
+## M3 bounded JSON structure complexity (1 November 2026)
+
+- Added a 2,048-container traversal budget to the already byte-bounded, depth-limited authentication JSON parser. Wide arrays of nested objects/arrays now fail closed even if their payload fits the 16 KiB byte limit.
+- Added tests for the exact accepted boundary and first rejected width. This is source-only denial-of-service defense in depth; CI and independent staging/wallet/security validation remain required.
+- M3 remains partial. No public trading, minting, mainnet activity, or irreversible spending is enabled.
