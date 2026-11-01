@@ -7,7 +7,7 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 |---|---|---|---|
 | M1 | Initial UI | Original preview source built and merged into main | Staging deployment and cross-browser review |
 | M2 | Zora-inspired original design | Partial: original Looke UI plus narrow-screen touch targets, forced-colors and increased-contrast CSS (PR pending verification) | Browser/device pixel QA, screen-reader and accessibility audit, mobile usability acceptance |
-| M3 | Authentication | Partial: EVM signature nonce/session; strict host, address, chain, nonce and validity-window challenge binding; canonical challenge ID checks; bounded object-shaped JSON request parsing; encoded-body rejection (PR pending CI) | Provision DB; prove live login with genuine wallets; rate-limit by IP; Google/Apple/email optional |
+| M3 | Authentication | Partial: EVM signature nonce/session; strict host, address, chain, nonce and validity-window challenge binding; canonical challenge ID checks; bounded object-shaped JSON request parsing; encoded-body rejection; 32-level JSON nesting guard (PR pending CI) | Provision DB; prove live login with genuine wallets; rate-limit by IP; Google/Apple/email optional |
 | M4 | Ultra wallets | Partial: EVM and native testnet connect | Test physical wallets, chain/account changes, real receipts |
 | M5 | Social profiles | Partial: SQL and editor | DB migration, identity integrity, moderation |
 | M6 | Feed/publishing | Partial: verified-session text posts | Database, media upload, moderation and scale |
@@ -125,3 +125,15 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 - Reject Content-Encoding other than explicit identity in the bounded authentication/session JSON parser before reading the body. This prevents ambiguity about whether the 16 KiB streamed limit applies to encoded or decoded bytes; upstream reverse proxies must still enforce their own limits.
 - Add regression tests for gzip, Brotli, deflate, combined and empty encodings, and accepted identity encoding. This does not constitute a decompression-bomb defense at the edge.
 - M3 remains partial pending protected staging, genuine independent wallet sign-in, session persistence, IP-based rate limiting and independent security review. No trading, minting, mainnet or irreversible spending enabled.
+
+## M3 authentication JSON nesting guard (1 November 2026)
+
+- Limit nested JSON objects/arrays to 32 container levels after bounded UTF-8 parsing, using an iterative traversal to avoid recursive stack exhaustion. This is a defense-in-depth limit on shared authentication/session request parsing.
+- Added tests for the boundary, excessive nested objects and excessive nested arrays. Verify CI before merging.
+- M3 remains partial: genuine wallet signature/session acceptance, protected staging, IP-based edge rate limiting and independent security review are still outstanding. No trading, minting, spending or mainnet actions enabled.
+
+## M3 nesting boundary CI repair (1 November 2026)
+
+- PR #15 initial quality run #76 failed in `npm run test:math` because the new rejection test used 32 object containers, which is the permitted maximum. Corrected rejection coverage to 33 containers and acceptance coverage to exactly 32 containers.
+- The iterative parser's limit remains unchanged. Require a new successful GitHub CI run before merging; source-level checks are not evidence of live wallet authentication.
+- Protected staging, genuine wallet/session testing, production edge rate limiting and independent security review remain M3 release gates. No trading, minting, spending or mainnet actions enabled.
