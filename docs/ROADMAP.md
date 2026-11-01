@@ -70,3 +70,9 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 - PR #6 initial CI failed at `npm run test:math` because literal `\\n` characters were accidentally committed between JavaScript statements in `lib/auth-challenge.mjs`.
 - Replaced those literal escape sequences with actual source newlines in the PR branch. A successful rerun of all checks is required before merge; this repair alone is not verification.
 - M3 remains partial until protected staging, independent wallet sign-in and production rate limiting are verified.
+
+## M3 issuance/verification compatibility (1 November 2026)
+
+- Extracted the Ultra EVM login challenge message into a deterministic, validated formatter shared by the challenge issuance endpoint.
+- Added regression coverage that generates a real-format challenge and checks acceptance by the verification parser, plus malformed host/nonce/address/timestamp rejection.
+- This is source-level hardening only. Protected staging deployment, real wallet signatures, rate limiting at the edge and independent security review are still required; M3 remains partial.
