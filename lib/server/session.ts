@@ -2,6 +2,7 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { cookies } from "next/headers";
 import { database } from "./database";
+import { parseBoundedJson } from "../bounded-json.mjs";
 
 export const SESSION_COOKIE = "looke_session";
 export const SESSION_SECONDS = 7 * 24 * 60 * 60;
@@ -27,8 +28,5 @@ export function validOrigin(request: Request) {
   return !!origin && origin === new URL(request.url).origin;
 }
 export function parseJson(request: Request): Promise<unknown> {
-  if (!request.headers.get("content-type")?.toLowerCase().startsWith("application/json")) {
-    throw new Error("Expected application/json");
-  }
-  return request.json();
+  return parseBoundedJson(request);
 }
