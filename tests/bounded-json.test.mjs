@@ -61,3 +61,13 @@ test("rejects misleading JSON media types and unsupported charset parameters", a
     await assert.rejects(parseBoundedJson(request("{}", type)), /application\/json/);
   }
 });
+
+test("rejects non-object top-level authentication JSON", async () => {
+  for (const value of ["null", "[]", "[1]", "true", "false", "42", '"hello"']) {
+    await assert.rejects(parseBoundedJson(request(value)), /Expected a JSON object/);
+  }
+});
+test("accepts empty and nested JSON objects", async () => {
+  assert.deepEqual(await parseBoundedJson(request("{}")), {});
+  assert.deepEqual(await parseBoundedJson(request('{"data":{"items":[1,2]}}')), { data: { items: [1, 2] } });
+});
