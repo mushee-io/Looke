@@ -13,7 +13,7 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 | M6 | Feed/publishing | Partial: real text feed with microsecond keyset pagination, browser drafts, owner edit/delete, atomic post throttles and private report intake | Image/video uploads, operator moderation, protected staging and real multi-account/load/security testing |
 | M7 | Likes/follows/notifications | Partial: likes/follows, signed-in comments and author deletion, repost tracking/counts, shareable post links, four-type notifications with unread state | Protected staging, multi-account testing, operational moderation, repost syndication, push delivery and abuse/security review |
 | M8 | Discovery/recommendations | Partial: indexed public creator/post full-text search; real Trending, For You (follow boost), Following and Latest feeds; tests and staging search indexes | Protected deployment, multi-account acceptance, moderation/anti-manipulation safeguards, search pagination and scale QA |
-| M9 | Creator coins | Undeployed ERC20 factory prototype | Audit and onchain creator launch receipts |
+| M9 | Creator coins | Partial: one-draft-per-authenticated-creator launch lab, bounded metadata/supply, read-only 18881 factory preflight, factory local-EVM invariant tests; staged schema | Independent contract audit, protected staging, real Ultra EVM signed factory/token deployment and receipts, onchain creator attestation, UX/security approval |
 | M10 | Content coins | Undeployed factory kind/reference | Authenticated content attestation, liquidity |
 | M11 | Trend coins | Undeployed factory kind/reference | Governance, spam policies, liquidity |
 | M12 | Token trades | Pure BigInt quote tests and allowlisted real-reserve read-only quote API | AMM/router, approvals, slippage, real swaps |
@@ -180,3 +180,11 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 - Wired real discovery to the Explore sitewide search, and working four-mode feed navigation. Fictional preview social posts are separated and explicitly labelled.
 - Applied public-only full-text search indexes to Looke's isolated Neon staging database (`db/006_discovery.sql`). Added regression tests for query validation, modes, ranking time decay and following boost.
 - See `docs/M8-DISCOVERY.md`: anti-manipulation, moderation, full production search/performance verification and protected staging are still required. M8 remains **partial**, not production-accepted.
+
+## M9 creator coin draft, contract simulation and audit gates (1 November 2026)
+
+- Added signed-in creator-specific private token launch drafts with strict name, uppercase symbol, whole-token supply and pinned IPFS CID URI validation. Drafts are stored only in Looke's isolated Neon project; this does not mint a token or create any financial claim.
+- Added Profile creator coin lab and a strictly read-only Ultra EVM testnet factory check (`coinFor` address lookup; no signing, broadcasting or liquidity). The factory's code or address is **not** treated as audit evidence.
+- Added isolated Ganache EVM runtime tests for the unaudited Solidity factory (one creator coin per EVM wallet, 18-decimal fixed supply, ownership, duplicate and invalid-parameter reverts). CI verification is required before merge.
+- Applied `db/007_creator_coin_drafts.sql` to the dedicated Neon staging database. See `docs/M9-CREATOR_COINS.md` for remaining deployment, metadata/identity, independent audit and signed testnet receipt gates.
+- M9 remains **partial**; no publicly enabled token issuer, creator earnings, active swaps, testnet deployment evidence or mainnet launch.
