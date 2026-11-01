@@ -94,3 +94,10 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 - Initial PR #9 CI failed during `npm run typecheck`: the pure JavaScript UUID validator does not provide TypeScript control-flow narrowing for an `unknown` challenge ID used in parameterized SQL.
 - Added an explicit `typeof payload.challengeId === "string"` guard before the canonical UUID validation, preserving strict runtime rejection while narrowing the SQL argument safely.
 - Repair committed to the existing PR branch; passing full CI is required before merge. Protected staging, genuine wallet signature tests, production rate limiting and independent review remain outstanding.
+
+## M3 bounded JSON request parsing (1 November 2026)
+
+- Added a 16 KiB actual-byte limit for shared session API JSON parsing, including requests without Content-Length; oversize bodies are rejected before JSON decoding.
+- Added regression tests for accepted JSON, invalid content type, oversize UTF-8 input, malformed and empty JSON.
+- This is defense in depth, not a substitute for upstream edge limits, production IP-based rate limiting, protected staging, genuine wallet-signature acceptance or security review. M3 remains partial and all spending/minting/trading remain disabled.
+- Verify GitHub CI before merge; no live staging validation claimed.
