@@ -7,7 +7,7 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 |---|---|---|---|
 | M1 | Initial UI | Original preview source built and merged into main | Staging deployment and cross-browser review |
 | M2 | Zora-inspired original design | Partial: original Looke UI plus narrow-screen touch targets, forced-colors and increased-contrast CSS (PR pending verification) | Browser/device pixel QA, screen-reader and accessibility audit, mobile usability acceptance |
-| M3 | Authentication | Partial: EVM signature nonce/session; strict host, address, chain, nonce and validity-window challenge binding (PR pending CI) | Provision DB; prove live login with genuine wallets; rate-limit by IP; Google/Apple/email optional |
+| M3 | Authentication | Partial: EVM signature nonce/session; strict host, address, chain, nonce and validity-window challenge binding; canonical challenge ID checks (source PR pending CI) | Provision DB; prove live login with genuine wallets; rate-limit by IP; Google/Apple/email optional |
 | M4 | Ultra wallets | Partial: EVM and native testnet connect | Test physical wallets, chain/account changes, real receipts |
 | M5 | Social profiles | Partial: SQL and editor | DB migration, identity integrity, moderation |
 | M6 | Feed/publishing | Partial: verified-session text posts | Database, media upload, moderation and scale |
@@ -82,3 +82,9 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 - Reject impossible calendar dates and non-round-tripping UTC timestamps in persisted login challenges before signature verification; do not rely on permissive `Date.parse` normalization.
 - Add Node regression tests for canonical dates, invalid calendar dates and the five-minute challenge window boundary.
 - This is source-only defense in depth. CI, genuine wallet acceptance, protected staging deployment, edge rate limiting and independent review are still required; M3 remains partial. No transaction or spending capabilities are enabled.
+
+## M3 challenge identifier input validation (1 November 2026)
+
+- Added a pure canonical UUID-shape validator and wired it into the wallet signature verification endpoint before database lookup. Previously a permissive 36-character hex-and-hyphen pattern could admit malformed UUID strings.
+- Added Node regression tests for valid mixed-case identifiers and malformed lengths, separators, characters and input types.
+- This is input validation, not proof of live wallet authentication or a replacement for one-time database consumption. Require passing CI, protected staging, independent wallet testing, production edge rate limiting and security review before M3 acceptance.
