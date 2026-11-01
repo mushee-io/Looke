@@ -19,6 +19,7 @@ import { Notifications } from "@/components/Notifications";
 import { NetworkStatus } from "@/components/NetworkStatus";
 import { NativeUniqMintLab } from "@/components/NativeUniqMintLab";
 import { AccountSecurity } from "@/components/AccountSecurity";
+import { CreatorDirectory } from "@/components/CreatorDirectory";
 
 type Page = "explore" | "feed" | "nfts" | "activity" | "profile" | "settings";
 type ComposerType = "Content coin" | "Creator coin" | "Trend coin" | "Uniq NFT";
@@ -228,7 +229,7 @@ export default function Looke() {
         <div className="market-table"><div className="table-head"><span>Coin</span><button aria-label={`Sort demo market cap ${tab==="Top" && sortDesc ? "ascending" : "descending"}`} onClick={()=>{if(tab==="Top")setSortDesc(!sortDesc);else{setTab("Top");setSortDesc(true);}}}>Market cap <ChevronDown size={12}/></button><span>24h volume</span><span>Holders</span><span>Age</span><span>24h change</span></div>
           {filteredCoins.length ? filteredCoins.map(c=><button className="market-row" key={c.id} onClick={()=>setSelectedCoin(c)}><span className="coin-name"><CoinAvatar coin={c}/><span><strong>{c.name}</strong><small>{c.ticker} <span className="verified-dot">✓</span></small></span></span><span className="numeric-cell">{c.cap}</span><span className="numeric-cell">{c.volume}</span><span className="numeric-cell">{c.holders}</span><span className="numeric-cell">{c.age}</span><span className={`percent ${c.change<0?"negative":"positive"}`}>{c.change>0?"+":""}{c.change.toFixed(2)}% <ArrowUpRight size={13}/></span></button>) : <EmptyState label="No coins match this search" hint="Try another name or category."/>}
         </div>
-        <NetworkStatus /><LiveCoins /><div className="explore-bottom"><span><span className="tiny-circle"/> Market figures are illustrative, not live Ultra data.</span><button onClick={()=>go("feed")}>See creator feed <ArrowRight size={15}/></button></div>
+        <NetworkStatus /><LiveCoins /><CreatorDirectory /><div className="explore-bottom"><span><span className="tiny-circle"/> Market figures are illustrative, not live Ultra data.</span><button onClick={()=>go("feed")}>See creator feed <ArrowRight size={15}/></button></div>
         <div className="feature-banner"><div><span className="eyebrow">MORE TO DISCOVER</span><h2>Every great idea starts somewhere.</h2><p>Make your first coin or explore one-of-a-kind Uniqs on Ultra.</p><button onClick={()=>openCreate()}>Start creating <ArrowUpRight size={16}/></button></div><div className="banner-sculpture"><span/><span/><span/></div></div>
       </section>}
       {page === "feed" && <section className="feed-page"><div className="feed-header"><span className="eyebrow">YOUR CORNER OF THE INTERNET</span><h1>The feed<span className="brand-period">.</span></h1><p>Stories worth discovering. People worth following.</p></div><div className="feed-column"><SocialLive authenticated={authenticated} onRequireLogin={()=>setModal("login")} /><div className="feed-trends"><span>Trending now</span><div>{coins.slice(0,2).map(c=><button key={c.id} onClick={()=>setSelectedCoin(c)}><CoinAvatar coin={c}/><span><strong>{c.name}</strong><small>{c.cap} <b className={c.change<0?"negative":"positive"}>{c.change>0?"+":""}{c.change}%</b></small></span><MiniChart negative={c.change<0}/></button>)}</div></div>
