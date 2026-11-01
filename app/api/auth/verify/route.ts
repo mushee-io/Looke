@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { verifyMessage, getAddress, isAddress } from "viem";
 import { database } from "@/lib/server/database";
 import { challengeMatchesRequest } from "@/lib/auth-challenge.mjs";
+import { validChallengeId } from "@/lib/challenge-id.mjs";
 import { SESSION_COOKIE, SESSION_SECONDS, tokenHash, parseJson, validOrigin } from "@/lib/server/session";
 export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
@@ -10,7 +11,7 @@ export async function POST(request: Request) {
   try {
     const payload = await parseJson(request) as { challengeId?: unknown; address?: unknown; signature?: unknown };
     if (typeof payload?.address !== "string" || !isAddress(payload.address) ||
-      typeof payload.challengeId !== "string" || !/^[0-9a-f-]{36}$/i.test(payload.challengeId) ||
+      !validChallengeId(payload.challengeId) ||
       typeof payload.signature !== "string" || !/^0x[0-9a-f]{130}$/i.test(payload.signature)) {
       return NextResponse.json({error:"Invalid signature request"}, {status:400});
     }
