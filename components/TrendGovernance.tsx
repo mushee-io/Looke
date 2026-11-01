@@ -5,7 +5,7 @@ import {TrendingUp,ShieldCheck,Users,RefreshCw,ThumbsUp,FileSearch} from "lucide
 type Evidence={topic:string;posts:number;authors:number;eligibleForNomination:boolean;criterion:string};
 type Proposal={
  id:string;topic:string;slug:string;trendRef:string;name:string;symbol:string;
- supplyTokens:string;createdAt:string;proposerName:string;proposerHandle:string|null;
+ supplyTokens:string;metadataURI:string;createdAt:string;proposerName:string;proposerHandle:string|null;
  isOwner:boolean;endorsements:number;viewerEndorsed:boolean;
  evidencePosts:number;evidenceAuthors:number;evidenceCurrent:boolean;status:string;
 };
