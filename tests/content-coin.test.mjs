@@ -23,7 +23,7 @@ test("content snapshot is deterministic, domain separated and bound to author, p
  assert.match(first.textHash,/^0x[0-9a-f]{64}$/);
  assert.equal(first.version,"looke.content.v1");
  assert.equal(first.chainId,18881);
- assert.deepEqual(contentSnapshot(id.toUpperCase(),a.toUpperCase(),"Hello Ultra"),first);
+ assert.deepEqual(contentSnapshot(id.toUpperCase(),"0x"+a.slice(2).toUpperCase(),"Hello Ultra"),first);
  assert.notEqual(contentSnapshot(id,a,"Hello Ultra edited").contentRef,first.contentRef);
  assert.notEqual(contentSnapshot(id,b,"Hello Ultra").contentRef,first.contentRef);
  assert.notEqual(contentSnapshot("ed827d1a-a415-4b6a-8a5c-d47ec09dd932",a,"Hello Ultra").contentRef,first.contentRef);
