@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { randomBytes } from "node:crypto";
+import { formatLoginChallenge } from "@/lib/login-challenge.mjs";
 import { getAddress, isAddress } from "viem";
 import { database } from "@/lib/server/database";
 import { parseJson, validOrigin } from "@/lib/server/session";
@@ -19,16 +20,7 @@ export async function POST(request: Request) {
     const issued = new Date();
     const expiry = new Date(issued.getTime() + 5 * 60_000);
     const host = new URL(request.url).host;
-    const message = [
-      "Looke — Sign in to your Ultra EVM testnet social account",
-      "Domain: " + host,
-      "Address: " + address,
-      "Chain ID: 18881",
-      "Nonce: " + nonce,
-      "Issued At: " + issued.toISOString(),
-      "Expires At: " + expiry.toISOString(),
-      "This signature is only for login. It does not authorize spending or trading."
-    ].join("\n");
+    const message = formatLoginChallenge({ host, address, nonce, issuedAt: issued, expiresAt: expiry });
     const rows = await sql`INSERT INTO looke_challenges(evm_address,message,expires_at) VALUES(${address},${message},${expiry.toISOString()}) RETURNING id`;
     return NextResponse.json({ challengeId: rows[0].id, message, expiresAt: expiry.toISOString() }, {headers:{"Cache-Control":"no-store"}});
   } catch {
