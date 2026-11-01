@@ -106,6 +106,7 @@ export async function syncConfirmedStream(stream:Stream) {
    const x=log as typeof log & {args?:Record<string,unknown>};
    const a=x.args??{};
    if(!x.transactionHash||x.logIndex==null||!x.blockHash||x.blockNumber==null||
+      typeof a.coin!=="string"||typeof a.creator!=="string"||
       !isAddress(a.coin)||!isAddress(a.creator)||
       typeof a.kind!=="number"||!Number.isInteger(a.kind)||a.kind<0||a.kind>2||
       typeof a.contentRef!=="string"||!/^0x[0-9a-f]{64}$/i.test(a.contentRef)||
