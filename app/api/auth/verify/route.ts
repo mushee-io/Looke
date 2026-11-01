@@ -11,7 +11,7 @@ export async function POST(request: Request) {
   try {
     const payload = await parseJson(request) as { challengeId?: unknown; address?: unknown; signature?: unknown };
     if (typeof payload?.address !== "string" || !isAddress(payload.address) ||
-      !validChallengeId(payload.challengeId) ||
+      (typeof payload.challengeId !== "string" || !validChallengeId(payload.challengeId)) ||
       typeof payload.signature !== "string" || !/^0x[0-9a-f]{130}$/i.test(payload.signature)) {
       return NextResponse.json({error:"Invalid signature request"}, {status:400});
     }
