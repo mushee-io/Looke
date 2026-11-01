@@ -7,7 +7,7 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 |---|---|---|---|
 | M1 | Initial UI | Original preview source built and merged into main | Staging deployment and cross-browser review |
 | M2 | Zora-inspired original design | Partial: original Looke UI plus narrow-screen touch targets, forced-colors and increased-contrast CSS (PR pending verification) | Browser/device pixel QA, screen-reader and accessibility audit, mobile usability acceptance |
-| M3 | Authentication | Partial: EVM signed challenge/session; session inventory and global revocation; production trusted-IP HMAC rate-limit implementation; strict challenge and JSON validation | Apply migration 003, deploy staging, verify genuine wallets/IP limits, enable Vercel WAF, independent security review, optional Google/Apple/email |
+| M3 | Authentication | Partial: EVM signed challenge/session; active session inventory, global revocation; production trusted-IP HMAC rate-limiting source and staging migration; strict challenge and JSON validation | Protected Vercel staging, real-wallet/multi-IP verification, WAF policy, independent security review and optional Google/Apple/email providers |
 | M4 | Ultra wallets | Partial: EVM and native testnet connect | Test physical wallets, chain/account changes, real receipts |
 | M5 | Social profiles | Partial: SQL and editor | DB migration, identity integrity, moderation |
 | M6 | Feed/publishing | Partial: verified-session text posts | Database, media upload, moderation and scale |
