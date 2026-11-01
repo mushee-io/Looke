@@ -63,6 +63,7 @@ export function NativeUniqMintLab({account}:{account:string|null}){
    throw Error("Testnet UOS payment cap must be above zero and no more than 10 UOS.");
  }
  async function queryReview(id:number){
+  if(!account)throw Error("Connect a native Ultra testnet account before factory review.");
   const response=await fetch("/api/uniqs/factory?"+new URLSearchParams({
    factoryId:String(id),account
   }),{cache:"no-store"});
