@@ -225,6 +225,10 @@ export function SocialLive({ authenticated, onRequireLogin }:{authenticated:bool
       <button className="subtle-cta" type="submit" disabled={mutationBusy}>Submit report</button>
       <button type="button" onClick={()=>setReportId(null)}>Cancel</button>
     </form>}
+    {post.is_owner&&<a href={"/?contentPost="+encodeURIComponent(post.id)+"#profile"}
+      style={{fontSize:12,fontWeight:700,display:"inline-block",marginTop:12,textDecoration:"underline"}}>
+      Prepare a content coin draft for this post
+    </a>}
     <PostInteractions post={post} authenticated={authenticated} onRequireLogin={onRequireLogin}
       onChanged={()=>fetchFeed()} onNotice={setNotice}/>
    </article>):<p style={{fontSize:13,opacity:.65,marginTop:14}}>No public posts yet. Be the first creator.</p>}

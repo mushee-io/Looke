@@ -14,7 +14,7 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 | M7 | Likes/follows/notifications | Partial: likes/follows, signed-in comments and author deletion, repost tracking/counts, shareable post links, four-type notifications with unread state | Protected staging, multi-account testing, operational moderation, repost syndication, push delivery and abuse/security review |
 | M8 | Discovery/recommendations | Partial: indexed public creator/post full-text search; real Trending, For You (follow boost), Following and Latest feeds; tests and staging search indexes | Protected deployment, multi-account acceptance, moderation/anti-manipulation safeguards, search pagination and scale QA |
 | M9 | Creator coins | Partial: one-draft-per-authenticated-creator launch lab, bounded metadata/supply, read-only 18881 factory preflight, factory local-EVM invariant tests; staged schema | Independent contract audit, protected staging, real Ultra EVM signed factory/token deployment and receipts, onchain creator attestation, UX/security approval |
-| M10 | Content coins | Undeployed factory kind/reference | Authenticated content attestation, liquidity |
+| M10 | Content coins | Partial: authenticated creator-owned post snapshots, versioned contentRef, private draft UX, readonly 18881 factory mapping preflight and isolated kind-1 contract tests | Fix permissionless copied-ref authorization gap; independently audit, deploy on Ultra EVM testnet, verify signed receipts and content moderation/liquidity gates |
 | M11 | Trend coins | Undeployed factory kind/reference | Governance, spam policies, liquidity |
 | M12 | Token trades | Pure BigInt quote tests and allowlisted real-reserve read-only quote API | AMM/router, approvals, slippage, real swaps |
 | M13 | Live markets | Confirmed testnet factory-event indexer skeleton | Contract deployment, scheduler, real liquidity/price source |
@@ -188,3 +188,10 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 - Added isolated Ganache EVM runtime tests for the unaudited Solidity factory (one creator coin per EVM wallet, 18-decimal fixed supply, ownership, duplicate and invalid-parameter reverts). CI verification is required before merge.
 - Applied `db/007_creator_coin_drafts.sql` to the dedicated Neon staging database. See `docs/M9-CREATOR_COINS.md` for remaining deployment, metadata/identity, independent audit and signed testnet receipt gates.
 - M9 remains **partial**; no publicly enabled token issuer, creator earnings, active swaps, testnet deployment evidence or mainnet launch.
+
+## M10 post-linked content coin preparation (1 November 2026)
+
+- Created owner-only visible-post content coin proposals with a `looke.content.v1` domain-separated reference committed to Ultra EVM 18881, the creator EVM address, post UUID, exact source text and latest edited revision. Edit/hide invalidates the old proposal; deleting a post cascades to its private draft.
+- Built authenticated API, Profile content-coin preparation UI, post-to-draft links, read-only factory `coinFor` preflight and isolated Ganache kind-1 factory tests. Applied `db/008_content_coin_drafts.sql` to the dedicated Neon staging database.
+- Contract tests demonstrate a blocking copied-reference attack: a different wallet can launch against an identical reference in the existing **permissionless** factory. Audited onchain issuer attestation/authorization is mandatory before public content coins; no minting, liquidity or spending was enabled.
+- See `docs/M10-CONTENT_COINS.md`. This source is partial and has no verified Ultra testnet deployment, audit, wallet acceptance or production release.
