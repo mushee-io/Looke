@@ -24,7 +24,11 @@ export async function GET() {
           WHERE profile_id = ${profile.id} AND expires_at > now()`,
     ]);
     return NextResponse.json({
-      sessions: publicSessionRows(rows),
+      sessions: publicSessionRows(rows.map(row => ({
+        created_at: row.created_at as Date,
+        expires_at: row.expires_at as Date,
+        is_current: row.is_current === true,
+      }))),
       total: Number(totals[0]?.total ?? 0),
     }, { headers: { "Cache-Control": "private, no-store" } });
   } catch {
