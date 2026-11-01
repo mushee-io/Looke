@@ -25,6 +25,9 @@ export async function GET(request: NextRequest) {
         to_char(p.created_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS cursor_time,
         (p.profile_id=${me?.id ?? null}::uuid) AS is_owner,
         (SELECT count(*)::int FROM looke_likes l WHERE l.post_id=p.id) AS likes,
+        (SELECT count(*)::int FROM looke_comments c WHERE c.post_id=p.id AND c.moderation_status='visible') AS comments,
+        (SELECT count(*)::int FROM looke_reposts r WHERE r.post_id=p.id) AS reposts,
+        EXISTS(SELECT 1 FROM looke_reposts r WHERE r.post_id=p.id AND r.profile_id=${me?.id ?? null}::uuid) AS user_reposted,
         EXISTS(SELECT 1 FROM looke_likes l WHERE l.post_id=p.id AND l.profile_id=${me?.id ?? null}::uuid) AS user_liked,
         EXISTS(SELECT 1 FROM looke_follows f WHERE f.followed_id=p.profile_id AND f.follower_id=${me?.id ?? null}::uuid) AS user_following
       FROM looke_posts p JOIN looke_profiles u ON u.id=p.profile_id
