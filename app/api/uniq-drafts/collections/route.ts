@@ -14,7 +14,7 @@ export async function GET(){
   const collections=await sql`
    SELECT c.id,c.name,c.description,c.image_uri AS "imageURI",
     c.planned_native_account AS "nativeAccount",c.planned_factory_id AS "factoryId",
-    c.created_at AS "createdAt",c.updated_at AS "updatedAt",
+    c.created_at AS "createdAt",c.updated_at AS "updatedAt",c.revision,
     (SELECT count(*)::int FROM looke_uniq_item_drafts i WHERE i.collection_id=c.id) AS "itemCount"
    FROM looke_uniq_collection_drafts c WHERE c.profile_id=${me.id}::uuid
    ORDER BY c.updated_at DESC,c.id DESC LIMIT ${MAX_UNIQ_COLLECTIONS}

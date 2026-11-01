@@ -18,7 +18,7 @@ export async function GET(request:NextRequest){
   if(!exists.length)return NextResponse.json({error:"Private collection unavailable"},{status:404,headers});
   const items=await sql`SELECT id,collection_id AS "collectionId",name,description,
     image_uri AS "imageURI",edition_limit AS "editionLimit",
-    created_at AS "createdAt" FROM looke_uniq_item_drafts
+    created_at AS "createdAt",updated_at AS "updatedAt",revision FROM looke_uniq_item_drafts
     WHERE collection_id=${id}::uuid AND profile_id=${me.id}::uuid
     ORDER BY created_at DESC,id DESC LIMIT ${MAX_UNIQ_ITEMS_PER_COLLECTION}`;
   return NextResponse.json({items,minted:false},{headers});
