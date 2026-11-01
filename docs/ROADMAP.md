@@ -272,3 +272,9 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 - Added a 2,048-container traversal budget to the already byte-bounded, depth-limited authentication JSON parser. Wide arrays of nested objects/arrays now fail closed even if their payload fits the 16 KiB byte limit.
 - Added tests for the exact accepted boundary and first rejected width. This is source-only denial-of-service defense in depth; CI and independent staging/wallet/security validation remain required.
 - M3 remains partial. No public trading, minting, mainnet activity, or irreversible spending is enabled.
+
+## M3 authentication JSON property budget (1 November 2026)
+
+- Bound total enumerable JSON properties/array entries to 2,048 in the shared authentication parser, in addition to the existing 16 KiB byte, 32-container-depth and 2,048-container limits. This covers broad scalar-only objects that evade container-count checks.
+- Add boundary regression tests for 2,048 accepted and 2,049 rejected scalar properties. Source-level defense in depth only; CI must pass before merge.
+- M3 remains partial pending protected Vercel staging, genuine wallet and database-session acceptance, production WAF/rate-limiting checks and independent security review. No trading, minting, mainnet or irreversible spending enabled.
