@@ -71,6 +71,7 @@ export async function GET(request:NextRequest){
   const promoterBp=typeof sale.promoter_basis_point==="number"?
    sale.promoter_basis_point:Number(sale.promoter_basis_point);
   if(!Number.isSafeInteger(promoterBp))throw new Error("Invalid listed promoter fee");
+  if(typeof sale.price!=="string")throw new Error("Native resale UOS price unavailable");
   const scenario=estimateNativeResaleDistribution({
    price:sale.price,seller,factoryShares:asShares(factory.resale_shares),
    globalShares:globalTable.rows,promoterBasisPoints:promoterBp,
