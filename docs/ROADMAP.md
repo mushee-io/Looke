@@ -107,3 +107,9 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 - Reject malformed or oversized declared `Content-Length` before consuming authentication JSON request streams; continue enforcing the streamed 16 KiB byte cap even when the header understates the body.
 - Add tests for oversized declarations, malformed declarations, false low declarations and exact-boundary requests. This is defense in depth, not an IP-based rate limiter or proof of live wallet login.
 - Acceptance remains blocked on protected Vercel staging permissions, genuine independent wallet sign-in, database-backed sessions, production edge rate limiting and security review. No trading, minting or spending is enabled.
+
+## M3 strict authentication JSON media type (1 November 2026)
+
+- Require an exact `application/json` media type (optionally with a UTF-8 charset parameter) for the bounded authentication JSON parser; reject prefix lookalikes such as `application/jsonp` and unsupported parameters.
+- Add regression coverage for accepted UTF-8 variants and rejected misleading content types. This is source-only input hardening; successful CI and protected staging acceptance remain separate gates.
+- M3 remains partial pending independent wallet sign-in, production edge rate limiting, Vercel staging access and security review. No trading, minting or spending is enabled.
