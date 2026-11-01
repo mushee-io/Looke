@@ -175,6 +175,12 @@ export function TrendGovernance({authenticated,onRequireLogin}:{
          <span style={{fontSize:11,color:"#8d7cac"}}>Under review · no issuance</span>
        </div>
        <p style={{fontSize:12,margin:"8px 0"}}>Topic: <strong>#{p.slug}</strong> · Proposed by {p.proposerHandle?"@"+p.proposerHandle:p.proposerName}</p>
+       <p style={{fontSize:12,margin:"7px 0",color:"#6c6577"}}>
+         Proposed fixed supply: <strong>{Number(p.supplyTokens).toLocaleString()} tokens</strong> · No assigned value or liquidity
+       </p>
+       <p style={{fontSize:11,color:"#999",overflowWrap:"anywhere",margin:"6px 0"}}>
+         Unverified IPFS metadata: {p.metadataURI}
+       </p>
        <p style={{fontSize:12,color:"#777",margin:"8px 0",lineHeight:1.5}}>
          <Users size={14} style={{display:"inline",verticalAlign:"middle"}}/> {p.evidencePosts} visible posts by {p.evidenceAuthors} accounts ·
          {p.endorsements} endorsements · {p.evidenceCurrent?" Activity threshold currently met":" Activity threshold no longer met"}
