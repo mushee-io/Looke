@@ -121,3 +121,12 @@ test("rejects wide JSON structures above the container budget", async () => {
   const body = JSON.stringify({ items: Array.from({ length: 2047 }, () => []) });
   await assert.rejects(parseBoundedJson(request(body)), /JSON structure too complex/);
 });
+
+test("accepts authentication JSON at the 2048-property boundary", async () => {
+  const data = Object.fromEntries(Array.from({ length: 2048 }, (_, i) => [i.toString(36), 0]));
+  assert.equal(Object.keys(await parseBoundedJson(request(JSON.stringify(data)))).length, 2048);
+});
+test("rejects excess scalar properties even without nested containers", async () => {
+  const data = Object.fromEntries(Array.from({ length: 2049 }, (_, i) => [i.toString(36), 0]));
+  await assert.rejects(parseBoundedJson(request(JSON.stringify(data))), /too many properties/);
+});
