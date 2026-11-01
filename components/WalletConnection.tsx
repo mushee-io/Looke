@@ -6,19 +6,27 @@ import { ULTRA_EVM_TESTNET } from "@/lib/ultra";
 
 type EvmProvider = {
   request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
+  on?: (event: "accountsChanged" | "chainChanged", listener: (value: unknown) => void) => void;
+  removeListener?: (event: "accountsChanged" | "chainChanged", listener: (value: unknown) => void) => void;
 };
 type NativeWallet = {
   connect: () => Promise<{ data: { blockchainid: string } }>;
 };
 export type ConnectedWallet = { kind: "Ultra EVM" | "Ultra Native"; address: string };
-export function WalletConnection({ onConnected, onAuthenticated, onLoggedOut }: { onConnected: (wallet: ConnectedWallet) => void; onAuthenticated:()=>void; onLoggedOut:()=>void }) {
+export function WalletConnection({ onConnected, onAuthenticated, onLoggedOut, onDisconnected, authenticated, sessionAddress }: {
+  onConnected: (wallet: ConnectedWallet) => void;
+  onAuthenticated: (address: string) => void;
+  onLoggedOut: () => void;
+  onDisconnected: (kind: ConnectedWallet["kind"]) => void;
+  authenticated: boolean;
+  sessionAddress: string | null;
+}) {
   const [evm, setEvm] = useState<ConnectedWallet | null>(null);
   const [native, setNative] = useState<ConnectedWallet | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState("");
   const [networkWrong, setNetworkWrong] = useState(false);
   const [nativeReady, setNativeReady] = useState(false);
-  const [authenticated,setAuthenticated]=useState(false);
   const nativeClient = useRef<NativeWallet | null>(null);
 
   useEffect(() => {
@@ -35,6 +43,23 @@ export function WalletConnection({ onConnected, onAuthenticated, onLoggedOut }: 
   function provider(): EvmProvider | null {
     return (window as Window & { ethereum?: EvmProvider }).ethereum ?? null;
   }
+
+  useEffect(() => {
+    const p = provider();
+    if (!p?.on) return;
+    const reset = () => {
+      setEvm(null);
+      setNetworkWrong(false);
+      setError("EVM wallet account or network changed. Reconnect before signing.");
+      onDisconnected("Ultra EVM");
+    };
+    p.on("accountsChanged", reset);
+    p.on("chainChanged", reset);
+    return () => {
+      p.removeListener?.("accountsChanged", reset);
+      p.removeListener?.("chainChanged", reset);
+    };
+  }, [onDisconnected]);
 
   async function connectEvm() {
     setError(""); setBusy("evm");
@@ -99,7 +124,7 @@ export function WalletConnection({ onConnected, onAuthenticated, onLoggedOut }: 
       const verified=await fetch("/api/auth/verify",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({challengeId:challenge.challengeId,address:evm.address,signature})});
       const result=await verified.json() as {authenticated?:boolean;error?:string};
       if(!verified.ok || !result.authenticated) throw new Error(result.error||"Signature verification failed.");
-      setAuthenticated(true);onAuthenticated();
+      onAuthenticated(evm.address);
     } catch(e) {setError(e instanceof Error?e.message:"Sign-in failed.");}
     finally {setBusy("");}
   }
@@ -108,7 +133,7 @@ export function WalletConnection({ onConnected, onAuthenticated, onLoggedOut }: 
     try {
       const response=await fetch("/api/auth/logout",{method:"POST"});
       if(!response.ok) throw new Error("Could not revoke session");
-      setAuthenticated(false);onLoggedOut();
+      onLoggedOut();
     } catch(e) {setError(e instanceof Error?e.message:"Sign-out failed.");}
     finally {setBusy("");}
   }
@@ -136,6 +161,9 @@ export function WalletConnection({ onConnected, onAuthenticated, onLoggedOut }: 
       <Wallet size={18} /> {native ? "Ultra: " + native.address : nativeReady ? "Connect Ultra Wallet (Uniqs)" : "Loading Ultra extension SDK…"}
       {native ? <CheckCircle2 size={16}/> : <ExternalLink size={16}/>}
     </button>
+    {authenticated && <p role="status" style={{fontSize:12,marginTop:13,overflowWrap:"anywhere"}}>Social account signed in as: <strong>{sessionAddress || "an Ultra EVM wallet"}</strong>. This browser session can outlive the wallet connection.</p>}
+    {authenticated && evm && sessionAddress && evm.address.toLowerCase() !== sessionAddress.toLowerCase() &&
+      <p role="alert" style={{fontSize:12,color:"#bb2548"}}>Connected wallet is not your signed-in creator account. Sign out of Looke before switching accounts.</p>}
     {evm && !authenticated && <button type="button" className="login-provider" disabled={!!busy} onClick={signIn}><CheckCircle2 size={17}/> Sign login challenge (no spending)</button>}
     {authenticated && <button type="button" className="login-provider" disabled={!!busy} onClick={signOut}>Sign out of social account</button>}
     {error && <p role="alert" style={{color:"#bb2548",display:"flex",gap:8,alignItems:"center"}}><AlertCircle size={16}/>{error}</p>}
