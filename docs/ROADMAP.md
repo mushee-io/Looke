@@ -9,7 +9,7 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 | M2 | Zora-inspired original design | Partial: original Looke UI plus narrow-screen touch targets, forced-colors and increased-contrast CSS (PR pending verification) | Browser/device pixel QA, screen-reader and accessibility audit, mobile usability acceptance |
 | M3 | Authentication | Partial: EVM signed challenge/session; active session inventory, global revocation; production trusted-IP HMAC rate-limiting source and staging migration; strict challenge and JSON validation | Protected Vercel staging, real-wallet/multi-IP verification, WAF policy, independent security review and optional Google/Apple/email providers |
 | M4 | Ultra wallets | Partial: EVM and native testnet connect | Test physical wallets, chain/account changes, real receipts |
-| M5 | Social profiles | Partial: SQL and editor | DB migration, identity integrity, moderation |
+| M5 | Social profiles | Partial: authenticated profile editor with reserved-handle validation, public creator pages, directory, real follower/post counts and follow integration | Protected staging, multi-account acceptance, impersonation reporting/moderation, profile identity policies and mobile QA |
 | M6 | Feed/publishing | Partial: verified-session text posts | Database, media upload, moderation and scale |
 | M7 | Likes/follows/notifications | Partial: DB APIs and UI | Real-user tests and notification fanout |
 | M8 | Discovery/recommendations | Preview search and filters | Personalized server-side ranking and search index |
@@ -152,3 +152,10 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 - Require platform-verified Vercel client IP and a separate server-only secret in production; missing or invalid prerequisites fail closed with 503. Exhausted buckets return 429. Existing per-address challenge throttling is retained.
 - Includes regression tests for forwarded IP spoofing rejection, invalid addresses and HMAC scope isolation; does **not** replace a deployed Vercel WAF policy or proven live login. See `docs/M3-RATE_LIMITS.md`.
 - M3 remains incomplete until real production-shaped acceptance, protected deployment and independent review.
+
+## M5 public creator profiles (1 November 2026)
+
+- Added shareable public creator routes, directory, database-backed follower/visible-post counts and follow state, with original Looke responsive UI.
+- Hardened handle normalization and reserved creator names, and linked real social posts and saved profiles to public pages.
+- Added regression tests and `docs/M5-CREATOR_PROFILES.md` acceptance guide. No token issuance, NFT minting or creator-earnings claims are enabled.
+- Staging deployment, real multi-account tests and moderation remain required; M5 is not yet production accepted.
