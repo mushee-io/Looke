@@ -26,14 +26,13 @@ test("rejects empty body", async () => {
 });
 
 test("rejects declared oversize without reading the body", async () => {
-  let pulled = false;
-  const body = new ReadableStream({ pull(controller) { pulled = true; controller.enqueue(new Uint8Array([123, 125])); controller.close(); } });
+  const body = new ReadableStream({ start(controller) { controller.enqueue(new Uint8Array([123, 125])); controller.close(); } });
   const req = new Request("https://looke.test/api/auth/verify", {
     method: "POST", headers: { "content-type": "application/json", "content-length": "1000" },
     body, duplex: "half"
   });
   await assert.rejects(parseBoundedJson(req, 64), /too large/);
-  assert.equal(pulled, false);
+  assert.equal(req.body.locked, false);
 });
 test("rejects malformed declared lengths", async () => {
   for (const length of ["-1", "1.5", "12x", "01"]) {
