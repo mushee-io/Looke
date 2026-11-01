@@ -64,3 +64,9 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 - Verify a persisted signed challenge is within its issue/expiry window, permitting no more than 30 seconds of clock skew in either direction. Existing database expiry and single-use consumption remain authoritative and stricter.
 - Add regression tests for stale and future-issued challenges, boundary clock skew, and non-finite timestamps.
 - Source tests and CI do **not** establish live authentication. Protected staging deployment, independent EVM wallet sign-in, session persistence checks, rate limiting at the edge and security review remain required.
+
+## M3 CI repair (1 November 2026)
+
+- PR #6 initial CI failed at `npm run test:math` because literal `\\n` characters were accidentally committed between JavaScript statements in `lib/auth-challenge.mjs`.
+- Replaced those literal escape sequences with actual source newlines in the PR branch. A successful rerun of all checks is required before merge; this repair alone is not verification.
+- M3 remains partial until protected staging, independent wallet sign-in and production rate limiting are verified.
