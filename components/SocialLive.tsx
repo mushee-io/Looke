@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Heart, Plus, Send, UserRound, Wallet, Loader2, Check, Pencil, Trash2, Flag } from "lucide-react";
 import { PostInteractions } from "@/components/PostInteractions";
 
@@ -8,7 +8,8 @@ type LivePost = {
   created_at:string;edited_at?:string|null;likes:number;comments:number;reposts:number;is_owner?:boolean;user_reposted?:boolean;
   user_liked?:boolean;user_following?:boolean;
 };
-type FeedResult={posts:LivePost[];nextCursor:string|null};
+type FeedResult={posts:LivePost[];nextCursor:string|null;explanation?:string};
+type FeedMode="latest"|"trending"|"for-you"|"following";
 async function jsonOrError(response:Response) {
  const data=await response.json();
  if(!response.ok)throw new Error(data?.error??"Request failed");
@@ -17,6 +18,9 @@ async function jsonOrError(response:Response) {
 
 export function SocialLive({ authenticated, onRequireLogin }:{authenticated:boolean;onRequireLogin:()=>void}) {
  const [posts,setPosts]=useState<LivePost[]>([]);
+ const [feedMode,setFeedMode]=useState<FeedMode>("for-you");
+ const [discoveryExplanation,setDiscoveryExplanation]=useState("");
+ const fetchSequence=useRef(0);
  const [cursor,setCursor]=useState<string|null>(null);
  const [loading,setLoading]=useState(false);
  const [loadingMore,setLoadingMore]=useState(false);
@@ -44,10 +48,18 @@ export function SocialLive({ authenticated, onRequireLogin }:{authenticated:bool
  },[text,draftReady]);
 
  async function fetchFeed(next:string|null=null,append=false) {
+   const currentFetch=++fetchSequence.current;
+   if(feedMode==="following"&&!authenticated) {
+     setPosts([]);setCursor(null);setUnavailable(false);setDiscoveryExplanation("Sign in to see posts by the creators you follow.");
+     setLoading(false);setLoadingMore(false);return;
+   }
    if(append)setLoadingMore(true);else setLoading(true);
    try {
-     const path="/api/posts"+(next?"?cursor="+encodeURIComponent(next):"");
+     const path=feedMode==="latest"
+       ?"/api/posts"+(next?"?cursor="+encodeURIComponent(next):"")
+       :"/api/discovery/feed?mode="+encodeURIComponent(feedMode);
      const data=await jsonOrError(await fetch(path,{cache:"no-store"})) as FeedResult;
+     if(currentFetch!==fetchSequence.current)return;
      let list=data.posts;
      if(!append && typeof window!=="undefined") {
        const requested=new URLSearchParams(window.location.search).get("post");
@@ -59,15 +71,18 @@ export function SocialLive({ authenticated, onRequireLogin }:{authenticated:bool
          }catch {/* Missing or moderated shared post: show the public feed only. */}
        }
      }
+     if(currentFetch!==fetchSequence.current)return;
      setPosts(current=>append ? [...current,...list.filter(x=>!current.some(p=>p.id===x.id))] : list);
-     setCursor(data.nextCursor);
+     setCursor(feedMode==="latest"?data.nextCursor:null);
+     setDiscoveryExplanation(data.explanation??"Latest visible public posts, newest first.");
      setUnavailable(false);
    }catch(e){
+     if(currentFetch!==fetchSequence.current)return;
      if(!append){setPosts([]);setCursor(null);setUnavailable(true);}
      setNotice(e instanceof Error?e.message:"Feed unavailable");
-   }finally{setLoading(false);setLoadingMore(false);}
+   }finally{if(currentFetch===fetchSequence.current){setLoading(false);setLoadingMore(false);}}
  }
- useEffect(()=>{void fetchFeed();},[authenticated]);
+ useEffect(()=>{void fetchFeed();},[authenticated,feedMode]);
 
  async function publish(event:FormEvent<HTMLFormElement>) {
    event.preventDefault();
@@ -153,6 +168,16 @@ export function SocialLive({ authenticated, onRequireLogin }:{authenticated:bool
    </div>
    <p style={{fontSize:11,color:"#888",margin:"10px 0 0"}}>Image/video uploads will be enabled only after storage, safety screening and moderator review are configured.</p>
   </form>:<button type="button" className="subtle-cta" onClick={onRequireLogin}><Wallet size={16}/> Sign in with Ultra EVM to publish</button>}
+  <div role="group" aria-label="Real social feed selection" style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",margin:"16px 0 10px"}}>
+    {([["for-you","For you"],["trending","Trending"],["following","Following"],["latest","Latest"]] as [FeedMode,string][]).map(([mode,label])=>
+      <button key={mode} type="button" aria-pressed={feedMode===mode}
+        disabled={loading||loadingMore} className="subtle-cta"
+        style={{background:feedMode===mode?"#19171c":"#fff",color:feedMode===mode?"#fff":"#343434"}}
+        onClick={()=>setFeedMode(mode)}>{label}</button>)}
+  </div>
+  <p style={{fontSize:11,color:"#898991",lineHeight:1.5,margin:"6px 0 12px"}}>
+    {discoveryExplanation||"For you ranks visible posts by engagement, recency and whether you follow the author. No AI personalization or trading signals."}
+  </p>
   {notice&&<p role="status" style={{fontSize:13,margin:"12px 0",overflowWrap:"anywhere"}}>{notice}</p>}
   {unavailable?<p style={{fontSize:13,opacity:.65,marginTop:14}}>Live social publishing is unavailable until the database and feed migration are configured. Sample posts remain below.</p>
    :loading?<p role="status" style={{fontSize:13,opacity:.65}}>Loading creator posts…</p>
@@ -203,7 +228,8 @@ export function SocialLive({ authenticated, onRequireLogin }:{authenticated:bool
     <PostInteractions post={post} authenticated={authenticated} onRequireLogin={onRequireLogin}
       onChanged={()=>fetchFeed()} onNotice={setNotice}/>
    </article>):<p style={{fontSize:13,opacity:.65,marginTop:14}}>No public posts yet. Be the first creator.</p>}
-  {cursor&&!unavailable&&<button className="subtle-cta" style={{marginTop:16}} disabled={loadingMore} onClick={()=>void fetchFeed(cursor,true)}>
+  {feedMode==="following"&&!authenticated&&<button type="button" className="subtle-cta" onClick={onRequireLogin}>Sign in to see your following feed</button>}
+  {cursor&&feedMode==="latest"&&!unavailable&&<button className="subtle-cta" style={{marginTop:16}} disabled={loadingMore} onClick={()=>void fetchFeed(cursor,true)}>
     {loadingMore?"Loading…":"Load more posts"}
   </button>}
  </section>;
