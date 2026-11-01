@@ -25,6 +25,7 @@
     "@types/react-dom": "^19.0.0",
     "typescript": "^5.9.0",
     "@openzeppelin/contracts": "^5.4.0",
-    "solc": "^0.8.30"
+    "solc": "^0.8.30",
+    "ganache": "^7.9.2"
   }
 }

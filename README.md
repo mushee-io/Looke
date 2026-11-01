@@ -12,7 +12,7 @@ Looke is an original Zora-style social coin ecosystem for Ultra, with additional
 - PostgreSQL-backed social posts, likes, follows and social notifications (requires configured database and migration).
 - Ultra EVM testnet RPC status and real UOS balance lookups.
 - Server-side Ultra Uniq holdings GraphQL proxy (requires approved Ultra API credentials).
-- Solidity fixed-supply ERC-20 factory prototype for creator/content/trend coins (**unaudited, undeployed**), pure BigInt AMM quote tests and event-indexing worker (**requires audited testnet deployment and keys**).
+- Solidity fixed-supply ERC-20 factory prototype for creator/content/trend coins (**unaudited, undeployed**); an account-scoped M9 creator coin draft/review lab and isolated local EVM contract tests; pure BigInt AMM quote tests and event-indexing worker (**requires audited testnet deployment and keys**).
 - GitHub CI typechecks, tests quote invariants, compiles the Solidity contracts, and runs the Next.js production build.
 
 ## Start locally
@@ -32,7 +32,7 @@ Without a PostgreSQL database, the UI sample feed and local drafts still work; s
 
 ## Real integrations (testnet first)
 
-1. Provision dedicated TLS PostgreSQL. Store `DATABASE_URL` securely on the server and run `db/001_social.sql`, then `db/002_coin_events.sql`. Never place secret keys in `NEXT_PUBLIC_` variables.
+1. Provision dedicated TLS PostgreSQL. Store `DATABASE_URL` securely on the server and run `db/001_social.sql`, then `db/002_coin_events.sql` and the subsequent social/discovery/creator draft migrations through `db/007_creator_coin_drafts.sql`. Never place secret keys in `NEXT_PUBLIC_` variables.
 2. Connect Ultra EVM wallet on chain 18881 and native Ultra Wallet extension on Ultra native testnet (distinct chains). Sign a login-only challenge for social publishing. No spending approval is requested.
 3. Request Ultra NFT GraphQL access from developers@ultra.io, then configure `ULTRA_API_BEARER_TOKEN` and `ULTRA_API_CLIENT_ID` server-side to query native Uniqs.
 4. Do not deploy the coin factory or enable financial functions until independent security review. After audited testnet deployment, configure `LOOKE_FACTORY_TESTNET_ADDRESS`, `LOOKE_FACTORY_TESTNET_DEPLOY_BLOCK` and `LOOKE_INDEXER_SECRET` and run the protected indexer through an authorized scheduler.

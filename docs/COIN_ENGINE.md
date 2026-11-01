@@ -15,3 +15,7 @@ Prototype code, **not deployed or audited**:
 6. Only after testnet and independent review, consider a mainnet launch. Never enable irreversible spending by default.
 
 The initial compiler check is a *syntax/ABI gate*, not proof of economic solvency, security or operational readiness.
+
+## M9 creator coin launch preparation
+
+The Profile page now has authenticated, account-scoped fixed-supply creator coin drafts (see `db/007_creator_coin_drafts.sql`). The read-only `/api/creator-coins/preflight` route retrieves the signed-in profile's EVM address, validates the saved draft and optionally reads a specifically configured testnet factory's chain, bytecode presence and `coinFor` mapping. The factory has **not** been audited or deployed on Ultra. The app does **not** expose a transaction signer, minting button or spend authorization. An isolated EVM runtime test suite evaluates factory uniqueness and supply behavior without claiming real chain deployment. See `docs/M9-CREATOR_COINS.md`.
