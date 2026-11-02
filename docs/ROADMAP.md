@@ -24,7 +24,7 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 | M17 | Creator earnings | Partial: native Uniq policy/beneficiary royalty projections from real resale/factory/global share tables, private unverified payout reference inbox, strict BigInt basis-point math and account-scoped API/UI | Finalized historical native transaction/action traces, actual verified receipts and wallet-beneficiary pairing, immutable reconciliation ledger, audited payout controls, protected staging |
 | M18 | Portfolios and history | Partial: pinned-block EVM UOS/approved ERC-20 balance API, native account-scoped Uniq paging, recent 12-confirmed ERC-20 Transfer logs and checkpoint-checked creator launch events in unified Profile/Activity portfolio | Protected staging, independent real holdings and receipts, verified wallet control and source provenance, full/native transaction indexing, cost basis and independently priced PnL |
 | M19 | Rewards/community | Partial: real visible-social-data 14-day provisional activity score, category/counterparty caps and age gates, private owner-only daily ledger, revised unverified snapshots and public aggregate community stats | Protected staging, independent anti-sybil and moderation audit, immutable source-event provenance and claims reviews, funded audited token distribution and real testnet receipts |
-| M20 | Indexing/backend | Partial: isolated Neon staging database migrated, social APIs, indexer source | Vercel staging blocked by 403, monitoring and jobs |
+| M20 | Indexing/backend | Partial: testnet-only 15-min opt-in GitHub Actions indexer scheduler, 32+ character operator auth, separate status credential, durable sanitized worker heartbeats and RPC/canonical lag diagnostics; staged Neon operations migration and tests | Authorized protected Vercel staging and secrets, genuine reviewed factory/pools, activated scheduler, independent receipts, reorg-runbook acceptance, incident alerts and operational security review |
 | M21 | Testnet/security | CI typecheck, math tests and Solidity compile | Signed test transactions, adversarial tests and independent audit |
 | M22 | Mainnet release | Not implemented | Hosting rights, security audit, all gates complete and approved |
 
@@ -290,3 +290,16 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 - After bounded streaming, reject authentication JSON whose declared Content-Length differs from actual received bytes; previously a short or long declaration within the cap was accepted. Requests with no declaration remain valid.
 - Add tests for underreported and overreported lengths and exact/missing declarations. This is defense in depth and does not replace reverse-proxy request framing enforcement or edge rate limiting.
 - M3 remains partial pending protected Vercel staging, real wallet and database-session acceptance, WAF/rate-limiting verification and independent security review. No public trading, minting, mainnet actions or irreversible spending enabled.
+## M20 indexer operations and protected deployment readiness (2 November 2026)
+
+- Added an **inactive until explicitly opted in** GitHub Actions 15-minute cron/manual workflow. It makes bounded, HTTPS-only authenticated requests to the existing confirmed testnet factory/pool indexer. No repository secrets, wallet keys, trading permissions or user funds are used in the source implementation; the schedule job is skipped unless the authorized operator explicitly sets the matching Actions variable.
+- Added distinct server-only indexer and monitor bearers (minimum 32 characters), separate sanitized operator attempt/success heartbeats and private source health diagnostics for stale/failed jobs, RPC chain mismatch, canonical checkpoint changes and confirmed-head lag. Source indexing still preserves M13 atomic event+cursor commits.
+- Added isolated Neon `db/015_indexer_operations.sql` and operation/runner tests, plus a staged deployment and reorg-incident runbook. **No factory or pool verified event ingestion has been run as part of M20**, and no production indexer/scheduler is active by code merge alone.
+- The Vercel Looke project remains unavailable in accessible project listings, and protected staging/permissions and real Ultra EVM source verification still need operator action. See `docs/M20-INDEXER_OPERATIONS.md`.
+
+
+## M20 Next.js production-build compatibility repair (2 November 2026)
+
+- Initial PR #44 quality run #138 passed TypeScript, 119 Node tests and Solidity compilation but failed during Next.js production build in `@vercel/nft` static expression evaluation (`Cannot mix BigInt and other types`).
+- Replaced BigInt literal arithmetic in the new operator status route and its pure indexer-health helper with explicit `BigInt(...)` conversions to avoid static literal-folding ambiguity. Retained the 12-block confirmation and 250-block lag limits.
+- **Verification pending:** this change requires a fresh successful GitHub CI run including production build. No scheduled worker activation, authenticated staging deployment, verified factory/pool, independent audit, live trading or mainnet activity is claimed.

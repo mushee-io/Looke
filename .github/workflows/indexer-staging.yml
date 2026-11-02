@@ -1,0 +1,32 @@
+name: Looke Ultra testnet indexer
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/15 * * * *'
+
+# Operational gating: this is intentionally inert until the repository owner
+# explicitly sets the approved GitHub Actions variable and all secrets.
+# No wallets, production assets, private keys or signing permissions.
+permissions:
+  contents: read
+concurrency:
+  group: looke-testnet-indexer
+  cancel-in-progress: false
+jobs:
+  bounded-testnet-sync:
+    if: ${{ vars.LOOKE_INDEXER_SCHEDULER_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      LOOKE_INDEXER_SCHEDULER_ENABLED: ${{ vars.LOOKE_INDEXER_SCHEDULER_ENABLED }}
+      LOOKE_SCHEDULER_BASE_URL: ${{ secrets.LOOKE_SCHEDULER_BASE_URL }}
+      LOOKE_INDEXER_SECRET: ${{ secrets.LOOKE_INDEXER_SECRET }}
+      LOOKE_INDEXER_MONITOR_SECRET: ${{ secrets.LOOKE_INDEXER_MONITOR_SECRET }}
+      LOOKE_SCHEDULER_POOLS: ${{ vars.LOOKE_APPROVED_INDEXER_POOLS }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run limited, confirmed Ultra EVM testnet ingestion
+        run: node scripts/run-indexer.mjs
