@@ -5,6 +5,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
+import {fileURLToPath} from "node:url";
 import solc from "solc";
 import {encodeDeployData,getAddress,isAddress,keccak256,zeroAddress} from "viem";
 
@@ -44,7 +45,7 @@ export function unsignedFactoryManifest(issuer){
   next:"Independent audit and human wallet approval required. Verify deployed runtime bytecode and immutable attestor, pin measured runtime code hash; do not automatically trust compilation or this manifest."
  };
 }
-const direct=process.argv[1]&&path.resolve(process.argv[1])===path.resolve(new URL(import.meta.url).pathname);
+const direct=process.argv[1]&&path.resolve(process.argv[1])===path.resolve(fileURLToPath(import.meta.url));
 if(direct){
  if(process.argv.length!==3||process.argv[2]!=="--unsigned-18881"||
     process.env.LOOKE_UNSIGNED_DEPLOY_ACK!=="REVIEWED_TESTNET_ONLY"){
