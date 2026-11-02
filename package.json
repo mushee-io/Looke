@@ -10,7 +10,8 @@
     "test:math": "node --test tests/*.test.mjs",
     "contracts:check": "node scripts/check-contracts.mjs",
     "factory:prepare:testnet": "node scripts/prepare-testnet-factory.mjs --unsigned-18881",
-    "factory:verify:testnet": "node scripts/testnet-factory-acceptance.mjs --read-only"
+    "factory:verify:testnet": "node scripts/testnet-factory-acceptance.mjs --read-only",
+    "beta:smoke": "node scripts/m22-beta-smoke.mjs --read-only"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",
