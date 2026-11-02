@@ -317,3 +317,9 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 - Updated isolated contract adversarial tests for replay, stolen signatures, altered terms, expired approvals, wrong domain/chain/factory and duplicate global refs. **This does not repair any previously deployed factory bytecode.**
 - The issuer attestor is deliberately not operated or provisioned, the revised factory is not independently audited or live-deployed, and no verified genuine signed Ultra testnet receipts or end-user wallet approvals exist. Protected Vercel staging and separate native Uniq evidence remain blocked. Public minting/trading and mainnet are strictly **NO-GO**.
 - See `docs/M21-TESTNET_SECURITY.md`.
+
+## M20 scheduler host and heartbeat fail-closed hardening (2 November 2026)
+
+- Reject trailing-dot HTTPS hostnames in the protected scheduler base URL, preventing DNS-equivalent localhost/internal names from bypassing the existing literal hostname checks. This is not a DNS resolution or network egress allowlist; independently restrict outbound networking before activation.
+- Treat unexpected stored worker heartbeat status strings as `worker_status_unknown` and **not ready**, while accepting the actual bounded ingestion statuses (`indexed`, `caught_up`, `awaiting_confirmations`, `cursor_advanced_by_other_worker`) and explicit `failed`.
+- Added regression cases for trailing-dot hosts, unknown statuses and known ingestion statuses. GitHub CI, protected Vercel staging, independent chain verification, scheduler opt-in and security review remain required. No trading, minting, spending or mainnet actions enabled.
