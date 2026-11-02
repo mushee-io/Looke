@@ -2,7 +2,6 @@
 pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/interfaces/IERC1271.sol";
 
@@ -39,13 +38,16 @@ contract LookeCoin is ERC20 {
  * Existing deployments of any older factory are NOT patched by this source.
  * No trading, liquidity or release toggle exists in this contract.
  */
-contract LookeCoinFactory is EIP712 {
+contract LookeCoinFactory {
     uint256 public constant MAX_SUPPLY_TOKENS = 1_000_000_000;
     uint256 public constant MAX_AUTHORIZATION_LIFETIME = 1 days;
     uint8 public constant CREATOR = 0;
     uint8 public constant CONTENT = 1;
     uint8 public constant TREND = 2;
 
+    bytes32 private constant DOMAIN_TYPEHASH = keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
+    bytes32 private constant DOMAIN_NAME_HASH = keccak256("LookeCoinFactory");
+    bytes32 private constant DOMAIN_VERSION_HASH = keccak256("1");
     bytes32 private constant AUTHORIZATION_TYPEHASH = keccak256(
         "CoinAuthorization(address creator,uint8 kind,bytes32 contentRef,bytes32 nameHash,bytes32 symbolHash,uint256 initialSupplyTokens,bytes32 metadataHash,uint256 nonce,uint256 deadline)"
     );
@@ -84,7 +86,7 @@ contract LookeCoinFactory is EIP712 {
         uint256 nonce
     );
 
-    constructor(address trustedAttestor) EIP712("LookeCoinFactory", "1") {
+    constructor(address trustedAttestor) {
         require(trustedAttestor != address(0), "ZERO_ATTESTOR");
         attestor = trustedAttestor;
     }
@@ -143,7 +145,7 @@ contract LookeCoinFactory is EIP712 {
             request.deadline
         ));
         require(
-            _validAttestation(_hashTypedDataV4(structHash), signature),
+            _validAttestation(_typedDataHash(structHash), signature),
             "INVALID_ATTESTATION"
         );
 
@@ -157,7 +159,7 @@ contract LookeCoinFactory is EIP712 {
     }
 
     /**
-     * @dev EOA and ERC-1271 verification without newer Cancun-only Byte helpers.
+     * @dev EIP-712 v4 digest with chain/factory-bound domain.\n     * Explicit encoding preserves Shanghai compatibility without relying on\n     * transitive OpenZeppelin Bytes.sol Cancun opcodes.\n     */\n    function _typedDataHash(bytes32 structHash) internal view returns (bytes32) {\n        bytes32 domainHash = keccak256(abi.encode(\n            DOMAIN_TYPEHASH, DOMAIN_NAME_HASH, DOMAIN_VERSION_HASH, block.chainid, address(this)\n        ));\n        return keccak256(abi.encodePacked(bytes2(0x1901), domainHash, structHash));\n    }\n\n    /**\n     * @dev EOA and ERC-1271 verification without newer Cancun-only Byte helpers.
      * The ECDSA library rejects malleable or malformed EOA signatures.
      */
     function _validAttestation(bytes32 digest, bytes calldata signature) internal view returns (bool) {
