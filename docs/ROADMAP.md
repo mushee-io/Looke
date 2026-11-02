@@ -291,3 +291,10 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 - Added distinct server-only indexer and monitor bearers (minimum 32 characters), separate sanitized operator attempt/success heartbeats and private source health diagnostics for stale/failed jobs, RPC chain mismatch, canonical checkpoint changes and confirmed-head lag. Source indexing still preserves M13 atomic event+cursor commits.
 - Added isolated Neon `db/015_indexer_operations.sql` and operation/runner tests, plus a staged deployment and reorg-incident runbook. **No factory or pool verified event ingestion has been run as part of M20**, and no production indexer/scheduler is active by code merge alone.
 - The Vercel Looke project remains unavailable in accessible project listings, and protected staging/permissions and real Ultra EVM source verification still need operator action. See `docs/M20-INDEXER_OPERATIONS.md`.
+
+
+## M20 Next.js production-build compatibility repair (2 November 2026)
+
+- Initial PR #44 quality run #138 passed TypeScript, 119 Node tests and Solidity compilation but failed during Next.js production build in `@vercel/nft` static expression evaluation (`Cannot mix BigInt and other types`).
+- Replaced BigInt literal arithmetic in the new operator status route and its pure indexer-health helper with explicit `BigInt(...)` conversions to avoid static literal-folding ambiguity. Retained the 12-block confirmation and 250-block lag limits.
+- **Verification pending:** this change requires a fresh successful GitHub CI run including production build. No scheduled worker activation, authenticated staging deployment, verified factory/pool, independent audit, live trading or mainnet activity is claimed.
