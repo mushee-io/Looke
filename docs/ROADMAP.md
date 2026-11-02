@@ -334,3 +334,10 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 - Added a user-initiated, non-signing `eth_accounts`/`eth_chainId` wallet/session comparison with wrong-account and wrong-network warnings. Social login still requires its separate existing user-signed challenge. Native Ultra remains a separate wallet/account and ledger.
 - Added operator-only manual staging smoke CLI restricted to public HTTPS, credential-free `GET /api/beta/status`; it cannot enable beta, mint, trade, deploy or sign. See `docs/M22-PUBLIC_TESTNET_BETA.md`.
 - M22 source implementation is **partial** and public Testnet financial beta remains **CLOSED** until protected deployment, real wallet tests, independently verified signed receipts, source/attestor audit, native Uniq acceptance and approved economic/incident controls. This milestone does NOT approve mainnet.
+
+
+## M20 offline configuration preflight (2 November 2026)
+
+- Added `scripts/check-indexer-config.mjs` for read-only, offline configuration shape checks and `tests/indexer-config-preflight.test.mjs` for fail-closed regression coverage. Run with `node scripts/check-indexer-config.mjs` and `node --test tests/indexer-config-preflight.test.mjs`.
+- Checks opt-in scheduler flag, credential length/separation without printing secret values, canonical factory/pool addresses, duplicate and excess pools, and nonnegative deployment block. An enabled scheduler is always reported as requiring operator intervention; `activationAuthorized` is always false.
+- This tool does **not** validate live secrets, audit contract code, establish RPC independence, deploy staging, authorize ingestion, or prove transactions. M20 remains partial pending authorized protected Vercel staging, independently verified factory/pools, genuine signed receipts, scheduler acceptance, and security review. No trading, minting, mainnet or irreversible spending enabled.
