@@ -14,7 +14,7 @@ const hashPattern=/^0x[0-9a-f]{64}$/i;
 const ABI=parseAbi([
  "function attestor() view returns (address)",
  "function authorizationNonces(address creator) view returns (uint256)",
- "function referenceCoinFor(uint8 kind,bytes32 reference) view returns (address)"
+ "function referenceCoinFor(uint8 kind,bytes32 contentRef) view returns (address)"
 ]);
 
 /** Separate bearer: indexer/monitor credentials cannot review issuer payloads. */
