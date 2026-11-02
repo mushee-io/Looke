@@ -334,3 +334,10 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 - Added a user-initiated, non-signing `eth_accounts`/`eth_chainId` wallet/session comparison with wrong-account and wrong-network warnings. Social login still requires its separate existing user-signed challenge. Native Ultra remains a separate wallet/account and ledger.
 - Added operator-only manual staging smoke CLI restricted to public HTTPS, credential-free `GET /api/beta/status`; it cannot enable beta, mint, trade, deploy or sign. See `docs/M22-PUBLIC_TESTNET_BETA.md`.
 - M22 source implementation is **partial** and public Testnet financial beta remains **CLOSED** until protected deployment, real wallet tests, independently verified signed receipts, source/attestor audit, native Uniq acceptance and approved economic/incident controls. This milestone does NOT approve mainnet.
+
+
+## M20 canonical checkpoint hash format validation (2 November 2026)
+
+- Indexer health now rejects malformed nonempty checkpoint block hashes (non-string, non-hex or wrong length) as `invalid_checkpoint_hash` rather than reporting readiness. A missing hash continues to report `legacy_checkpoint`.
+- Added regression cases for truncated, non-hex and non-string hashes. This is a local input-integrity guard, not proof that the hash matches the chain; canonical RPC corroboration remains mandatory.
+- CI, protected Vercel staging, independent Ultra testnet receipts, scheduler activation and security review remain pending. No trading, minting, spending or mainnet actions enabled.
