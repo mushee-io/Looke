@@ -22,7 +22,7 @@ export async function GET(request:NextRequest){
   signedTestnetFactoryReceiptsRecorded:false,
   signedTestnetSwapReceiptsRecorded:false,
   nativeUniqTestnetReceiptsRecorded:false,
-  knownFactoryAuthorizationIssue:"Content and trend reference copying remains possible by other senders on the current permissionless factory",
+  knownFactoryAuthorizationIssue:"Old permissionless factory code allowed copied references. New source includes attested issuance, but no verified upgraded deployment, trusted attestor operations, independent audit or onchain proof of post authorship exists.",
   evidenceRoute:"/api/operator/testnet/evidence",
   warning:"No API response or RPC configuration can enable token issuance, signed swaps, NFT sales, reward distribution or mainnet release."
  },{status:503,headers:HEADERS});
