@@ -284,3 +284,9 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 - Explicitly reject UTF-8 BOM-prefixed authentication JSON before decoding. The platform decoder otherwise strips the BOM, permitting an ambiguous noncanonical wire representation.
 - Add regression tests for BOM rejection, malformed UTF-8 rejection and valid Unicode acceptance. This is source-level request hardening only; CI must pass before merge.
 - M3 remains partial pending protected Vercel staging, genuine independent wallet signatures and database sessions, production WAF/rate-limit verification and independent security review. No public trading, minting, mainnet or irreversible spending enabled.
+
+## M3 declared JSON framing consistency (2 November 2026)
+
+- After bounded streaming, reject authentication JSON whose declared Content-Length differs from actual received bytes; previously a short or long declaration within the cap was accepted. Requests with no declaration remain valid.
+- Add tests for underreported and overreported lengths and exact/missing declarations. This is defense in depth and does not replace reverse-proxy request framing enforcement or edge rate limiting.
+- M3 remains partial pending protected Vercel staging, real wallet and database-session acceptance, WAF/rate-limiting verification and independent security review. No public trading, minting, mainnet actions or irreversible spending enabled.
