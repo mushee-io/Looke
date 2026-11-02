@@ -39,3 +39,7 @@ Without a PostgreSQL database, the UI sample feed and local drafts still work; s
 5. Never treat successful compilation as proof of solvency, safety or economic operation. Record genuine signed testnet transaction receipts and independently audit contracts and fee accounting.
 
 See [M1–M22 roadmap](docs/ROADMAP.md), [Ultra boundary](docs/ULTRA_INTEGRATION.md), [signed social backend](docs/SOCIAL_BACKEND.md), [wallets](docs/WALLET_NETWORK.md), [Uniqs](docs/UNIQ_API.md), [event indexer](docs/INDEXER.md), [coin engine](docs/COIN_ENGINE.md).
+
+## M20 operator indexer monitoring (disabled by default)
+
+The protected M13 Ultra EVM indexing code now has a separate operator heartbeat table (`db/015_indexer_operations.sql`), a bearer-protected `/api/operator/indexer/status` endpoint and a bounded GitHub Actions testnet scheduler (`.github/workflows/indexer-staging.yml`). The scheduled worker is **skipped** until the repository owner sets `LOOKE_INDEXER_SCHEDULER_ENABLED=true` and configures approved staging HTTPS URL and secrets. No real deployment, factory verification, trading, payout or fund movement follows from merging the workflow. See [M20 operator setup and incident guide](docs/M20-INDEXER_OPERATIONS.md).
