@@ -83,7 +83,7 @@ export async function GET(request:NextRequest){
   return NextResponse.json({
    network:"Ultra EVM Testnet",chainId:ULTRA_EVM_TESTNET.chainId,
    rpcStatus:chainStatus,head:head?.toString()??null,
-   confirmedFrontier:head!==null&&head>=12n?(head-12n).toString():null,
+   confirmedFrontier:head!==null&&head>=BigInt(12)?(head-BigInt(12)).toString():null,
    ready,streams:results,tradeEnabled:false,
    note:"Private operational diagnostics, not an independent contract audit or an instruction to rewrite halted indexer cursors."
   },{status:ready?200:503,headers});
