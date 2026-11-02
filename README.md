@@ -45,4 +45,16 @@ The protected M13 Ultra EVM indexing code now has a separate operator heartbeat 
 
 ## M21 read-only testnet receipt corroboration (NO-GO)
 
-M21 introduces private operator-only endpoints `GET /api/operator/testnet/evidence` (factory or allowlisted pool receipt/log checks across two distinct-host testnet RPCs) and `GET /api/operator/testnet/readiness` (hard NO-GO while independent security/real signed evidence is missing). A second server-only `LOOKE_INDEPENDENT_EVM_TESTNET_RPC` is required; absent configuration fails closed. The existing factory still permits copied content/trend references from another wallet in isolated EVM tests. This code **does not** deploy/fund a wallet, fix factory authorization, validate native Ultra Uniq transactions or approve financial execution. See [M21 security runbook](docs/M21-TESTNET_SECURITY.md).
+M21 introduces private operator-only endpoints `GET /api/operator/testnet/evidence` (factory or allowlisted pool receipt/log checks across two distinct-host testnet RPCs) and `GET /api/operator/testnet/readiness` (hard NO-GO while independent security/real signed evidence is missing). A second server-only `LOOKE_INDEPENDENT_EVM_TESTNET_RPC` is required; absent configuration fails closed. The revised **source-only** factory now requires signed EIP-712 authorization and globally unique references for content/trend issuance; older deployed factory bytecode would remain unsafe. This code **does not** deploy/fund a wallet, operate a trusted attestor, validate native Ultra Uniq transactions or approve financial execution. See [M21 security runbook](docs/M21-TESTNET_SECURITY.md).
+
+
+## M21 operator attestor review and testnet factory preparation
+
+A private **read-only** content-post review route is available at `GET /api/operator/attestor/review?postId=<uuid>` using its own 32+ character `LOOKE_ATTESTATION_REVIEW_SECRET`. The route is **disabled** by default; it requires `LOOKE_ATTESTATION_REVIEW_ENABLED=true`, a dedicated protected staging database, a pinned independently reviewed factory runtime code hash, an expected immutable attestor and two HTTPS Ultra EVM Testnet RPCs. It checks live post ownership, edits, moderation reports, factory bytecode, ERC-20 reference uniqueness and EIP-712 nonce across matching 12-confirmed blocks. It returns **unsigned**, five-minute review data and cannot mint, trade, issue a signature or approve a release. Trend issuance stays disabled pending reviewed governance.
+
+Two manual operator CLI commands are provided, with no wallet access or secrets:
+
+- `LOOKE_UNSIGNED_DEPLOY_ACK=REVIEWED_TESTNET_ONLY npm run factory:prepare:testnet > unsigned-factory.json` — locally compiles a Shanghai-compatible factory and produces an unsigned deployment manifest, after `LOOKE_EXPECTED_ATTESTOR_ADDRESS` is configured.
+- `LOOKE_TESTNET_ACCEPTANCE_ACK=REVIEWED_TESTNET_ONLY npm run factory:verify:testnet` — requires real externally wallet-signed Ultra 18881 deployment receipt, pinned runtime bytecode hash, attestor and independent RPC. Optional external wallet-signed content issuance receipt proves onchain events, registry and supply. No transaction is sent.
+
+See [M21 runbook](docs/M21-TESTNET_SECURITY.md). A signed Testnet receipt is evidence of a chain event, **not** a contract security audit or approval to launch.
