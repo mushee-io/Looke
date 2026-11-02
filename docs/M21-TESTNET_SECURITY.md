@@ -48,3 +48,44 @@ The next iteration hardens `contracts/LookeCoinFactory.sol` **in source, not in 
 - Updated isolated Ganache tests must prove authorized issuance, stolen signature rejection, nonce replay refusal, expiry/future deadline rejection, altered terms rejection, domain/chain/factory replay rejection and global reference uniqueness. Passing these tests is **not** an audit or independent Ultra Testnet acceptance.
 
 **Release still NO-GO:** source-level mitigation is not operational activation. Independent security review, an audited attestor trust model with revocation/governance controls, protected staging, genuine two-wallet testnet transactions, two independent RPC corroborations and third-party chain evidence are still required. No public issuance, trading, funds movement or mainnet capability is enabled.
+
+
+## M21 operator content attestation review and signed Testnet receipt acceptance (2 November 2026)
+
+**Status: source-only operational preparation; external attestor / deployment / testnet acceptance NOT ACTIVE.**
+
+### Trust boundary
+
+- `GET /api/operator/attestor/review?postId=<uuid>` is a separately authenticated operator-only **read-only** endpoint. Its own long bearer `LOOKE_ATTESTATION_REVIEW_SECRET` must not equal the indexer or monitor credentials. The handler refuses requests unless explicitly enabled via `LOOKE_ATTESTATION_REVIEW_ENABLED=true` in **protected staging**; it is off by default. It does not accept user-supplied RPC URLs, factory addresses, issuer keys or approval booleans.
+- Content proposals are pulled exclusively from the dedicated Looke SQL tables: `looke_content_coin_drafts` joined to the current `looke_posts`, author profile and private `looke_post_reports`. A missing/deleted/hidden/reported/edited source, mismatched profile/wallet, invalid metadata, invalid supply or stale snapshot **fails closed**. This is an engineering preflight, **not independent legal authorship, safety approval, secure anti-Sybil identity or metadata pinning proof.** Moderator decisions and legal/content disputes still require review.
+- All onchain reads are from the documented Ultra EVM Testnet 18881 RPC and a second independently configured HTTPS host. The handler reads at the same 12-confirmed block on both nodes, requiring matching canonical hash, immutable factory `attestor()`, per-sender `authorizationNonces()`, unused global `referenceCoinFor(1,contentRef)` and **exact runtime keccak256** equal to `LOOKE_EXPECTED_FACTORY_CODE_HASH`. That hash must be independently established from approved source/compiler and deployment provenance. Merely copying a hash from an untrusted RPC is **not** security acceptance.
+- Only **unsigned** EIP-712 `CoinAuthorization` data are generated: chain + factory domain, wallet/creator, content ref, token-term hashes, nonce, five-minute expiry derived from the corroborated block timestamp. Original source text and token terms are included for *operator review*, never public browsing. The response says `manualApprovalRequired:true`, `signed:false`, `issuanceEnabled:false`. The chain/nonce/post may change after a 12-confirmed snapshot; an external signer must revalidate immediately before signing and must refuse stale payloads.
+- **Trend issuer path is denied:** existing trend nominations cannot become onchain-approved just from mutable social nominations and endorsements. A separate reviewed governance registry/policy, anti-Sybil review, appeals and explicit audited approval mechanism are still required.
+
+### External signing/operational controls NOT built or enabled
+
+**There is intentionally no Vercel signing key or signing API.** Do not upload attestor seed phrases, private keys or raw hardware-wallet secrets to Looke, Vercel, GitHub, ChatGPT, analytics or CI. To operationalize safely, an independent team must specify an attestor wallet/custody system (ideally hardware-backed or multi-party with a revocation/rotation plan), dual-person issuance approvals, complete source/content dispute checks, immutable audit logs, rate limits, expiry/nonces and independent security assessment. An immutable attestor set in the factory constructor cannot be rotated without a new factory migration. ERC-1271 attestors must be separately audited for replay and authorization bypass.
+
+### Unsigned deployment manifest (NO submission)
+
+After source audit and independent approval of a specific attestor **public address**:
+
+```powershell
+$env:LOOKE_EXPECTED_ATTESTOR_ADDRESS="0x...reviewed-public-attestor..."
+$env:LOOKE_UNSIGNED_DEPLOY_ACK="REVIEWED_TESTNET_ONLY"
+npm run factory:prepare:testnet > unsigned-factory.json
+```
+
+The local `scripts/prepare-testnet-factory.mjs` compiles Shanghai-compatible Solidity, with pinned optimizer runs, and outputs ABI, compiler version, creation bytecode hash and **unsigned** constructor calldata for chain 18881. It **does not** connect to a chain, deploy or sign anything. An authorized owner must independently verify the build, then approve and sign any Testnet deployment with their own secure wallet, after audit. Do **not** reuse previously vulnerable factory deployments or treat constructor/creation hash as deployed runtime hash.
+
+### Genuine wallet-signed Testnet acceptance (read-only)
+
+After an authorized owner has independently deployed the reviewed factory on **Ultra EVM Testnet 18881**, and independent source/compiler/constructor/runtime code analysis has established the expected runtime hash:
+
+1. Set private operator configuration `LOOKE_FACTORY_TESTNET_ADDRESS`, `LOOKE_FACTORY_DEPLOY_TX_HASH`, `LOOKE_EXPECTED_ATTESTOR_ADDRESS`, `LOOKE_EXPECTED_FACTORY_CODE_HASH`, and a distinct provider `LOOKE_INDEPENDENT_EVM_TESTNET_RPC`. The independent RPC URL may include a provider access token only in server-local config; never commit/log/share it.
+2. Set local `LOOKE_TESTNET_ACCEPTANCE_ACK=REVIEWED_TESTNET_ONLY` and run `npm run factory:verify:testnet`. This **does not** broadcast or sign.
+3. The script fails closed unless two nodes both verify chain 18881, a successful **externally wallet-signed** contract creation receipt with >=12 confirmation blocks, the same canonical block and logs, receipt contract address matching the configured factory, historical and current runtime bytecode hash equal to pinned reviewed hash, and immutable attestor equal to the intended public address.
+4. Optionally, after independently reviewing and obtaining a legitimate creator-signed Ultra Testnet content coin issuance transaction with an externally approved EIP-712 attestor signature, configure `LOOKE_CONTENT_ISSUANCE_TX_HASH` and rerun. It checks the caller, exact factory events, `CoinAuthorizationUsed` nonce, globally reserved contentRef, issued ERC-20 totalSupply and token runtime code across both RPCs.
+5. Independently corroborate hashes, source provenance and bytecode with a third reputable explorer/source. Verify in an actual user wallet and indexer; record receipt IDs, block/hash/time, signer and source audit artifact in a private human-reviewed change record. Cross-node agreement alone does not prove independent providers, intent or economic safety.
+
+**No execution or financial release permission follows from these checks.** Native Ultra Uniq wallet-signed activity remains separate; public issuance/trading and mainnet remain NO-GO pending attestor operations, independent audit, protected staging, real wallet acceptance and explicit multi-party release approval.
