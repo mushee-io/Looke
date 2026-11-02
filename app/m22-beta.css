@@ -1,0 +1,49 @@
+/* M22 beta workspace: read-only Testnet checks, not public financial execution. */
+.beta-hub{max-width:1120px;margin:0 auto 45px;color:#252333}
+.beta-hero{display:grid;grid-template-columns:minmax(0,1.9fr) minmax(235px,1fr);gap:24px;align-items:stretch;background:linear-gradient(125deg,#efedff,#fcfbff 65%,#f5fffa);border:1px solid #e6e1fa;border-radius:22px;padding:29px}
+.beta-eyebrow{display:block;font-size:11px;letter-spacing:1.4px;color:#6559ae;font-weight:800;text-transform:uppercase;margin-bottom:10px}
+.beta-hero h2{font-family:Manrope,'DM Sans',sans-serif;font-size:clamp(28px,4vw,43px);letter-spacing:-1.4px;line-height:1.13;margin:0 0 13px}
+.beta-hero p{color:#575467;line-height:1.7;font-size:13px;max-width:640px;margin:0}
+.beta-hero-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:22px}
+.beta-hero-actions button{min-height:43px}
+.beta-restriction{background:#fff;border:1px solid #e7e2f2;border-radius:16px;padding:23px;display:flex;flex-direction:column;gap:12px;justify-content:center;align-items:flex-start;box-shadow:0 6px 20px rgba(68,50,110,.05)}
+.beta-restriction svg{color:#8658b4}
+.beta-restriction strong{font-size:15px}
+.beta-restriction span{color:#6b6674;line-height:1.5;font-size:12px}
+.beta-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:17px}
+.beta-stat{border:1px solid #eae7ef;border-radius:15px;padding:19px;background:#fff;min-width:0;display:flex;flex-direction:column;gap:8px}
+.beta-stat>span{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:#777087;font-weight:750}
+.beta-stat>strong{font-size:17px;line-height:1.3;overflow-wrap:anywhere}
+.beta-stat>small{font-size:11px;line-height:1.55;color:#827d8a}
+.beta-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px;margin-top:18px}
+.beta-panel{border:1px solid #e9e5f0;border-radius:16px;padding:22px;background:#fff;min-width:0}
+.beta-panel h3{display:flex;align-items:center;gap:9px;font-size:16px;line-height:1.4;margin:0 0 13px}
+.beta-panel h3 svg{color:#7b61a7;flex:none}
+.beta-panel p{font-size:12px;line-height:1.65;overflow-wrap:anywhere;margin-bottom:12px}
+.beta-muted{color:#767080}
+.beta-error{margin-top:13px;padding:11px 14px;border:1px solid #e5b6c4;border-radius:10px;color:#9a294e;background:#fff7f9;font-size:12px}
+.beta-check{background:#f8f6fd;padding:15px;border:1px solid #ece4f6;border-radius:12px;margin-top:16px;display:grid;gap:9px;font-size:12px;overflow-wrap:anywhere}
+.beta-check>small{color:#716777;line-height:1.6}
+.beta-gates{padding:0;margin:9px 0 0;list-style:none;display:grid;gap:15px}
+.beta-gates li{display:flex;gap:10px;align-items:flex-start}
+.beta-gates li>div{display:grid;gap:5px}
+.beta-gates strong{font-size:12px;line-height:1.4}
+.beta-gates small{color:#777280;line-height:1.5;font-size:11px}
+.beta-gate-dot{width:10px;height:10px;background:#d5bcc9;border:2px solid #f6e8ef;border-radius:100%;flex:none;margin-top:4px}
+.beta-journey{margin-top:19px}
+.beta-steps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;margin-top:18px}
+.beta-step{border:1px solid #eeeaf3;border-radius:12px;padding:16px;display:flex;gap:12px;align-items:flex-start;min-width:0}
+.beta-step-icon{border-radius:9px;width:34px;height:34px;flex:none;background:#f2effc;color:#775ca7;display:grid;place-items:center}
+.beta-step>div{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.beta-step strong{font-size:12px}
+.beta-step small{font-size:11px;color:#77717f;line-height:1.5}
+.beta-step button{display:flex;gap:3px;align-items:center;flex:none;padding:6px;color:#54418c;font-size:11px;font-weight:700}
+.beta-step button:hover{text-decoration:underline}
+.beta-footer{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:18px 2px;color:#6f6979;font-size:11px;line-height:1.5}
+.beta-footer>span,.beta-footer>a{display:inline-flex;gap:7px;align-items:center}
+.beta-footer svg{flex:none}
+.beta-footer>a{text-decoration:underline}
+.beta-panel button:disabled{opacity:.55;cursor:not-allowed}
+@media(max-width:880px){.beta-hero,.beta-grid{grid-template-columns:1fr}.beta-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.beta-hero{padding:20px}.beta-stats,.beta-steps{grid-template-columns:1fr}.beta-panel{padding:17px}.beta-step{flex-wrap:wrap}.beta-stat{padding:15px}}
+@media(forced-colors:active){.beta-hub .beta-hero,.beta-restriction,.beta-stat,.beta-panel,.beta-step,.beta-error{border:1px solid CanvasText}.beta-gate-dot{background:CanvasText}}

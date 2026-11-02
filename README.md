@@ -58,3 +58,14 @@ Two manual operator CLI commands are provided, with no wallet access or secrets:
 - `LOOKE_TESTNET_ACCEPTANCE_ACK=REVIEWED_TESTNET_ONLY npm run factory:verify:testnet` — requires real externally wallet-signed Ultra 18881 deployment receipt, pinned runtime bytecode hash, attestor and independent RPC. Optional external wallet-signed content issuance receipt proves onchain events, registry and supply. No transaction is sent.
 
 See [M21 runbook](docs/M21-TESTNET_SECURITY.md). A signed Testnet receipt is evidence of a chain event, **not** a contract security audit or approval to launch.
+
+
+## M22 controlled Testnet beta workspace (financial execution NO-GO)
+
+Looke now has a dedicated `/#beta` interface for real tester *preparation*: Ultra EVM testnet RPC availability, a read-only connected EVM wallet/account vs social session comparison, and links to existing social, token draft, native Uniq and sourced portfolio labs. It does not sign, issue, purchase, sell or transfer assets. The network check represents one RPC observation, **not** independent settlement proof or public launch.
+
+The no-store `GET /api/beta/status` returns an intentionally immutable closed-beta policy; a reached chain never changes `publicBetaOpen`, `publicTradingEnabled`, `publicIssuanceEnabled` or `mainnetReady` to true. Protected staging and real wallet/contract evidence are still required.
+
+After an authorized protected staging deployment, `LOOKE_BETA_STAGING_ORIGIN=https://your-approved-staging.example LOOKE_BETA_SMOKE_ACK=READ_ONLY npm run beta:smoke` runs a **read-only** HTTPS smoke check of the beta policy (no credentials or wallet access). Windows PowerShell users can set the same values as separate `$env:` variables. This proves only that the staging response is reachable and fails closed, not operational financial readiness.
+
+See [M22 Testnet beta runbook](docs/M22-PUBLIC_TESTNET_BETA.md). Mainnet launch is a later, separately approved milestone.
