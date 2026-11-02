@@ -42,3 +42,7 @@ See [M1–M22 roadmap](docs/ROADMAP.md), [Ultra boundary](docs/ULTRA_INTEGRATION
 ## M20 operator indexer monitoring (disabled by default)
 
 The protected M13 Ultra EVM indexing code now has a separate operator heartbeat table (`db/015_indexer_operations.sql`), a bearer-protected `/api/operator/indexer/status` endpoint and a bounded GitHub Actions testnet scheduler (`.github/workflows/indexer-staging.yml`). The scheduled worker is **skipped** until the repository owner sets `LOOKE_INDEXER_SCHEDULER_ENABLED=true` and configures approved staging HTTPS URL and secrets. No real deployment, factory verification, trading, payout or fund movement follows from merging the workflow. See [M20 operator setup and incident guide](docs/M20-INDEXER_OPERATIONS.md).
+
+## M21 read-only testnet receipt corroboration (NO-GO)
+
+M21 introduces private operator-only endpoints `GET /api/operator/testnet/evidence` (factory or allowlisted pool receipt/log checks across two distinct-host testnet RPCs) and `GET /api/operator/testnet/readiness` (hard NO-GO while independent security/real signed evidence is missing). A second server-only `LOOKE_INDEPENDENT_EVM_TESTNET_RPC` is required; absent configuration fails closed. The existing factory still permits copied content/trend references from another wallet in isolated EVM tests. This code **does not** deploy/fund a wallet, fix factory authorization, validate native Ultra Uniq transactions or approve financial execution. See [M21 security runbook](docs/M21-TESTNET_SECURITY.md).
