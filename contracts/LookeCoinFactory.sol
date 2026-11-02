@@ -3,7 +3,8 @@ pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
-import "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/interfaces/IERC1271.sol";
 
 /**
  * @notice Non-upgradeable fixed-supply Looke social coin; no owner mint or blacklist.
@@ -142,7 +143,7 @@ contract LookeCoinFactory is EIP712 {
             request.deadline
         ));
         require(
-            SignatureChecker.isValidSignatureNow(attestor, _hashTypedDataV4(structHash), signature),
+            _validAttestation(_hashTypedDataV4(structHash), signature),
             "INVALID_ATTESTATION"
         );
 
@@ -153,6 +154,22 @@ contract LookeCoinFactory is EIP712 {
             request.initialSupplyTokens, request.metadataURI
         );
         emit CoinAuthorizationUsed(msg.sender, request.kind, request.contentRef, request.nonce);
+    }
+
+    /**
+     * @dev EOA and ERC-1271 verification without newer Cancun-only Byte helpers.
+     * The ECDSA library rejects malleable or malformed EOA signatures.
+     */
+    function _validAttestation(bytes32 digest, bytes calldata signature) internal view returns (bool) {
+        if (attestor.code.length == 0) {
+            (address recovered, ECDSA.RecoverError error,) = ECDSA.tryRecover(digest, signature);
+            return error == ECDSA.RecoverError.NoError && recovered == attestor;
+        }
+        try IERC1271(attestor).isValidSignature(digest, signature) returns (bytes4 magic) {
+            return magic == IERC1271.isValidSignature.selector;
+        } catch {
+            return false;
+        }
     }
 
     function _createCoin(
