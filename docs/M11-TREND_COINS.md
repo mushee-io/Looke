@@ -36,3 +36,8 @@ Account-level endorsements are **not sybil resistant**: one actor can own multip
 - [ ] Design separate reliable liquidity provisioning and trading controls; a fixed-supply ERC-20 proposal has no market cap, valuation, earnings or sale volume.
 
 **M11 remains partial until these verifications are completed. No mint, trade, spender, DAO contract or public launch action was enabled.**
+
+
+## M21 source hardening addendum (2 November 2026)
+
+The permissionless copied-topic behavior described above belongs to the **older factory design**. Revised factory source now rejects all trend issuances through `createCoin` and requires a trusted EIP-712 trend attestation and globally unique topic reference through `createCoinAuthorized`. No actual governance/signer service exists and this source is **unaudited and undeployed**: approval policy, sybil resistance, safe revocation, real Ultra testnet issuance, wallet testing and external review remain outstanding. No public issuance or trading is enabled.
