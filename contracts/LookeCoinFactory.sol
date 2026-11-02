@@ -159,7 +159,19 @@ contract LookeCoinFactory {
     }
 
     /**
-     * @dev EIP-712 v4 digest with chain/factory-bound domain.\n     * Explicit encoding preserves Shanghai compatibility without relying on\n     * transitive OpenZeppelin Bytes.sol Cancun opcodes.\n     */\n    function _typedDataHash(bytes32 structHash) internal view returns (bytes32) {\n        bytes32 domainHash = keccak256(abi.encode(\n            DOMAIN_TYPEHASH, DOMAIN_NAME_HASH, DOMAIN_VERSION_HASH, block.chainid, address(this)\n        ));\n        return keccak256(abi.encodePacked(bytes2(0x1901), domainHash, structHash));\n    }\n\n    /**\n     * @dev EOA and ERC-1271 verification without newer Cancun-only Byte helpers.
+     * @dev EIP-712 v4 digest with chain/factory-bound domain.
+     * Explicit encoding preserves Shanghai compatibility without relying on
+     * transitive OpenZeppelin Bytes.sol Cancun opcodes.
+     */
+    function _typedDataHash(bytes32 structHash) internal view returns (bytes32) {
+        bytes32 domainHash = keccak256(abi.encode(
+            DOMAIN_TYPEHASH, DOMAIN_NAME_HASH, DOMAIN_VERSION_HASH, block.chainid, address(this)
+        ));
+        return keccak256(abi.encodePacked(bytes2(0x1901), domainHash, structHash));
+    }
+
+    /**
+     * @dev EOA and ERC-1271 verification without newer Cancun-only Byte helpers.
      * The ECDSA library rejects malleable or malformed EOA signatures.
      */
     function _validAttestation(bytes32 digest, bytes calldata signature) internal view returns (bool) {
