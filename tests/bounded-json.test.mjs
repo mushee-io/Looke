@@ -130,3 +130,15 @@ test("rejects excess scalar properties even without nested containers", async ()
   const data = Object.fromEntries(Array.from({ length: 2049 }, (_, i) => [i.toString(36), 0]));
   await assert.rejects(parseBoundedJson(request(JSON.stringify(data))), /too many properties/);
 });
+
+test("rejects UTF-8 BOM before JSON decoding", async () => {
+  const bytes = new Uint8Array([0xef, 0xbb, 0xbf, 0x7b, 0x7d]);
+  await assert.rejects(parseBoundedJson(request(bytes)), /BOM not permitted/);
+});
+test("rejects malformed UTF-8 instead of replacing invalid bytes", async () => {
+  const bytes = new Uint8Array([0x7b, 0x22, 0x78, 0x22, 0x3a, 0x22, 0xc3, 0x22, 0x7d]);
+  await assert.rejects(parseBoundedJson(request(bytes)), TypeError);
+});
+test("accepts ordinary UTF-8 authentication JSON", async () => {
+  assert.deepEqual(await parseBoundedJson(request('{"label":"Café"}')), { label: "Café" });
+});
