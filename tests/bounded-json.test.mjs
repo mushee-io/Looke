@@ -142,3 +142,21 @@ test("rejects malformed UTF-8 instead of replacing invalid bytes", async () => {
 test("accepts ordinary UTF-8 authentication JSON", async () => {
   assert.deepEqual(await parseBoundedJson(request('{"label":"Café"}')), { label: "Café" });
 });
+
+
+test("rejects understated Content-Length even when within the byte budget", async () => {
+  const req = request('{"value":1}');
+  req.headers.set("content-length", "2");
+  await assert.rejects(parseBoundedJson(req), /Content-Length does not match/);
+});
+test("rejects overstated Content-Length even when within the byte budget", async () => {
+  const req = request("{}");
+  req.headers.set("content-length", "3");
+  await assert.rejects(parseBoundedJson(req), /Content-Length does not match/);
+});
+test("accepts absent and accurate Content-Length framing", async () => {
+  assert.deepEqual(await parseBoundedJson(request("{}")), {});
+  const req = request('{"ok":true}');
+  req.headers.set("content-length", String(new TextEncoder().encode('{"ok":true}').length));
+  assert.deepEqual(await parseBoundedJson(req), { ok: true });
+});
