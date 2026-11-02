@@ -34,3 +34,17 @@
 - M21 changes no production financial contract, token issuance toggle or user trading capability; there are no payment or reward permissions in this milestone.
 
 **M21 remains partial until live authorized signed testnet transactions and third-party verification, independent security audit, corrected contract authorization, native wallet proof and protected staging are available.**
+
+
+## M21 continued: source-only issuance authorization mitigation (2 November 2026)
+
+The next iteration hardens `contracts/LookeCoinFactory.sol` **in source, not in any verified deployed contract**:
+
+- The legacy `createCoin(name,symbol,kind,contentRef,supply,metadataURI)` entry point now accepts **creator coins only** (`kind=0`). A nonzero reference for content/trend **cannot** pass this path.
+- A new `createCoinAuthorized(request,signature)` path allows content/trend only with a trusted **immutable attestor** (EOA or ERC-1271 wallet verified with OpenZeppelin `ECDSA` and a guarded `IERC1271` read). The typed EIP-712 authorization includes the caller's EVM wallet, kind, reference, name/symbol/metadata hashes, token supply, per-caller nonce and maximum 24-hour deadline. Chain ID and verifying factory address are in the EIP-712 domain. The caller still submits their own transaction.
+- All non-creator references are additionally **globally unique per kind**, so even an erroneously approved second wallet cannot create a second coin for the same post/topic on this factory.
+- The trusted attestor must securely verify authenticated post ownership, current revision/publication status, content disputes and moderated trend governance **before** it signs anything. **No issuance-attestor service, signing key, deployment address or governance authority is configured or activated.** A malicious, compromised or careless attestor could still approve false assertions; this is **not cryptographic proof of offchain authorship**.
+- Existing/older independently deployed bytecode would remain vulnerable; replacing source does not upgrade existing immutable contracts. A new, separately reviewed deployment and migration must explicitly reject old factory addresses, verify provenance and update allowlists.
+- Updated isolated Ganache tests must prove authorized issuance, stolen signature rejection, nonce replay refusal, expiry/future deadline rejection, altered terms rejection, domain/chain/factory replay rejection and global reference uniqueness. Passing these tests is **not** an audit or independent Ultra Testnet acceptance.
+
+**Release still NO-GO:** source-level mitigation is not operational activation. Independent security review, an audited attestor trust model with revocation/governance controls, protected staging, genuine two-wallet testnet transactions, two independent RPC corroborations and third-party chain evidence are still required. No public issuance, trading, funds movement or mainnet capability is enabled.

@@ -309,3 +309,11 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 - Built a private, read-only testnet evidence route to corroborate factory `CoinCreated` and allowlisted pool `Swap` receipts between the documented Ultra EVM testnet RPC and a second operator-configured HTTPS endpoint. Validates 18881 chain ID, source code, confirmed canonical block, successful transaction with 12-block delay, expected transaction signer, exact event topics/data/indexes and byte-for-byte code agreement across both nodes. Separate node URLs alone are not proof of operator independence.
 - Added a hard-NO-GO operator readiness endpoint and regression tests covering failed/forked/shallow/wrong-chain/mismatched receipts and the known **reproducible copied content/trend ref** vulnerability in the existing local EVM factory. No user-provided RPC hosts, wallet signature requests, allowances, token launches, swaps or mainnet capability were added.
 - See `docs/M21-TESTNET_SECURITY.md` for protected staging, genuine testnet receipt and audit acceptance. With no accepted deployment or verified authorizations, M21 remains **partial** and all financial execution remains disabled.
+
+
+## M21 continued — signed reference authorization (2 November 2026)
+
+- Hardened the **undeployed, unaudited** factory source: the original 6-argument issuance route is now creator-only. Content/trend issuance requires EIP-712 attestor signatures over wallet, full token terms, reference, chain, factory, nonce and limited expiry; globally unique references prevent cross-wallet copies in the revised factory.
+- Updated isolated contract adversarial tests for replay, stolen signatures, altered terms, expired approvals, wrong domain/chain/factory and duplicate global refs. **This does not repair any previously deployed factory bytecode.**
+- The issuer attestor is deliberately not operated or provisioned, the revised factory is not independently audited or live-deployed, and no verified genuine signed Ultra testnet receipts or end-user wallet approvals exist. Protected Vercel staging and separate native Uniq evidence remain blocked. Public minting/trading and mainnet are strictly **NO-GO**.
+- See `docs/M21-TESTNET_SECURITY.md`.

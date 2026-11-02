@@ -16,13 +16,16 @@ test("M21 operator receipt verification cannot sign, broadcast, settle or claim 
  assert.doesNotMatch(source,/\.writeContract\(|\.sendTransaction\(|signMessage\(|privateKeyToAccount\(/);
  assert.doesNotMatch(readiness,/\.writeContract\(|\.sendTransaction\(|signMessage\(/);
 });
-test("known copied-content/trend authorizations remain explicit unresolved release blockers",()=>{
+test("new source prevents permissionless reference copying; release still awaits independent audit",()=>{
  const integration=read("tests/creator-coin-contract.test.mjs");
  const factory=read("contracts/LookeCoinFactory.sol");
- assert.match(integration,/another wallet can copy the reference/);
- assert.match(integration,/permissionless factory allows ANOTHER wallet/);
- assert.match(factory,/keccak256\(abi.encode\(msg.sender, kind, contentRef\)\)/);
- assert.match(factory,/external returns \(address coin\)/);
+ assert.match(integration,/A stolen, valid signer approval/);
+ assert.match(integration,/Even an attestor-signed second wallet/);
+ assert.match(factory,/require\(kind == CREATOR, "ATTESTATION_REQUIRED"\)/);
+ assert.match(factory,/ECDSA\.tryRecover\(digest, signature\)/);
+ assert.match(factory,/IERC1271\(attestor\)\.isValidSignature\(digest, signature\)/);
+ assert.match(factory,/referenceCoinFor\[kind\]\[contentRef\] == address\(0\)/);
+ assert.match(factory,/request.nonce == authorizationNonces\[msg.sender\]/);
  const release=acceptanceGate();
  assert.equal(release.tradingEnabled,false);
  assert.equal(release.mainnetReady,false);
