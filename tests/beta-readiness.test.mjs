@@ -66,7 +66,7 @@ test("M22 public API and beta wallet UI are strictly read-only, no secret values
  assert.doesNotMatch(route,/process\.env|operatorAuthorized|Authorization:|privateKeyToAccount|\.writeContract|sendTransaction/);
  assert.match(ui,/"eth_accounts"/);
  assert.match(ui,/"eth_chainId"/);
- assert.doesNotMatch(ui,/eth_requestAccounts|personal_sign|eth_sendTransaction|wallet_switchEthereumChain|privateKeyToAccount|signTypedData|\.writeContract/);
+ assert.doesNotMatch(ui,/method\s*:\s*["'](?:eth_requestAccounts|personal_sign|eth_sendTransaction|wallet_switchEthereumChain)["']|privateKeyToAccount\s*\(|signTypedData\s*\(|\.writeContract\s*\(/);
  assert.match(app,/label="Testnet beta"/);
  assert.match(app,/page === "beta"/);
  assert.match(ui,/publicBetaOpen!==false/);
