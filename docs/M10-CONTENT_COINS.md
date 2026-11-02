@@ -33,3 +33,8 @@ Therefore **public launch is a NO-GO** even if the factory compiles, a database 
 7. Conduct independent security audit, wallet/device testing, load testing, content moderation and release approval before considering public issuance or mainnet.
 
 **M10 remains partial** until onchain provenance, audit, real signed testnet receipt evidence and operational staging tests are complete.
+
+
+## M21 source hardening addendum (2 November 2026)
+
+The permissionless copied-reference behavior described above belongs to the **older factory design**, not the revised source. The revised factory rejects content issuance through the six-argument entry point, requiring a trusted, scoped EIP-712 signer on `createCoinAuthorized`, and enforces global reference uniqueness. This is still an unaudited, undeployed prototype: no offchain ownership authority, signer operations, real signed Ultra testnet receipt or independent security acceptance has been completed. Read-only drafts/preflight remain non-issuing.
