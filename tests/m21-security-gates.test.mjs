@@ -22,7 +22,8 @@ test("new source prevents permissionless reference copying; release still awaits
  assert.match(integration,/A stolen, valid signer approval/);
  assert.match(integration,/Even an attestor-signed second wallet/);
  assert.match(factory,/require\(kind == CREATOR, "ATTESTATION_REQUIRED"\)/);
- assert.match(factory,/SignatureChecker\.isValidSignatureNow\(attestor/);
+ assert.match(factory,/ECDSA\.tryRecover\(digest, signature\)/);
+ assert.match(factory,/IERC1271\(attestor\)\.isValidSignature\(digest, signature\)/);
  assert.match(factory,/referenceCoinFor\[kind\]\[contentRef\] == address\(0\)/);
  assert.match(factory,/request.nonce == authorizationNonces\[msg.sender\]/);
  const release=acceptanceGate();
