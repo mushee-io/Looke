@@ -317,3 +317,11 @@ Status terms: **Preview** = interactive demo only; **Built (unverified)** = code
 - Updated isolated contract adversarial tests for replay, stolen signatures, altered terms, expired approvals, wrong domain/chain/factory and duplicate global refs. **This does not repair any previously deployed factory bytecode.**
 - The issuer attestor is deliberately not operated or provisioned, the revised factory is not independently audited or live-deployed, and no verified genuine signed Ultra testnet receipts or end-user wallet approvals exist. Protected Vercel staging and separate native Uniq evidence remain blocked. Public minting/trading and mainnet are strictly **NO-GO**.
 - See `docs/M21-TESTNET_SECURITY.md`.
+
+
+## M21 operator attestor review + real signed Testnet acceptance preparation (2 November 2026)
+
+- Added a distinct-bearer, opt-in-only **unsigned** private source review route. It joins current visible posts and private creator drafts/reports, fails closed for stale edits, owner mismatch, reports or invalid token terms, and crosschecks an independently pinned, immutable-attestor factory's code hash, nonce and unclaimed contentRef at one 12-confirmed Ultra EVM block across two separately configured HTTPS RPCs. No attestor key or signing API exists in Looke; trend attestations remain disabled pending binding reviewed governance.
+- Added an offline SHA/compiler-identified, **unsigned** Shanghai factory deployment manifest and a read-only two-RPC acceptance CLI for genuine wallet-signed 18881 deployment receipts and optional content issuance receipts with global-reference mapping, nonce and ERC-20 supply verification. Neither CLI submits transactions or supplies a wallet.
+- Added source-level and adversarial tests; see `docs/M21-TESTNET_SECURITY.md` for stage configuration, independent signing custody design, third-source evidence and manual release controls.
+- M21 operational acceptance remains **NOT MET**: protected deployment permissions, independent audit, externally secured attestor approvals, verified real chain deployments, signed wallet transactions, independent explorer review and native Ultra Uniq testnet acceptance remain outstanding. Public issuance/trading and mainnet remain NO-GO.
