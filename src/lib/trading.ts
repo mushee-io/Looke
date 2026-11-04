@@ -230,13 +230,19 @@ export function verifySwapReceipt(
   if (receipt.status !== "success") throw new Error("Swap transaction failed.");
   if (!receipt.to || getAddress(receipt.to) !== market.router) throw new Error("Receipt destination differs from the approved router.");
   if (getAddress(receipt.from) !== getAddress(recipient)) throw new Error("Receipt signer differs from the connected account.");
-  let sawPairSwap = false;
+  let actualPairOut = 0n;
   let actualOut = 0n;
+  const baseIsToken0 = market.baseToken.toLowerCase() < market.quoteToken.toLowerCase();
+  const outputIsToken0 = outputToken === (baseIsToken0 ? market.baseToken : market.quoteToken);
   for (const log of receipt.logs) {
     if (getAddress(log.address) === market.pair) {
       try {
         const e = decodeEventLog({abi:v2PairAbi,eventName:"Swap",topics:log.topics,data:log.data,strict:true});
-        if (e.eventName === "Swap") sawPairSwap = true;
+        if (e.eventName === "Swap") {
+          const inputAmount = outputIsToken0 ? e.args.amount1In : e.args.amount0In;
+          const outputAmount = outputIsToken0 ? e.args.amount0Out : e.args.amount1Out;
+          if (inputAmount > 0n && outputAmount > 0n) actualPairOut += outputAmount;
+        }
       } catch { /* unrelated pair log */ }
     }
     if (getAddress(log.address) === outputToken) {
@@ -247,7 +253,11 @@ export function verifySwapReceipt(
       } catch { /* unrelated ERC20 log */ }
     }
   }
-  if (!sawPairSwap) throw new Error("Verified pair did not emit a Swap event.");
-  if (actualOut < minOut || actualOut <= 0n) throw new Error("Received token transfer does not meet the reviewed minimum.");
+  if (actualPairOut < minOut || actualPairOut <= 0n) {
+    throw new Error("Verified pair did not emit a directional Swap meeting the reviewed minimum.");
+  }
+  if (actualOut < minOut || actualOut <= 0n || actualOut !== actualPairOut) {
+    throw new Error("Received token transfer does not match the directional pair output and reviewed minimum.");
+  }
   return {txHash:receipt.transactionHash,actualOut};
 }

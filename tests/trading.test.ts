@@ -84,7 +84,7 @@ function receipt({revert=false,wrongRouter=false,wrongPair=false,output=995n,wro
   const swapTopics=encodeEventTopics({abi:v2PairAbi,eventName:"Swap",args:{sender:router,to:trader}});
   const swapData=encodeAbiParameters(
     [{type:"uint256"},{type:"uint256"},{type:"uint256"},{type:"uint256"}],
-    [0n,1000n,output,0n],
+    [1000n,0n,0n,output],
   );
   const transferTopics=encodeEventTopics({abi:erc20Abi,eventName:"Transfer",args:{from:pair,to:wrongRecipient?factory:trader}});
   const transferData=encodeAbiParameters([{type:"uint256"}],[output]);
