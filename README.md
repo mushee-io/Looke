@@ -97,3 +97,23 @@ The `/trade` terminal is an integration for **real, operator-allowlisted V2-comp
 **By default the market registry is empty and execution is disabled.** No funded Ultra EVM V2-compatible router/pair deployment is claimed. Without actual separately authorized liquidity and reviewed addresses, the terminal shows no market and **cannot buy or sell**. It does not fabricate orders, trades, prices or volume. No contract, transaction, or liquidity provisioning has been performed by M4 engineering work.
 
 See [M4 trading testnet runbook](docs/M4_ULTRA_EVM_TRADING_RUNBOOK.md) and `.env.example` for configuration and acceptance steps.
+
+## M3 — native Uniq collections and resale (in review)
+
+The new [Uniq Studio](src/app/uniqs/page.tsx) at `/uniqs` is distinct from
+Ultra EVM and includes: native Testnet extension wallet connect, direct
+chain-table reads for owned `token.b` Uniqs, `factory.b` collections
+and `resale.a` listings, and reviewed action builders for `create.b`,
+`issue.b`, `resell`, `cancelresell` and `buy`. These actions are
+never signed/broadcast without a user action and wallet approval.
+
+The publicly documented Ultra NFT GraphQL API requires a `client_id`,
+so M3 uses the chain's public Testnet RPC via a read-only server route.
+M3 does not scrape arbitrary image metadata or invent creator content.
+A wallet broadcast hash is *not* claimed as final: listing/buy/mint results
+are checked against native Testnet's last irreversible block and relevant
+chain-table state. New factory IDs require separate attribution/proof.
+No real wallet transactions have been executed by this milestone.
+
+See [M3 Testnet acceptance runbook](docs/M3_NATIVE_UNIQ_RUNBOOK.md) for
+prerequisites, Testnet/extension support and operator test cases.
