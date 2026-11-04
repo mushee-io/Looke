@@ -13,7 +13,7 @@ export function parseMarketQuery(raw:URLSearchParams):MarketQuery{
 }
 export function rankVerifiedMarkets(rows:DiscoverMarket[],query:MarketQuery):
  {rows:DiscoverMarket[];total:number;page:number;limit:number;hasMore:boolean}{
-  const matching=rows.filter(m=>
+  const matching=rows.filter(m=>(query.sort!=="new"||m.createdAt!==null)&&
     (!query.quote||m.quoteSymbol.toUpperCase()===query.quote)&&
     (!query.q||[m.id,m.baseSymbol,m.baseToken,m.quoteSymbol,m.quoteToken,m.pair]
       .some(s=>s.toLocaleLowerCase("en-US").includes(query.q.toLocaleLowerCase("en-US")))));

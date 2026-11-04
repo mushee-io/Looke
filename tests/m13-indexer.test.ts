@@ -8,7 +8,7 @@ import {
 import {
   exactHolderCount,verifiedQuoteMarketCap,verifiedPriceChange,
   validateHolderScan,MAX_HOLDER_HISTORY_BLOCKS,
-} from "../src/lib/ops/m13-metrics";
+} from "../src/lib/ops/m13-metrics-pure";
 import {parseMarketQuery,rankVerifiedMarkets,safeAge} from "../src/lib/ops/m13-discovery";
 import type {DiscoverMarket} from "../src/lib/discover";
 

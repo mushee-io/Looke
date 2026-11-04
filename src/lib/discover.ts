@@ -54,7 +54,7 @@ export function selectDiscoverMarkets(
 ):DiscoverMarket[]{
   // New can rank only real CoinCreated event times, never inferred token ages.
   const needle=cleanDiscoveryQuery(query);
-  const filtered=markets.filter(m=>
+  const filtered=markets.filter(m=>(sort!=="new"||m.createdAt!==null)&&
     (!needle||[m.id,m.baseSymbol,m.quoteSymbol,m.baseToken,m.pair]
       .some(x=>x.toLocaleLowerCase("en-US").includes(needle))) &&
     (sort!=="watchlist"||watchlist.has(m.id)),
