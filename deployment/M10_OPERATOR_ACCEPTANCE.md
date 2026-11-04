@@ -1,6 +1,6 @@
 # Looke M10 — Independent Ultra Testnet Acceptance and Protected Beta Gate
 
-**State at creation, 4 Nov 2026:** M9 PR #9 remains draft while its most recent GitHub Actions jobs are queued. M10 is developed as a stacked branch from M9 and **must not merge into main before M9 is green and merged**. The connected Vercel team `mushee-ios-projects` has no Looke staging project and still rejects project creation with **403 Forbidden**. No deployment, wallet signature, financial transaction, liquidity addition, NFT mint, database provisioning, or public beta opening has occurred.
+**Updated integration state, 4 Nov 2026:** M9 PR #9 passed all five required workflows and merged into `main` (merge commit `82e461b929c9b2b58cf520ea5cefbb1537e3a714`). M10 PR #10 was retargeted to `main`, with its M9 ancestry reconciled. M10 must **not** merge until CI on its final commit is green. The connected Vercel team `mushee-ios-projects` has no Looke staging project and still rejects project creation with **403 Forbidden**. No deployment, wallet signature, financial transaction, liquidity addition, NFT mint, database provisioning, or public beta opening has occurred.
 
 ## New security invariant
 
@@ -89,7 +89,7 @@ Existing `/api/ops/monitor` returns 503 for degraded live chain or PostgreSQL. G
 
 ## Current blockers
 
-- [ ] Latest M9 commit's five CI workflows completed successfully; M9 merged before M10.
+- [x] Latest M9 commit's five CI workflows completed successfully; M9 merged before M10.
 - [ ] Vercel administrator authorizes and verifies dedicated all-URL-authenticated staging project.
 - [ ] A real protected Preview deployment passes signed-out Vercel authentication and pinned revision check.
 - [ ] Optional second, trusted EVM and native RPC providers cross-verify real canonical blocks.
@@ -100,4 +100,4 @@ Existing `/api/ops/monitor` returns 503 for degraded live chain or PostgreSQL. G
 - [ ] Independent security audit and ops approval recorded.
 - [ ] All beta release gates and a separately approved signed-revision release authorization pass.
 
-**PUBLIC BETA REMAINS CLOSED.**
+**M10 PR #10 remains draft until all GitHub Actions workflows on its final SHA pass. Public beta remains CLOSED.**
