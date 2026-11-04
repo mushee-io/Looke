@@ -1,0 +1,78 @@
+name: M14 original Looke creator experience and safe release
+
+on:
+  pull_request:
+    paths:
+      - "src/app/page.tsx"
+      - "src/app/social/page.tsx"
+      - "src/app/api/experience/**"
+      - "src/components/experience/**"
+      - "src/lib/experience/**"
+      - "tests/m14-experience.test.ts"
+      - "deployment/M14_CREATOR_EXPERIENCE.md"
+      - ".github/workflows/m14-experience.yml"
+      - "package.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  redesigned-experience:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      LOOKE_PUBLIC_BETA_ENABLED: "false"
+      LOOKE_M4_TRADING_ENABLED: "false"
+      LOOKE_SOCIAL_WRITES_ENABLED: "false"
+      LOOKE_M6_EVIDENCE_ENABLED: "false"
+      LOOKE_M4_MARKETS_JSON: "[]"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: Public beta and trade execution remain closed
+        run: npm run m7:preflight
+      - name: Every unit and regression test
+        run: npm test
+      - name: TypeScript compiler
+        run: npm run typecheck
+      - name: Production Next.js build
+        run: npm run build
+      - name: Local smoke — no fake social or wallet data
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run start -- -p 3100 >/tmp/m14-next.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 50); do
+            if curl -fsS http://127.0.0.1:3100/ >/dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:3100/ | grep -q "Search for creators"
+          curl -fsS http://127.0.0.1:3100/api/experience/notifications | node -e '
+            let s="";process.stdin.on("data",x=>s+=x).on("end",()=>{
+              const n=JSON.parse(s);
+              if(n.authenticated!==false||n.events.length!==0)process.exit(2);
+            });
+          '
+          curl -fsS http://127.0.0.1:3100/api/discover | node -e '
+            let s="";process.stdin.on("data",x=>s+=x).on("end",()=>{
+              const d=JSON.parse(s);
+              if(d.source!=="verified-on-chain"||d.markets.length!==0||
+                 d.executionEnabled!==false)process.exit(2);
+            });
+          '
+          npm run m6:smoke
+          npm run m7:smoke
+      - name: In-memory shutdown/rollback rehearsal
+        run: npm run m8:rollback-rehearsal
+      - name: No broadcast, no public beta
+        if: always()
+        run: |
+          echo "Looke M14 is a redesigned client experience backed by actual read-only onchain and social data." >> "$GITHUB_STEP_SUMMARY"
+          echo "Private messaging and token-pair execution remain disabled, without simulated messages, users, balances or trades." >> "$GITHUB_STEP_SUMMARY"
+          echo "Only Preview deployment with authentication is allowed; production alias unchanged." >> "$GITHUB_STEP_SUMMARY"

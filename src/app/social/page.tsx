@@ -99,6 +99,10 @@ export default function SocialPage(){
 
   useEffect(()=>{void refreshMe().catch(e=>setNotice(errText(e)));},[refreshMe]);
   useEffect(()=>{void loadFeed();},[loadFeed]);
+  useEffect(()=>{
+    const linked=new URLSearchParams(window.location.search).get("profile");
+    if(linked&&/^[a-z][a-z0-9_]{2,23}$/.test(linked))void openProfile(linked);
+  },[]);
   useEffect(()=>{if(tab==="discover")void lookupDirectory(search);},[tab,lookupDirectory,search]);
 
   async function signIn(){

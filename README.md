@@ -394,3 +394,17 @@ a fictitious complete 24-hour statistic.
 honestly reports unconfigured/zero creator launches. No automatic token
 deployments, trades, liquidity or public beta are enabled. Read
 [the M13 operator acceptance runbook](deployment/M13_MARKET_INDEXER.md).
+
+## M14 — Full creator-app navigation and reference-inspired UX
+
+The Looke homepage now includes a compact market-first Discover, actual creator
+Trending feed, split-screen Messages, token creation (+) modal restricted to
+**ULTRA or LOOKE** pairing drafts, categorized Notifications, an on-chain wallet
+balance popup, and creator Profiles showing actual database posts/followers.
+
+Missing social data, verified LOOKE liquidity, historical wallet activities,
+token images and USD valuations are never fabricated. Public beta, trading,
+social writes and private message sending remain disabled until independent
+security/operational gates pass.
+
+[Read the M14 UI acceptance, security and Preview checklist](deployment/M14_CREATOR_EXPERIENCE.md).
