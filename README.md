@@ -182,3 +182,30 @@ wallet connection, on-chain transaction or public beta launch** is performed
 by this engineering milestone.
 
 See [M6 release runbook](docs/M6_INTEGRATED_TESTNET_BETA.md).
+
+## M7 — protected staging, operational checks and acceptance tooling
+
+The M6 beta-readiness foundations are now on `main`. M7 adds a read-only
+`/api/ops/monitor` with both Testnet head checks, chain IDs, native
+irreversibility, social database schema presence and strict release flag review.
+It returns a **503 degraded** status when real dependencies are unavailable.
+There are **no synthetic transactions, balances, NFTs, or social users**.
+
+The `m7:acceptance` operator command accepts a private local file with
+**public** factory/coin transaction hashes and native Uniq identifiers.
+It independently checks receipts and ownership, prints verified/blocked
+results, and never uses a wallet or broadcasts any transaction.
+`m7:preflight` fails if public beta, social writes, trading or evidence flags
+are on. `m7:rollback-plan` only **prints** manual rollback instructions.
+
+The connected Vercel team returned **403 Forbidden** when asked to create a
+new Looke staging project with Vercel Authentication on all deployment URLs.
+Therefore **no protected Vercel staging deployment was created**; an authorized
+team operator must create/protect the project before any release.
+All public-beta gates remain closed.
+
+CI has a dedicated `M7 protected staging & read-only acceptance` workflow
+with Next.js build/tests and local no-broadcast smoke. The existing M6 smoke
+also remains active.
+
+See [M7 staging/acceptance/rollback runbook](deployment/m7-protected-staging.md).

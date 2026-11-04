@@ -1,0 +1,58 @@
+name: M7 protected staging & read-only acceptance
+on:
+  pull_request:
+    paths:
+      - "src/lib/ops/**"
+      - "src/app/api/ops/**"
+      - "scripts/m7-*.ts"
+      - "tests/m7-*.test.ts"
+      - "deployment/m7-*.md"
+      - "deployment/m7-*.json"
+      - ".github/workflows/m7-operational.yml"
+      - "package.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  read-only-staging:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    env:
+      LOOKE_PUBLIC_BETA_ENABLED: "false"
+      LOOKE_M4_TRADING_ENABLED: "false"
+      LOOKE_SOCIAL_WRITES_ENABLED: "false"
+      LOOKE_M6_EVIDENCE_ENABLED: "false"
+      LOOKE_M4_MARKETS_JSON: "[]"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - run: npm run m7:preflight
+      - run: npm test
+      - run: npm run typecheck
+      - run: npm run build
+      - name: Run staging and operational monitor smoke locally
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run start -- -p 3100 > /tmp/looke-m7-preview.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 45); do
+            if curl -fsS "http://127.0.0.1:3100/api/beta/health?mode=live" >/dev/null; then break; fi
+            sleep 1
+          done
+          npm run m6:smoke
+          npm run m7:smoke
+      - name: Print manual rollback plan only (no Vercel mutation)
+        run: npm run m7:rollback-plan
+      - name: Log explicit release limitations
+        if: always()
+        run: |
+          echo "No Vercel project or protected staging deployment is created by CI." >> "$GITHUB_STEP_SUMMARY"
+          echo "No secrets, wallets, contract transactions, or production database writes are used." >> "$GITHUB_STEP_SUMMARY"
+          echo "Public beta stays closed." >> "$GITHUB_STEP_SUMMARY"
