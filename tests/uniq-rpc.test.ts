@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { getNativeTestnetInfo, readNativeTable, ownedUniqs, getFactory, getListing } from "../src/lib/ultra-native-rpc";
 import { ULTRA_NATIVE_TESTNET } from "../src/lib/ultra-native";
 
-function mockRpc(calls: Array<{ endpoint: string; body: Record<string, unknown> }>, chainId = ULTRA_NATIVE_TESTNET.chainId, pages?: Record<string, unknown>) {
+function mockRpc(calls: Array<{ endpoint: string; body: Record<string, unknown> }>, chainId: string = ULTRA_NATIVE_TESTNET.chainId, pages?: Record<string, unknown>) {
   return async (input: string | URL | Request, init?: RequestInit) => {
     const endpoint = String(input).split("/").at(-1) || "";
     const body = JSON.parse(String(init?.body || "{}")) as Record<string, unknown>;
