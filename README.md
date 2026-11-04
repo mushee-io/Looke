@@ -55,6 +55,34 @@ Looke code: MIT, copyright © 2026 Mushee Labs. A small upstream metadata-valida
 
 **Do not copy the current Zora Coins smart contracts**: multiple active contracts use `ZORA-DELAYED-OSL-v1`, which restricts commercial/competing use pending their applicable open dates. See [licensing and roadmap](docs/LICENSING_AND_ROADMAP.md).
 
+
+## M2 — authorized Ultra EVM Testnet deployment (in review)
+
+M2 adds an explicit testnet-only factory deployment script, a read-only gas/network preflight,
+independent deployment bytecode and transaction receipt verifiers, and an on-chain verified
+coin creation flow. None of these steps has deployed a contract on its own.
+
+**Operator workflow** (no automatic broadcast):
+
+```bash
+npm install
+forge build
+npm run m2:preflight
+# No signing/broadcast: simulate first
+forge script script/DeployLookeCoinFactory.s.sol:DeployLookeCoinFactory --rpc-url https://evm.test.ultra.eosusa.io
+# To deploy only AFTER owner authorization: follow docs/M2_TESTNET_RUNBOOK.md
+# Then manually provide deployment address and hash:
+LOOKE_FACTORY_ADDRESS=0x... LOOKE_FACTORY_DEPLOY_TX=0x... npm run m2:verify-factory
+# Only after verification set matching NEXT_PUBLIC_... variables in the web build.
+# After wallet-approved launch, verify a real coin-creation transaction:
+LOOKE_FACTORY_ADDRESS=0x... LOOKE_COIN_TX=0x... npm run m2:verify-coin
+```
+
+See **[M2 Testnet runbook](docs/M2_TESTNET_RUNBOOK.md)** for explicit signing approval,
+receipt checks, environment requirements and acceptance criteria. The UI does not
+enable token creation without a confirmed factory address **and its real deployment hash**.
+Trading, liquidity, Uniq NFT marketplace and live social messaging are out of scope.
+
 ## M3 — native Uniq collections and resale (in review)
 
 The new [Uniq Studio](src/app/uniqs/page.tsx) at `/uniqs` is distinct from

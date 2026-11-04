@@ -11,7 +11,10 @@
     "build": "next build",
     "start": "next start",
     "test": "node --import tsx --test tests/*.test.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "m2:preflight": "tsx scripts/preflight.ts",
+    "m2:verify-factory": "tsx scripts/verify-factory.ts",
+    "m2:verify-coin": "tsx scripts/verify-coin.ts"
   },
   "dependencies": {
     "next": "^15.5.0",
