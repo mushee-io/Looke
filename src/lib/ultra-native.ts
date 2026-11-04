@@ -223,5 +223,5 @@ export function parseWalletHash(result: unknown): string {
 }
 export function nativeTxUrl(tx: string): string {
   if (!/^[0-9a-fA-F]{64}$/.test(tx)) throw new Error("Invalid Testnet transaction ID.");
-  return `${ULTRA_NATIVE_TESTNET.explorer}/transaction/${tx}`;
+  return `${ULTRA_NATIVE_TESTNET.explorer}/tx/${tx}`;
 }
