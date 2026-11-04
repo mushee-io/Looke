@@ -25,7 +25,7 @@ export function rankVerifiedMarkets(rows:DiscoverMarket[],query:MarketQuery):
       return byAge||a.id.localeCompare(b.id);
     }
     const value=(m:DiscoverMarket)=>{
-      if(query.sort==="top")return num(m.marketCap??m.reserveQuote);
+      if(query.sort==="top")return num(m.marketCap);
       return num(m.observedQuoteVolume);
     };
     return value(b)-value(a)||a.id.localeCompare(b.id);
