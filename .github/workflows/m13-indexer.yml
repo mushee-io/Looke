@@ -1,0 +1,77 @@
+name: M13 real Ultra creator market indexing
+
+on:
+  pull_request:
+    paths:
+      - "src/lib/ops/m13-*"
+      - "src/app/api/discover/**"
+      - "src/lib/discover.ts"
+      - "src/components/discover/**"
+      - "tests/m13-indexer.test.ts"
+      - "deployment/M13_MARKET_INDEXER.md"
+      - "package.json"
+      - ".github/workflows/m13-indexer.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  genuine-indexer-and-launch-guards:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      LOOKE_PUBLIC_BETA_ENABLED: "false"
+      LOOKE_M4_TRADING_ENABLED: "false"
+      LOOKE_SOCIAL_WRITES_ENABLED: "false"
+      LOOKE_M6_EVIDENCE_ENABLED: "false"
+      LOOKE_M4_MARKETS_JSON: "[]"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: Closed-by-default release validation
+        run: npm run m7:preflight
+      - name: All unit tests, typecheck and build
+        run: |
+          npm test
+          npm run typecheck
+          npm run build
+      - name: Confirm empty genuine index when no verified factory is supplied
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run start -- -p 3100 >/tmp/m13-next.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 45); do
+            if curl -fsS http://127.0.0.1:3100/ >/dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:3100/api/discover?sort=top\&page=1\&limit=5 | node -e '
+            let s="";process.stdin.on("data",x=>s+=x).on("end",()=>{
+              const a=JSON.parse(s);
+              if(a.chainId!==18881||a.source!=="verified-on-chain"||
+                a.pagination.total!==0||a.markets.length!==0||a.executionEnabled!==false||
+                a.indexer.status!=="unconfigured")process.exit(2);
+            });
+          '
+          curl -fsS http://127.0.0.1:3100/api/discover/launches | node -e '
+            let s="";process.stdin.on("data",x=>s+=x).on("end",()=>{
+              const a=JSON.parse(s);
+              if(a.status!=="unconfigured"||a.launches.length!==0||
+                a.transactionsSent!==0)process.exit(2);
+            });
+          '
+          npm run m6:smoke
+          npm run m7:smoke
+      - name: Rollback protection dry run
+        run: npm run m8:rollback-rehearsal
+      - name: Clarify real acceptance state
+        if: always()
+        run: |
+          echo "This tests indexing code only. An unconfigured factory remains UNCONFIGURED." >> "$GITHUB_STEP_SUMMARY"
+          echo "No unverified creator coins, holders, market caps, 24h volumes or price changes are fabricated." >> "$GITHUB_STEP_SUMMARY"
+          echo "Financial execution, token issuance and beta remain OFF." >> "$GITHUB_STEP_SUMMARY"

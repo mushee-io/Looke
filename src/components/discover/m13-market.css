@@ -1,0 +1,38 @@
+/* M13 verified on-chain ranking, indexer monitoring and responsive paging. */
+.discover-market-first .discover-quote-filter{
+  appearance:none;background:#fff;border:1px solid #e8ebf2;border-radius:9px;
+  padding:10px 28px 10px 12px;color:#59647b;font-size:11px;font-weight:800;
+  cursor:pointer;min-width:109px;
+}
+.discover-market-first .discover-quote-filter:hover,
+.discover-market-first .discover-quote-filter:focus{border-color:#426cff;outline:none}
+.discover-market-first .discover-tab-network a{
+  color:#355df1;text-decoration:none;font-weight:800;margin-left:8px
+}
+.discover-market-first .discover-tab-network a:hover{text-decoration:underline}
+.discover-market-first .discover-positive strong{color:#149d64}
+.discover-market-first .discover-negative strong{color:#df3f72}
+.discover-market-first .discover-pagination{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:15px 4px;gap:14px;color:#8490a6;font-size:11px;
+  border-bottom:1px solid #eef1f5;
+}
+.discover-market-first .discover-pagination>div{display:flex;gap:8px}
+.discover-market-first .discover-pagination button{
+  padding:9px 12px;border-radius:9px;background:#fff;
+  border:1px solid #e4e9f4;color:#345af0;font-weight:800;font-size:11px;
+}
+.discover-market-first .discover-pagination button:hover:not(:disabled){
+  background:#ecf1ff;border-color:#afc1ff;
+}
+.discover-market-first .discover-pagination button:disabled{opacity:.35;cursor:not-allowed}
+.discover-market-first .discover-row-name strong{word-break:break-word}
+@media(max-width:950px){
+  .discover-market-first .discover-quote-filter{min-width:90px;padding:9px 6px;font-size:10px}
+}
+@media(max-width:700px){
+  .discover-market-first .discover-quote-filter{min-width:79px;padding:8px 5px}
+  .discover-market-first .discover-header-right{gap:5px}
+  .discover-market-first .discover-pagination{flex-wrap:wrap}
+  .discover-market-first .discover-tabs{overflow-x:auto}
+}

@@ -17,10 +17,16 @@ export type DiscoverMarket = {
   observedSwapCount:number|null;
   partial:boolean;
   activityError:string|null;
-  marketCap:null;
-  holders:null;
-  change24h:null;
-  createdAt:null;
+  marketCap:string|null;
+  holders:number|null;
+  change24h:string|null;
+  createdAt:string|null;
+  statistics?:{
+    capUnit:string;
+    holderCoverage:"complete-from-deployment"|"unavailable";
+    changeWindow:"verified-24h-reserves"|"unavailable";
+    priceSource:"on-chain-pool-reserves";
+  };
 };
 export type DiscoverFeed={
   chainId:18881;
@@ -31,6 +37,9 @@ export type DiscoverFeed={
   errors:{id:string;reason:string}[];
   executionEnabled:boolean;
   volumeWindow:"bounded-recent-blocks-not-24h";
+  pagination?:{total:number;page:number;limit:number;hasMore:boolean};
+  indexer?:{status:"verified"|"unconfigured"|"blocked";complete:boolean;nextCursor:string|null;
+    fromBlock:string|null;throughBlock:string|null;verifiedLaunchesInPage:number;errors:string[]};
 };
 export function cleanDiscoveryQuery(value:string):string {
   return value.trim().toLocaleLowerCase("en-US").slice(0,64);
@@ -43,16 +52,17 @@ function finiteNumber(value:string|null):number{
 export function selectDiscoverMarkets(
   markets:DiscoverMarket[],sort:DiscoverSort,query:string,watchlist:ReadonlySet<string>,
 ):DiscoverMarket[]{
-  if(sort==="new")return []; // No creation-time indexer: never invent token ages.
+  // New can rank only real CoinCreated event times, never inferred token ages.
   const needle=cleanDiscoveryQuery(query);
-  const filtered=markets.filter(m=>
+  const filtered=markets.filter(m=>(sort!=="new"||m.createdAt!==null)&&
     (!needle||[m.id,m.baseSymbol,m.quoteSymbol,m.baseToken,m.pair]
       .some(x=>x.toLocaleLowerCase("en-US").includes(needle))) &&
     (sort!=="watchlist"||watchlist.has(m.id)),
   );
   return [...filtered].sort((a,b)=>{
-    const first=sort==="top"?finiteNumber(a.reserveQuote):finiteNumber(a.observedQuoteVolume);
-    const second=sort==="top"?finiteNumber(b.reserveQuote):finiteNumber(b.observedQuoteVolume);
+    if(sort==="new")return (b.createdAt??"").localeCompare(a.createdAt??"")||a.id.localeCompare(b.id);
+    const first=sort==="top"?finiteNumber(a.marketCap):finiteNumber(a.observedQuoteVolume);
+    const second=sort==="top"?finiteNumber(b.marketCap):finiteNumber(b.observedQuoteVolume);
     return second-first||a.id.localeCompare(b.id);
   });
 }
