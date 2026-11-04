@@ -1,6 +1,6 @@
 {
   "name": "looke-ultra",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "private": true,
   "license": "MIT",
   "engines": {
@@ -22,7 +22,12 @@
     "m7:preflight": "tsx scripts/m7-preflight.ts",
     "m7:acceptance": "tsx scripts/m7-acceptance.ts",
     "m7:rollback-plan": "tsx scripts/m7-rollback-plan.ts",
-    "m7:smoke": "tsx scripts/m7-smoke.ts"
+    "m7:smoke": "tsx scripts/m7-smoke.ts",
+    "m8:rpc-evidence": "tsx scripts/m8-rpc-evidence.ts",
+    "m8:wallet-acceptance": "tsx scripts/m8-wallet-acceptance.ts",
+    "m8:db-audit": "tsx scripts/m8-db-audit.ts",
+    "m8:alert-summary": "tsx scripts/m8-alert-summary.ts",
+    "m8:rollback-rehearsal": "tsx scripts/m8-rollback-rehearsal.ts"
   },
   "dependencies": {
     "next": "^15.5.0",

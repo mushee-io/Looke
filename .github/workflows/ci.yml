@@ -52,6 +52,11 @@ jobs:
         run: npm run db:migrate
         env:
           DATABASE_URL: postgres://looke_ci:ci_only_password@localhost:5432/looke_social_ci
+      - name: Run M8 READ-ONLY disposable social DB operational audit
+        run: npm run m8:db-audit
+        env:
+          DATABASE_URL: postgres://looke_ci:ci_only_password@localhost:5432/looke_social_ci
+          LOOKE_M8_ALLOW_LOCAL_PLAINTEXT_DB: 'true'
       - name: Run signed auth and social DB integration tests
         run: npm run test:social-db
         env:

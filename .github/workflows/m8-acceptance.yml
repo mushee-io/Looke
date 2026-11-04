@@ -1,0 +1,75 @@
+name: M8 Live RPC observation and fail-closed staging checks
+
+on:
+  pull_request:
+    paths:
+      - "src/lib/ops/m8-*"
+      - "scripts/m8-*"
+      - "tests/m8-ops.test.ts"
+      - "deployment/M8_OPERATOR_ACCEPTANCE.md"
+      - ".github/workflows/m8-acceptance.yml"
+      - "package.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-release-safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    env:
+      LOOKE_PUBLIC_BETA_ENABLED: "false"
+      LOOKE_M4_TRADING_ENABLED: "false"
+      LOOKE_SOCIAL_WRITES_ENABLED: "false"
+      LOOKE_M6_EVIDENCE_ENABLED: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: Assert staging and transaction controls disabled
+        run: npm run m7:preflight
+      - name: Unit tests, types and production build
+        run: |
+          npm test
+          npm run typecheck
+          npm run build
+      - name: Rehearse rollback in memory only
+        run: npm run m8:rollback-rehearsal
+      - name: No external writes
+        run: |
+          echo "No Vercel deployment, public release, database write or wallet signature occurred." >> "$GITHUB_STEP_SUMMARY"
+
+  live-rpc-observation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      LOOKE_PUBLIC_BETA_ENABLED: "false"
+      LOOKE_M4_TRADING_ENABLED: "false"
+      LOOKE_SOCIAL_WRITES_ENABLED: "false"
+      LOOKE_M6_EVIDENCE_ENABLED: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: Capture real READ-ONLY EVM and native Ultra RPC responses
+        run: npm run m8:rpc-evidence
+      - name: Mark any missing infrastructure evidence as BLOCKED
+        run: npm run m8:alert-summary
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: m8-ultra-testnet-rpc-observations
+          path: artifacts/m8/rpc-evidence.json
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Explicit status note
+        if: always()
+        run: |
+          echo "A completed observation job is NOT proof both RPCs succeeded; inspect the JSON artifact allVerified field." >> "$GITHUB_STEP_SUMMARY"
+          echo "Staging project still needs Vercel team permission and authenticated deployment protection." >> "$GITHUB_STEP_SUMMARY"
+          echo "No recurring hourly builds or on-chain transactions are scheduled." >> "$GITHUB_STEP_SUMMARY"
