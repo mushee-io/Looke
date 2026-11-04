@@ -1,0 +1,74 @@
+name: M12 Ultra-native Discover redesign
+
+on:
+  pull_request:
+    paths:
+      - "src/app/page.tsx"
+      - "src/app/api/discover/**"
+      - "src/lib/discover.ts"
+      - "src/components/discover/**"
+      - "tests/m12-discover.test.ts"
+      - "deployment/M12_DISCOVER_RELEASE.md"
+      - ".github/workflows/m12-discovery.yml"
+      - "package.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  responsive-discovery-safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      LOOKE_PUBLIC_BETA_ENABLED: "false"
+      LOOKE_M4_TRADING_ENABLED: "false"
+      LOOKE_SOCIAL_WRITES_ENABLED: "false"
+      LOOKE_M6_EVIDENCE_ENABLED: "false"
+      LOOKE_M4_MARKETS_JSON: "[]"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: Release gates remain closed
+        run: npm run m7:preflight
+      - name: Complete unit suite and TypeScript
+        run: |
+          npm test
+          npm run typecheck
+      - name: Build M12 Discover
+        run: npm run build
+      - name: Check live local homepage and verified empty market response
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run start -- -p 3100 >/tmp/looke-m12.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 45); do
+            if curl -fsS http://127.0.0.1:3100/ >/dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:3100/ | grep -q "Explore markets"
+          if curl -fsS http://127.0.0.1:3100/ | grep -q "Discover the next wave"; then
+            echo "The oversized promotional hero must not precede market discovery."
+            exit 1
+          fi
+          curl -fsS http://127.0.0.1:3100/api/discover | node -e '
+            let s="";process.stdin.on("data",x=>s+=x).on("end",()=>{
+              const a=JSON.parse(s);
+              if(a.source!=="verified-on-chain"||a.chainId!==18881||
+                a.volumeWindow!=="bounded-recent-blocks-not-24h"||
+                a.markets.length!==0||a.executionEnabled!==false)
+                process.exit(2);
+            });
+          '
+          npm run m6:smoke
+          npm run m7:smoke
+      - name: No real transaction or beta activation
+        if: always()
+        run: |
+          echo "M12 Discover uses only verified Ultra Testnet market reads, never fake token tables." >> "$GITHUB_STEP_SUMMARY"
+          echo "Public beta, swaps, coin creation and social writes remain disabled in this CI." >> "$GITHUB_STEP_SUMMARY"

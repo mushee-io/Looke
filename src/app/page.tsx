@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import DiscoverDashboard from "../components/discover/DiscoverDashboard";
 import { encodeFunctionData, getAddress, isAddress, parseUnits, type Hash } from "viem";
 import { lookeCoinFactoryAbi } from "../lib/coin-abi";
 import { type CoinDraft, validateCoinDraft } from "../lib/metadata";
@@ -233,7 +234,7 @@ export default function Home() {
   }
 
   return (
-    <main className="shell">
+    <main className={screen === "Discover" ? "shell shell-discover" : "shell"}>
       <header className="topbar">
         <button className="brand" aria-label="Looke home" onClick={() => setScreen("Discover")}>
           <span className="brandmark">L<span>●</span></span>
@@ -250,7 +251,7 @@ export default function Home() {
           <div className="sidebar-label">EXPLORE</div>
           <nav aria-label="Main navigation">
             {screens.map((item, index) => (
-              <button key={item} className={`navitem ${screen === item ? "nav-active" : ""}`} onClick={() => { setScreen(item); setNotice(""); }}>
+              <button key={item} className={`navitem ${screen === item ? "nav-active" : ""}`} title={item} aria-label={item} onClick={() => { setScreen(item); setNotice(""); }}>
                 <span className="navicon">{["◈", "＋", "▧", "▤"][index]}</span>{item}<span className="navarrow">↗</span>
               </button>
             ))}
@@ -264,39 +265,7 @@ export default function Home() {
         </aside>
 
         <section className="content">
-          {screen === "Discover" && (
-            <>
-              <section className="hero">
-                <div className="eyebrow"><span className="statusdot" /> THE CREATOR ECONOMY, REIMAGINED FOR ULTRA</div>
-                <h1>Everything starts<br />with a <em>creator.</em></h1>
-                <p>Coins, collectibles and communities in one place. Meet Looke, a new creative layer for the Ultra ecosystem.</p>
-                <div className="hero-actions">
-                  <button className="primary" onClick={() => setScreen("Create")}>Create your coin <span>↗</span></button>
-                  <button className="ghost" onClick={() => setScreen("Uniq NFTs")}>Explore Uniq NFTs <span>→</span></button>
-                  <a href="/trade" className="ghost" style={{textDecoration:"none"}}>Trading terminal <span>↗</span></a>
-                </div>
-                <div className="hero-art" aria-hidden="true"><div className="art-circle circle-one"/><div className="art-circle circle-two"/><div className="art-circle circle-three"/><div className="art-star">✳</div></div>
-              </section>
-
-              <div className="section-heading"><div><span className="overline">THE LOOKE UNIVERSE</span><h2>Make something matter.</h2></div><span className="muted-tag">Ultra ecosystem</span></div>
-              <div className="feature-grid">
-                <button className="feature-card" onClick={() => setScreen("Create")}>
-                  <div className="feature-glyph coin-glyph">◉</div><span className="feature-index">01 / CREATE</span>
-                  <h3>Creator coins</h3><p>Prepare and launch fixed-supply creator tokens on Ultra EVM Testnet once the factory is deployed.</p><span className="card-link">Build a coin ↗</span>
-                </button>
-                <button className="feature-card" onClick={() => setScreen("Uniq NFTs")}>
-                  <div className="feature-glyph uniq-glyph">▧</div><span className="feature-index">02 / COLLECT</span>
-                  <h3>Native Uniq NFTs</h3><p>Ultra-native digital collectibles. Wallet and NFT market integration are next on the roadmap.</p><span className="card-link">See roadmap ↗</span>
-                </button>
-                <a href="/social" className="feature-card" style={{textDecoration:"none"}}>
-                  <div className="feature-glyph social-glyph">✳</div><span className="feature-index">03 / CONNECT</span>
-                  <h3>Social & community</h3><p>Wallet-authenticated profiles, real posts, follows and creator communities. A database is required; private messaging is still disabled.</p><span className="card-link">Open the social network ↗</span>
-                </a>
-              </div>
-
-              <div className="empty-strip"><div className="strip-icon">◇</div><div><strong>Real activity, when it's real.</strong><p>Live tokens and market data appear only after verified deployment and event indexing. No fabricated trades or volumes.</p></div><span className="pill">INDEXER PENDING</span></div>
-            </>
-          )}
+          {screen === "Discover" && <DiscoverDashboard onCreate={() => {setScreen("Create");setNotice("");}} />}
 
           {screen === "Create" && (
             <section className="create-screen">
