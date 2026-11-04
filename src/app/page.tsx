@@ -5,13 +5,9 @@ import DiscoverDashboard from "../components/discover/DiscoverDashboard";
 import {TrendingFeed,MessagesPanel,NotificationsPanel,ProfilePanel} from "../components/experience/LookeViews";
 import {CreateCoinModal,WalletModal,type CoinQuickDraft} from "../components/experience/LookeOverlays";
 import "../components/experience/experience.css";
-import { encodeFunctionData, getAddress, isAddress, parseUnits, type Hash } from "viem";
-import { lookeCoinFactoryAbi } from "../lib/coin-abi";
+import { isAddress } from "viem";
 import { type CoinDraft, validateCoinDraft } from "../lib/metadata";
-import {
-  assertHash, createUltraPublicClient, decodeCoinCreatedFromReceipt,
-  verifyCreatedCoinState, verifyFactoryDeployment,
-} from "../lib/verification";
+import {createUltraPublicClient,verifyFactoryDeployment} from "../lib/verification";
 import {
   LOOKE_FACTORY_ADDRESS, LOOKE_FACTORY_DEPLOY_TX, ULTRA_EVM_TESTNET,
   shortAddress, testnetAddressUrl, testnetTxUrl,
@@ -186,79 +182,10 @@ export default function Home() {
   }
 
   async function launchCoin() {
-    if (!preview || factoryStatus !== "verified" || submitting ||
-        transactionStatus === "submitted" || transactionStatus === "confirmed") return;
-    const provider = injectedWallet();
-    if (!provider || !address) {
-      setNotice("Connect an EVM wallet before launching.");
-      return;
-    }
-    // The token launch flow cannot claim LOOKE/ULTRA liquidity until an
-    // independently verified routing/pair contract exists for that asset.
-    setNotice("The "+chosenPair+" pairing has not passed on-chain contract and liquidity review. No transaction will be prepared.");
-    return;
-    let broadcastHash: Hash | undefined;
-    setNotice("");
-    setTxHash("");
-    setConfirmedCoin("");
-    setSubmitting(true);
-    try {
-      await ensureUltraNetwork(provider);
-      const activeChain = String(await provider.request({ method: "eth_chainId" }));
-      setChain(activeChain);
-      if (activeChain.toLowerCase() !== ULTRA_EVM_TESTNET.chainIdHex) {
-        throw new Error("Switch to Ultra EVM Testnet first.");
-      }
-      const currentAccounts = await provider.request({ method: "eth_accounts" }) as string[];
-      if (!currentAccounts?.[0] || getAddress(currentAccounts[0]) !== getAddress(address)) {
-        throw new Error("Connected wallet changed. Reconnect and review the transaction.");
-      }
-      const publicClient = createUltraPublicClient();
-      // Confirm the configured factory is a real, confirmed Ultra EVM Testnet deployment
-      // immediately before requesting a wallet-signed transaction.
-      await verifyFactoryDeployment(publicClient, LOOKE_FACTORY_ADDRESS, LOOKE_FACTORY_DEPLOY_TX);
-      const reviewedSupply = parseUnits(preview.supply, 18);
-      const data = encodeFunctionData({
-        abi: lookeCoinFactoryAbi,
-        functionName: "createCoin",
-        args: [preview.name, preview.symbol, preview.metadataURI, reviewedSupply],
-      });
-      const hash = await provider.request({
-        method: "eth_sendTransaction",
-        params: [{ from: address, to: LOOKE_FACTORY_ADDRESS, data }],
-      });
-      if (typeof hash !== "string") throw new Error("Wallet did not provide a transaction hash.");
-      assertHash(hash);
-      broadcastHash = hash;
-      setTxHash(hash);
-      setTransactionStatus("submitted");
-      setNotice("Wallet transaction submitted. Waiting for two confirmations and independent contract checks.");
-      const receipt = await publicClient.waitForTransactionReceipt({
-        hash, confirmations: 2, timeout: 120_000,
-      });
-      const created = decodeCoinCreatedFromReceipt(receipt, getAddress(LOOKE_FACTORY_ADDRESS), {
-        creator: getAddress(address),
-        name: preview.name,
-        symbol: preview.symbol,
-        metadataURI: preview.metadataURI,
-        supply: reviewedSupply,
-      });
-      await verifyCreatedCoinState(publicClient, created);
-      setConfirmedCoin(created.coin);
-      setTransactionStatus("confirmed");
-      setNotice("Coin creation verified on Ultra EVM Testnet. Event, token code, creator balance and total supply match.");
-    } catch (error) {
-      if (broadcastHash) {
-        setTransactionStatus("submitted");
-        setNotice("Transaction was broadcast but NOT verified: " + errorMessage(error) +
-          ". Check the on-chain receipt before attempting another launch.");
-      } else {
-        setTransactionStatus("failed");
-        setNotice(errorMessage(error));
-      }
-    } finally {
-      setSubmitting(false);
-    }
+    // No wallet requests, token deployments or pool activations are allowed
+    // until the chosen LOOKE or ULTRA pairing has independently verified
+    // addresses, liquidity/security approval and explicit wallet consent.
+    setNotice("The "+chosenPair+" pairing is not operationally verified. This is a token draft only; no transaction has been prepared.");
   }
 
   return (
