@@ -7,6 +7,7 @@ import {
   type DiscoverFeed,type DiscoverSort,
 } from "../../lib/discover";
 import "./discover.css";
+import "./market-first.css";
 
 type NativeHead={chainId:string;headBlock:number;irreversibleBlock:number};
 const TABS:{key:DiscoverSort;label:string}[]=[
@@ -94,139 +95,140 @@ export default function DiscoverDashboard({onCreate}:{onCreate:()=>void}){
   };
   const isSearching=cleanDiscoveryQuery(query).length>0;
 
+
   return (
-    <div className="discover-v12">
+    <div className="discover-v12 discover-market-first">
       <div className="discover-utility">
         <div className="discover-search">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.6"/><path d="m16 16 5 5"/></svg>
           <input ref={searchRef} type="search" value={query} onChange={e=>setQuery(e.target.value)}
-            placeholder="Search coins, creators or contracts" aria-label="Search verified Looke markets" maxLength={64}/>
+            placeholder="Search creators, tokens or contract addresses"
+            aria-label="Search verified creator markets" maxLength={64}/>
           <kbd>/</kbd>
         </div>
-        <div className="discover-utility-tag"><span className="discover-live-dot"/> Ultra Testnet <span className="discover-hide-mobile">· Chain 18881</span></div>
+        <span className="discover-market-network"><span className="discover-live-dot"/> Ultra Testnet <span>18881</span></span>
       </div>
 
-      <section className="discover-welcome" aria-label="Explore the Ultra creator economy">
-        <div className="discover-welcome-content">
-          <div className="discover-kicker"><span className="discover-kicker-dot"/> THE CREATOR ECONOMY, ON ULTRA</div>
-          <h1>Discover the <span>next wave.</span></h1>
-          <p>Every creator has a story. Every coin starts somewhere. Explore verified markets, discover Uniqs, and build what comes next.</p>
-          <div className="discover-hero-actions">
-            <button type="button" className="discover-create" onClick={onCreate}><span>＋</span> Create a coin <span aria-hidden="true">↗</span></button>
-            <Link className="discover-explore" href="/uniqs">Explore Uniqs <span aria-hidden="true">↗</span></Link>
-          </div>
-          <div className="discover-hero-footnote"><span className="discover-hero-pin"/> Real on-chain data only. No simulated trades.</div>
+      <nav className="discover-categories" aria-label="Explore Looke">
+        <div className="discover-categories-scroll">
+          <button type="button" className="discover-category discover-category-selected"
+            onClick={()=>{setTab("trending");setQuery("");}} aria-label="All verified creator coins">
+            <span className="discover-category-dot">✳</span> All coins <span aria-hidden="true" className="discover-chevron">⌄</span>
+          </button>
+          <button type="button" className="discover-category" onClick={onCreate}>
+            <span className="discover-category-dot purple">✦</span> Creator studio
+          </button>
+          <Link href="/uniqs" className="discover-category"><span className="discover-category-dot violet">◇</span> Uniq NFTs</Link>
+          <Link href="/trade" className="discover-category"><span className="discover-category-dot mint">↗</span> Trading</Link>
+          <Link href="/social" className="discover-category"><span className="discover-category-dot peach">◎</span> Communities</Link>
+          <Link href="/beta" className="discover-category"><span className="discover-category-dot grey">✓</span> Beta status</Link>
         </div>
-        <div className="discover-hero-art" aria-hidden="true">
-          <div className="discover-orb discover-orb-back"/>
-          <div className="discover-orb discover-orb-front"/>
-          <div className="discover-orb discover-orb-small"/>
-          <span className="discover-art-spark one">✳</span>
-          <span className="discover-art-spark two">✦</span>
-          <div className="discover-art-label"><span className="discover-live-dot"/> BUILD ON ULTRA</div>
-        </div>
-      </section>
+        <button type="button" className="discover-floating-create" onClick={onCreate}
+          aria-label="Create a coin on Ultra Testnet" title="Create a coin">＋</button>
+      </nav>
 
-      <div className="discover-shortcuts" aria-label="Explore Looke products">
-        {reference.map(item=>(
-          <Link key={item.label} className={"discover-shortcut discover-shortcut-"+item.tone} href={item.href}>
-            <span className="discover-shortcut-icon">{item.icon}</span>
-            <span className="discover-shortcut-copy"><strong>{item.label}</strong><small>{item.detail}</small></span>
-            <span className="discover-shortcut-arrow">↗</span>
-          </Link>
-        ))}
-      </div>
-
-      <section className="discover-markets" aria-label="Ultra creator markets">
+      <section className="discover-markets" aria-label="Ultra creator market rankings">
         <header className="discover-markets-header">
-          <div>
-            <div className="discover-overline">MARKETS / ULTRA EVM TESTNET</div>
-            <h2>Explore markets<span className="discover-header-period">.</span></h2>
-            <p>On-chain creator tokens. Verified contracts. Nothing made up.</p>
+          <div className="discover-market-heading">
+            <div className="discover-overline">DISCOVER / ULTRA EVM</div>
+            <h1>Explore markets <span className="discover-header-period">.</span></h1>
+            <p>Creator coins and verified on-chain activity.</p>
           </div>
           <div className="discover-header-right">
-            <span className="discover-market-status"><span className="discover-live-dot"/>{hasMarkets?"On-chain markets":"Waiting for first market"}</span>
-            <button className="discover-refresh" type="button" onClick={()=>{setLoading(true);void refresh();}} disabled={loading} aria-label="Refresh verified markets" title="Refresh verified markets">↻</button>
+            <span className="discover-market-status"><span className="discover-live-dot"/>{hasMarkets?"Verified markets":"Indexer awaiting markets"}</span>
+            <button className="discover-refresh" type="button" onClick={()=>{setLoading(true);void refresh();}} disabled={loading}
+              aria-label="Refresh verified markets" title="Refresh verified markets">↻</button>
           </div>
         </header>
-        <div className="discover-tabs" role="tablist" aria-label="Market views">
+        <div className="discover-tabs" role="tablist" aria-label="Market rankings">
           {TABS.map(t=><button key={t.key} role="tab" aria-selected={tab===t.key}
             className={tab===t.key?"discover-tab is-active":"discover-tab"}
             onClick={()=>setTab(t.key)} type="button">
             {t.label}{t.key==="watchlist"&&saved.length>0?<span className="discover-tab-count">{saved.length}</span>:null}
           </button>)}
           <span className="discover-tab-spacer"/>
-          <span className="discover-tab-network">◉ Verified Ultra markets</span>
+          <span className="discover-tab-network">{feed?.markets.length??0} verified creator markets</span>
         </div>
         <div className="discover-table">
           <div className="discover-table-head" aria-hidden="true">
-            <span>Coin / Pair</span><span>Pool price</span><span>Observed volume*</span>
-            <span>Liquidity in quote</span><span>Holders</span><span>24h</span><span>Save</span>
+            <span>Coin</span><span>Market cap</span><span>Observed vol*</span>
+            <span>Holders</span><span>Age</span><span>Paired with</span><span>Past 24h</span><span>Save</span>
           </div>
-          {rows.length>0&&tab!=="new"?rows.map((m,i)=>(
+          {rows.length>0&&tab!=="new"?rows.map(m=>(
             <div className="discover-row" key={m.id}>
               <div className="discover-row-name">
                 <span className="discover-token-icon" aria-hidden="true">{initials(m.baseSymbol)}</span>
-                <span><strong>{m.baseSymbol}</strong><small>{m.id.toUpperCase()} · {m.quoteSymbol}</small></span>
+                <span><strong>{m.baseSymbol}</strong><small>{m.id.toUpperCase()} · price {compactOnChainNumber(m.poolPrice,5)} {m.quoteSymbol}</small></span>
               </div>
-              <div className="discover-cell"><span className="discover-mobile-label">Pool price</span>
-                <strong>{compactOnChainNumber(m.poolPrice,5)} {m.quoteSymbol}</strong></div>
-              <div className="discover-cell"><span className="discover-mobile-label">Observed volume</span>
+              <div className="discover-cell discover-missing" title="Market cap needs a verified supply and complete pricing index">—</div>
+              <div className="discover-cell">
+                <span className="discover-mobile-label">Observed volume</span>
                 <strong>{m.observedQuoteVolume===null?"—":compactOnChainNumber(m.observedQuoteVolume)+" "+m.quoteSymbol}</strong>
-                {m.partial?<small>Partial scan</small>:null}</div>
-              <div className="discover-cell"><span className="discover-mobile-label">Quote liquidity</span>
-                <strong>{compactOnChainNumber(m.reserveQuote)} {m.quoteSymbol}</strong></div>
-              <div className="discover-cell discover-missing" title="Requires verified unique-holder indexing">—</div>
-              <div className="discover-cell discover-missing" title="24-hour price history not yet indexed">—</div>
+                {m.partial?<small>Partial scan</small>:null}
+              </div>
+              <div className="discover-cell discover-missing" title="Verified holder count indexing is not yet available">—</div>
+              <div className="discover-cell discover-missing" title="Creation date indexing is not yet available">—</div>
+              <div className="discover-cell discover-pair"><span className="discover-pair-icon">◉</span><strong>{m.quoteSymbol}</strong></div>
+              <div className="discover-cell discover-missing" title="Verified 24-hour historical prices are not available">—</div>
               <button className={"discover-save"+(watchlist.has(m.id)?" is-saved":"")}
                 onClick={()=>toggleSaved(m.id)} type="button"
                 aria-label={(watchlist.has(m.id)?"Remove ":"Add ")+m.baseSymbol+(watchlist.has(m.id)?" from":" to")+" watchlist"}
-                aria-pressed={watchlist.has(m.id)}>☆</button>
-              <Link href="/trade" className="discover-row-action" aria-label={"Inspect "+m.baseSymbol+" trading market"}>View market ↗</Link>
+                aria-pressed={watchlist.has(m.id)}>{watchlist.has(m.id)?"★":"☆"}</button>
+              <Link href="/trade" className="discover-row-action" aria-label={"Open "+m.baseSymbol+" trading market"}>Trade ↗</Link>
             </div>
           )):(
             <div className="discover-empty-market" role="status">
-              <div className="discover-empty-visual" aria-hidden="true">
-                <span className="discover-empty-diamond a">◇</span>
-                <span className="discover-empty-diamond b">◇</span>
-                <span className="discover-empty-diamond c">✳</span>
+              <span className="discover-empty-icon" aria-hidden="true">◇</span>
+              <div className="discover-empty-copy">
+                {loading?<><h2>Checking Ultra markets…</h2><p>Reading verified Testnet contracts and actual swap activity.</p></>:
+                  error?<><h2>Market data is unavailable</h2><p>{error} Looke will not show synthetic listings.</p></>:
+                  tab==="new"?<><h2>New listings are not indexed yet</h2><p>Creation-time indexing is required before coins can be listed as new.</p></>:
+                  tab==="watchlist"?<><h2>Nothing on your watchlist yet</h2><p>Bookmark a verified token to save it in this browser.</p></>:
+                  isSearching?<><h2>No matching verified coin</h2><p>Try a different symbol or contract address.</p></>:
+                  <><h2>First verified markets coming soon</h2><p>There are no confirmed creator coin markets with reviewed liquidity to list yet. Real coins will appear here automatically once indexed.</p></>}
               </div>
-              {loading?<><h3>Finding verified markets…</h3><p>Reading actual Ultra EVM Testnet contracts and recent swaps.</p></>:
-                error?<><h3>Market data is unavailable.</h3><p>{error} We don't substitute sample tokens or volume.</p></>:
-                tab==="new"?<><h3>New launches are coming.</h3><p>Creation dates need an independently verified deployment indexer. Until then, no token is falsely labeled new.</p></>:
-                tab==="watchlist"?<><h3>Your watchlist starts here.</h3><p>Save a verified token using the star beside its market. Saved items stay in this browser.</p></>:
-                isSearching?<><h3>No matching verified markets.</h3><p>Try another name, ticker or contract address. Only real Ultra Testnet tokens are included.</p></>:
-                <><h3>A new market starts with a creator.</h3><p>Verified Ultra creator tokens will appear here when their contracts and liquidity are live. No fake rankings, market caps or volumes.</p></>}
               <div className="discover-empty-actions">
-                <button type="button" className="discover-create" onClick={onCreate}>＋ Launch your token ↗</button>
-                <Link href="/trade" className="discover-empty-link">Open trading terminal ↗</Link>
+                <button type="button" className="discover-create" onClick={onCreate}>Create a coin ↗</button>
+                <Link href="/trade" className="discover-empty-link">Trading terminal ↗</Link>
               </div>
             </div>
           )}
         </div>
         <footer className="discover-market-footnote">
-          <span>*Observed volume is from a bounded recent blockchain scan, <strong>not</strong> a 24-hour statistic. Market cap, holders and 24h change appear after independently verified indexing.</span>
+          <span>*Observed volume comes from recent verified blocks, not a complete 24-hour window. Market cap, holders, age and price change remain unavailable without independent indexing.</span>
           {updated?<time dateTime={updated}>Checked {new Date(updated).toLocaleTimeString()}</time>:null}
         </footer>
-        {feed?.errors.length?<div className="discover-indexer-notice">Some allowlisted markets could not be independently verified. They are excluded from rankings.</div>:null}
+        {feed?.errors.length?<div className="discover-indexer-notice">Some allowlisted markets failed verification and are hidden.</div>:null}
       </section>
 
-      <section className="discover-bottom">
-        <div className="discover-bottom-card discover-bottom-creative">
-          <div className="discover-bottom-badge">LOOKE CREATOR STUDIO</div>
-          <div className="discover-bottom-content"><h3>Your next idea deserves a home.</h3><p>Give your community a coin, a collection, and a place to connect. Start with Ultra Testnet.</p>
-            <button type="button" onClick={onCreate}>Enter creator studio <span>↗</span></button></div>
-          <span className="discover-bottom-flower" aria-hidden="true">✳</span>
+      <div className="discover-product-footer">
+        <div className="discover-product-intro"><span className="discover-overline">THE LOOKE ECOSYSTEM</span><h2>More than a market<span className="branddot">.</span></h2></div>
+        <div className="discover-shortcuts" aria-label="Looke products">
+          {reference.map(item=>(
+            <Link key={item.label} className={"discover-shortcut discover-shortcut-"+item.tone} href={item.href}>
+              <span className="discover-shortcut-icon">{item.icon}</span>
+              <span className="discover-shortcut-copy"><strong>{item.label}</strong><small>{item.detail}</small></span>
+              <span className="discover-shortcut-arrow">↗</span>
+            </Link>
+          ))}
         </div>
-        <div className="discover-bottom-card discover-bottom-chain">
-          <div className="discover-bottom-badge">NETWORK PULSE</div>
-          <div className="discover-chain-row"><span className="discover-chain-glyph">◉</span><div><strong>Ultra EVM Testnet</strong><small>Chain ID 18881</small></div><span className="discover-chain-ok">Configured</span></div>
-          <div className="discover-chain-row"><span className="discover-chain-glyph">◆</span><div><strong>Ultra Native Testnet</strong><small>{native?"Irreversible block "+native.irreversibleBlock.toLocaleString("en-US"):"RPC check unavailable"}</small></div><span className={native?"discover-chain-ok":"discover-chain-pending"}>{native?"Verified":"Pending"}</span></div>
-          <Link href="/beta" className="discover-beta-link">View beta readiness <span>↗</span></Link>
+        <div className="discover-bottom">
+          <div className="discover-bottom-card discover-bottom-creative">
+            <div className="discover-bottom-badge">LOOKE CREATOR STUDIO</div>
+            <div className="discover-bottom-content"><h3>Start something original.</h3><p>Launch your creator coin and connect your community on Ultra Testnet when the verified factory is active.</p>
+              <button type="button" onClick={onCreate}>Open creator studio <span>↗</span></button></div>
+            <span className="discover-bottom-flower" aria-hidden="true">✳</span>
+          </div>
+          <div className="discover-bottom-card discover-bottom-chain">
+            <div className="discover-bottom-badge">NETWORK PULSE</div>
+            <div className="discover-chain-row"><span className="discover-chain-glyph">◉</span><div><strong>Ultra EVM Testnet</strong><small>Chain ID 18881</small></div><span className="discover-chain-ok">Configured</span></div>
+            <div className="discover-chain-row"><span className="discover-chain-glyph">◆</span><div><strong>Ultra Native Testnet</strong><small>{native?"Irreversible block "+native.irreversibleBlock.toLocaleString("en-US"):"RPC check unavailable"}</small></div><span className={native?"discover-chain-ok":"discover-chain-pending"}>{native?"Verified":"Pending"}</span></div>
+            <Link href="/beta" className="discover-beta-link">View beta readiness <span>↗</span></Link>
+          </div>
         </div>
-      </section>
+      </div>
 
-      <div className="discover-endnote"><span>looke<span className="branddot">.</span></span><p>Make something matter. Built on Ultra.</p><span>EARLY ACCESS · TESTNET</span></div>
+      <div className="discover-endnote"><span>looke<span className="branddot">.</span></span><p>Creator coins, Uniqs and communities on Ultra.</p><span>EARLY ACCESS · TESTNET</span></div>
     </div>
   );
 }

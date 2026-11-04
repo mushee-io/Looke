@@ -4,7 +4,7 @@
 
 ## New interface
 - Search bar with / keyboard shortcut, responsive small-icon navigation and wallet connection preserved from existing homepage.
-- Compact creator hero; shortcuts to creator coins, native Ultra Uniq NFTs and social modules.
+- **Market-first design:** compact centered search and real category navigation, Trending/Top/New tabs, accurate token table in the first viewport. Removed the oversized blue hero entirely; creator/Uniq/social shortcut cards now sit BELOW the market feed.
 - Real on-chain market directory with **Trending**, **Top**, **New** and local-browser **Watchlist** views.
 - Trending sorts by **observed quote-token volume in a bounded recent blockchain scan**, not claimed 24h volume; Top sorts by verified quote reserves.
 - New explicitly stays empty until an indexed coin creation-time source is available; no invented listing timestamps.

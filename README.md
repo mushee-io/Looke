@@ -361,3 +361,17 @@ shows an elegant empty state rather than fake coins. The existing trading, nativ
 NFT and wallet modules remain unchanged.
 
 [See M12 protected Preview release and operator guide](deployment/M12_DISCOVER_RELEASE.md).
+
+### M12 visual correction — markets above all promotional content
+
+Based on the actual screenshots, the original M12 styling still used the
+oversized blue landing-page hero and pushed the verified token table below
+the first viewport. This correction removes that hero entirely. On desktop,
+the first screen contains **search, category navigation, Trending / Top /
+New / Watchlist tabs, and the verified market table**. Product cards and
+creator CTAs now appear only below the market feed. The UI deliberately
+keeps an honest, compact empty state until genuine Testnet listings exist.
+
+A dedicated source-level test prevents the large hero from returning ahead
+of the market directory. The existing transaction and beta safety gates
+remain unchanged.
