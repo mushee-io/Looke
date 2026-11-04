@@ -83,6 +83,21 @@ receipt checks, environment requirements and acceptance criteria. The UI does no
 enable token creation without a confirmed factory address **and its real deployment hash**.
 Trading, liquidity, Uniq NFT marketplace and live social messaging are out of scope.
 
+
+## M4 — Verified Ultra EVM Testnet creator-token trading terminal
+
+The `/trade` terminal is an integration for **real, operator-allowlisted V2-compatible Ultra EVM Testnet (chain 18881) pools**. It checks:
+- router, factory, pair and ERC20 token code on the actual chain
+- `router.factory()`, `pair.factory()`, `factory.getPair()`, `pair.token0/token1`, token creator, and positive real reserves
+- real `getAmountsOut()` swap quotes with fixed-chain wallet signing, exact token approvals, bounded slippage (max 3%) and 5-minute deadlines
+- real confirmed receipt, pair Swap event and actual ERC20 token Transfer to the wallet
+- genuine pair Swap logs to construct trade candles, observed volume and explorer transaction links
+- real on-chain balances in the portfolio view
+
+**By default the market registry is empty and execution is disabled.** No funded Ultra EVM V2-compatible router/pair deployment is claimed. Without actual separately authorized liquidity and reviewed addresses, the terminal shows no market and **cannot buy or sell**. It does not fabricate orders, trades, prices or volume. No contract, transaction, or liquidity provisioning has been performed by M4 engineering work.
+
+See [M4 trading testnet runbook](docs/M4_ULTRA_EVM_TRADING_RUNBOOK.md) and `.env.example` for configuration and acceptance steps.
+
 ## M3 — native Uniq collections and resale (in review)
 
 The new [Uniq Studio](src/app/uniqs/page.tsx) at `/uniqs` is distinct from
