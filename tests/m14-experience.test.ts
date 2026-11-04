@@ -91,3 +91,10 @@ test("Wallet modal reads true Ultra EVM balance and does not invent fiat valuati
   assert.match(overlays,/Transaction history indexing has not been activated/);
   assert.ok(!overlays.includes("eth_sendTransaction"));
 });
+
+test("Global header market search is connected to actual Discover API filtering",()=>{
+  const discover=source("src/components/discover/DiscoverDashboard.tsx");
+  assert.ok(home.includes("<DiscoverDashboard search={globalSearch}"));
+  assert.match(discover,/setQuery\(search\)/);
+  assert.match(discover,/URLSearchParams\(\{q:search/);
+});

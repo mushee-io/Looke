@@ -225,7 +225,7 @@ export default function Home() {
         </aside>
 
         <section className="content">
-          {screen === "Discover" && <DiscoverDashboard onCreate={()=>setShowCreate(true)} />}
+          {screen === "Discover" && <DiscoverDashboard search={globalSearch} onCreate={()=>setShowCreate(true)} />}
           {screen === "Trending" && <TrendingFeed search={globalSearch} onCreate={()=>setShowCreate(true)}/>}
           {screen === "Messages" && <MessagesPanel/>}
           {screen === "Notifications" && <NotificationsPanel onCreate={()=>{setShowCreate(true);}}/>}
