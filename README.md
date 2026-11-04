@@ -54,3 +54,23 @@ The creator receives all fixed-supply tokens at launch. **Trading does not autom
 Looke code: MIT, copyright © 2026 Mushee Labs. A small upstream metadata-validation utility from Zora's **MIT-licensed** `@zoralabs/coins-sdk` is vendored under `vendor/zora/` with Zora's MIT license and credit.
 
 **Do not copy the current Zora Coins smart contracts**: multiple active contracts use `ZORA-DELAYED-OSL-v1`, which restricts commercial/competing use pending their applicable open dates. See [licensing and roadmap](docs/LICENSING_AND_ROADMAP.md).
+
+## M3 — native Uniq collections and resale (in review)
+
+The new [Uniq Studio](src/app/uniqs/page.tsx) at `/uniqs` is distinct from
+Ultra EVM and includes: native Testnet extension wallet connect, direct
+chain-table reads for owned `token.b` Uniqs, `factory.b` collections
+and `resale.a` listings, and reviewed action builders for `create.b`,
+`issue.b`, `resell`, `cancelresell` and `buy`. These actions are
+never signed/broadcast without a user action and wallet approval.
+
+The publicly documented Ultra NFT GraphQL API requires a `client_id`,
+so M3 uses the chain's public Testnet RPC via a read-only server route.
+M3 does not scrape arbitrary image metadata or invent creator content.
+A wallet broadcast hash is *not* claimed as final: listing/buy/mint results
+are checked against native Testnet's last irreversible block and relevant
+chain-table state. New factory IDs require separate attribution/proof.
+No real wallet transactions have been executed by this milestone.
+
+See [M3 Testnet acceptance runbook](docs/M3_NATIVE_UNIQ_RUNBOOK.md) for
+prerequisites, Testnet/extension support and operator test cases.
