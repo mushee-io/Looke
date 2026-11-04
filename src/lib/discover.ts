@@ -61,8 +61,8 @@ export function selectDiscoverMarkets(
   );
   return [...filtered].sort((a,b)=>{
     if(sort==="new")return (b.createdAt??"").localeCompare(a.createdAt??"")||a.id.localeCompare(b.id);
-    const first=sort==="top"?finiteNumber(a.marketCap??a.reserveQuote):finiteNumber(a.observedQuoteVolume);
-    const second=sort==="top"?finiteNumber(b.marketCap??b.reserveQuote):finiteNumber(b.observedQuoteVolume);
+    const first=sort==="top"?finiteNumber(a.marketCap):finiteNumber(a.observedQuoteVolume);
+    const second=sort==="top"?finiteNumber(b.marketCap):finiteNumber(b.observedQuoteVolume);
     return second-first||a.id.localeCompare(b.id);
   });
 }
