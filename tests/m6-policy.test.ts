@@ -47,7 +47,7 @@ test("deployment revision must be a real Git commit; hash and address validators
 });
 
 test("public beta release must be a valid, fresh, revision-bound wallet signature",async()=>{
-  const account=privateKeyToAccount("0x"+"b".repeat(64));
+  const account=privateKeyToAccount(("0x"+"b".repeat(64)) as `0x${string}`);
   const expires="2026-11-04T19:00:00.000Z";
   const msg=releaseText(revision,expires);
   assert.match(msg,/authorize the explicitly reviewed PUBLIC TESTNET BETA release only/);
