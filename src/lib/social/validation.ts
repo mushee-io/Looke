@@ -15,9 +15,14 @@ export const assetReference = z.discriminatedUnion("assetType",[
   z.object({assetType:z.literal("token"),assetChain:z.literal("ultra-evm"),assetId:address}),
   z.object({assetType:z.literal("uniq"),assetChain:z.literal("ultra-native"),assetId:z.string().regex(/^[1-9][0-9]{0,15}$/)}),
 ]);
+export const mediaAttachment=z.object({
+  url:z.string().url().max(800).refine(x=>x.startsWith("https://"),"Media URL must use HTTPS"),
+  kind:z.enum(["image","video"]),
+}).strict();
 export const post = z.object({
   body:z.string().trim().min(1).max(1000),
   asset:z.union([assetReference,z.null()]).default(null),
+  media:z.union([mediaAttachment,z.null()]).default(null),
 }).strict();
 export const comment = z.object({postId:z.string().uuid(),body:z.string().trim().min(1).max(500)}).strict();
 export const report = z.object({

@@ -408,3 +408,22 @@ social writes and private message sending remain disabled until independent
 security/operational gates pass.
 
 [Read the M14 UI acceptance, security and Preview checklist](deployment/M14_CREATOR_EXPERIENCE.md).
+
+## M15 — Moderated media groundwork, real creator search and independently verified assets
+
+Creator feeds and creator profiles now support **PostgreSQL-backed text search and
+cursor-paged authentic posts**. Creator-hosted image/video metadata can be
+submitted only for an operator-allowlisted HTTPS media host when social writes
+are enabled, and it stays hidden until an authorized moderator approves it.
+A selected local file only previews in the browser; Looke does not silently
+upload or store it. The M15 media schema migration is explicit and repeatable.
+
+Notifications refresh actual user-specific follows/comments. A strictly
+read-only Testnet proof endpoint can verify a creator-token factory event or
+a specific Uniq held in a supplied Ultra native account, but does not equate
+that native account with an EVM wallet. Messaging still has **no send path**;
+readiness and offline envelope validation prepare for a separate security
+audit. See [M15 operator acceptance](deployment/M15_CREATOR_ACCEPTANCE.md).
+
+No real pool/market activity, token mint, messaging, asset price or social data
+is created for the Preview. Public beta and all financial execution remain off.

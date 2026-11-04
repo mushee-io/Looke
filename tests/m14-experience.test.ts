@@ -51,7 +51,8 @@ test("Main Looke shell exposes approved seven visual flows rather than placehold
 });
 test("Trending feed only loads observed market index and real social database posts",()=>{
   assert.match(views,/fetch\("\/api\/discover\?sort=trending/);
-  assert.match(views,/fetch\("\/api\/social\?action=feed/);
+  assert.match(views,/action:"feed"/);
+  assert.match(views,/fetch\("\/api\/social\?"/);
   assert.match(views,/verified-on-chain/);
   assert.match(views,/No sample posts have been substituted/);
   assert.ok(!views.includes("Raydium"));
