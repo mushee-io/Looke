@@ -2,6 +2,9 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import DiscoverDashboard from "../components/discover/DiscoverDashboard";
+import {TrendingFeed,MessagesPanel,NotificationsPanel,ProfilePanel} from "../components/experience/LookeViews";
+import {CreateCoinModal,WalletModal,type CoinQuickDraft} from "../components/experience/LookeOverlays";
+import "../components/experience/experience.css";
 import { encodeFunctionData, getAddress, isAddress, parseUnits, type Hash } from "viem";
 import { lookeCoinFactoryAbi } from "../lib/coin-abi";
 import { type CoinDraft, validateCoinDraft } from "../lib/metadata";
@@ -14,7 +17,7 @@ import {
   shortAddress, testnetAddressUrl, testnetTxUrl,
 } from "../lib/ultra";
 
-type Screen = "Discover" | "Create" | "Uniq NFTs" | "Messages";
+type Screen = "Discover" | "Trending" | "Create" | "Uniq NFTs" | "Messages" | "Notifications" | "Wallet" | "Profile";
 
 type EthereumProvider = {
   request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
@@ -59,6 +62,10 @@ async function ensureUltraNetwork(provider: EthereumProvider): Promise<void> {
 
 export default function Home() {
   const [screen, setScreen] = useState<Screen>("Discover");
+  const [showCreate,setShowCreate] = useState(false);
+  const [showWallet,setShowWallet] = useState(false);
+  const [chosenPair,setChosenPair] = useState<"ULTRA"|"LOOKE">("ULTRA");
+  const [globalSearch,setGlobalSearch] = useState("");
   const [address, setAddress] = useState("");
   const [chain, setChain] = useState("");
   const [walletBusy, setWalletBusy] = useState(false);
@@ -73,7 +80,24 @@ export default function Home() {
   const [confirmedCoin, setConfirmedCoin] = useState("");
   const factoryConfigured = isAddress(LOOKE_FACTORY_ADDRESS) && /^0x[\da-fA-F]{64}$/.test(LOOKE_FACTORY_DEPLOY_TX);
   const onUltra = chain.toLowerCase() === ULTRA_EVM_TESTNET.chainIdHex;
-  const screens: Screen[] = ["Discover", "Create", "Uniq NFTs", "Messages"];
+  const screens: Screen[] = ["Discover","Trending","Messages","Create","Notifications","Wallet","Profile","Uniq NFTs"];
+  const icons: Record<Screen,string> = {
+    Discover:"⌂",Trending:"ϟ",Messages:"➤",Create:"＋",
+    Notifications:"♧",Wallet:"▣",Profile:"◉","Uniq NFTs":"◇",
+  };
+  function chooseNavigation(item:Screen){
+    setNotice("");
+    if(item==="Create"){setShowCreate(true);return;}
+    if(item==="Wallet"){if(address)setShowWallet(true);else void connectWallet();return;}
+    setScreen(item);
+  }
+  function reviewQuickDraft(coin:CoinQuickDraft){
+    setDraft(current=>({...current,name:coin.name,symbol:coin.symbol}));
+    setChosenPair(coin.pair);setPreview(null);setTxHash("");
+    setConfirmedCoin("");setTransactionStatus("idle");
+    setShowCreate(false);setScreen("Create");
+    setNotice("Draft prepared for "+coin.pair+" pairing. Neither liquidity pair is approved. A local image still needs publicly hosted metadata before review.");
+  }
 
   useEffect(() => {
     const provider = injectedWallet();
@@ -169,6 +193,10 @@ export default function Home() {
       setNotice("Connect an EVM wallet before launching.");
       return;
     }
+    // The token launch flow cannot claim LOOKE/ULTRA liquidity until an
+    // independently verified routing/pair contract exists for that asset.
+    setNotice("The "+chosenPair+" pairing has not passed on-chain contract and liquidity review. No transaction will be prepared.");
+    return;
     let broadcastHash: Hash | undefined;
     setNotice("");
     setTxHash("");
@@ -234,14 +262,18 @@ export default function Home() {
   }
 
   return (
-    <main className={screen === "Discover" ? "shell shell-discover" : "shell"}>
+    <main className="shell shell-discover looke-v14-shell">
       <header className="topbar">
         <button className="brand" aria-label="Looke home" onClick={() => setScreen("Discover")}>
           <span className="brandmark">L<span>●</span></span>
           <span>looke<span className="branddot">.</span></span>
         </button>
-        <div className="toplinks"><span className="statusdot" /> Ultra EVM Testnet <span className="toplinks-muted">/</span> <a href="/beta" style={{color:"inherit",textDecoration:"underline"}}>Beta readiness ↗</a></div>
-        <button className="wallet" onClick={connectWallet} disabled={walletBusy}>
+        <div className="lk-global-search"><span aria-hidden="true">⌕</span>
+          <input type="search" value={globalSearch} onChange={e=>setGlobalSearch(e.target.value)}
+            aria-label="Search Looke creators and markets" placeholder="Search for creators, trends or tokens…"/>
+          {globalSearch&&<button type="button" aria-label="Clear search" onClick={()=>setGlobalSearch("")}>×</button>}
+        </div>
+        <button className="wallet" onClick={()=>{if(address)setShowWallet(true);else void connectWallet();}} disabled={walletBusy}>
           <span className="wallet-led" /> {walletBusy ? "Connecting…" : address ? shortAddress(address) : "Connect wallet"} <span aria-hidden="true">↗</span>
         </button>
       </header>
@@ -250,9 +282,10 @@ export default function Home() {
         <aside className="sidebar">
           <div className="sidebar-label">EXPLORE</div>
           <nav aria-label="Main navigation">
-            {screens.map((item, index) => (
-              <button key={item} className={`navitem ${screen === item ? "nav-active" : ""}`} title={item} aria-label={item} onClick={() => { setScreen(item); setNotice(""); }}>
-                <span className="navicon">{["◈", "＋", "▧", "▤"][index]}</span>{item}<span className="navarrow">↗</span>
+            {screens.map(item => (
+              <button key={item} className={`navitem ${screen===item||(item==="Create"&&showCreate)||(item==="Wallet"&&showWallet)?"nav-active":""}`}
+                title={item} aria-label={item} aria-pressed={screen===item} onClick={()=>chooseNavigation(item)}>
+                <span className="navicon">{icons[item]}</span>{item}<span className="navarrow">↗</span>
               </button>
             ))}
           </nav>
@@ -265,7 +298,15 @@ export default function Home() {
         </aside>
 
         <section className="content">
-          {screen === "Discover" && <DiscoverDashboard onCreate={() => {setScreen("Create");setNotice("");}} />}
+          {screen === "Discover" && <DiscoverDashboard onCreate={()=>setShowCreate(true)} />}
+          {screen === "Trending" && <TrendingFeed search={globalSearch} onCreate={()=>setShowCreate(true)}/>}
+          {screen === "Messages" && <MessagesPanel/>}
+          {screen === "Notifications" && <NotificationsPanel onCreate={()=>{setShowCreate(true);}}/>}
+          {screen === "Profile" && <ProfilePanel address={address} onCreate={()=>setShowCreate(true)}/>}
+          {screen === "Wallet" && <div className="lk-wallet-route">
+            <h1>Wallet</h1><p>Inspect your real Ultra Testnet account in the wallet popup.</p>
+            <button type="button" onClick={()=>address?setShowWallet(true):void connectWallet()}>
+              {address?"Open wallet":"Connect wallet"}</button></div>}
 
           {screen === "Create" && (
             <section className="create-screen">
@@ -280,16 +321,21 @@ export default function Home() {
                   <label>Image URI<input required placeholder="ipfs://... or https://..." value={draft.image} onChange={e => updateDraft("image", e.target.value)} /></label>
                   <label>Published metadata JSON URI<input required placeholder="ipfs://.../metadata.json" value={draft.metadataURI} onChange={e => updateDraft("metadataURI", e.target.value)} /></label>
                   <label>Initial supply<input required inputMode="decimal" placeholder="1000000" value={draft.supply} onChange={e => updateDraft("supply", e.target.value)} /></label>
+                  <div className="lk-review-pair"><strong>PAIR WITH</strong>
+                    <span>{chosenPair==="ULTRA"?"◆ ULTRA":"L LOOKE"}</span>
+                    <small>Draft preference only. Actual pair contract, liquidity and wallet execution are not activated.</small>
+                  </div>
                   <button className="primary form-submit" type="submit">Review coin draft <span>→</span></button>
                   <p className="field-hint">Looke doesn't upload files yet. Host JSON metadata separately; preview validation does not verify remote content.</p>
                 </form>
                 <div className="preview-panel"><span className="overline">LIVE DRAFT PREVIEW</span><div className="preview-art"><span>✳</span></div><div className="preview-meta"><div><h3>{preview?.name || draft.name || "Your coin"}</h3><p>${preview?.symbol || draft.symbol || "TOKEN"}</p></div><span className="pill">FIXED SUPPLY</span></div><p>{preview?.description || draft.description || "Your creation starts here."}</p><div className="preview-data"><span>SUPPLY</span><strong>{preview?.supply || "—"}</strong></div><div className="preview-data"><span>NETWORK</span><strong>Ultra EVM · 18881</strong></div><div className="preview-data"><span>FACTORY</span><strong>{factoryStatus === "verified" ? shortAddress(LOOKE_FACTORY_ADDRESS) : "Not verified"}</strong></div>
                   <div className="preview-data"><span>DEPLOYMENT PROOF</span><strong>{factoryStatus === "verified" ? "Verified · 2+ confirmations" : factoryStatus === "checking" ? "Checking testnet receipt…" : "Not available"}</strong></div>
                   <button className="launch-button"
-                    disabled={!preview || factoryStatus !== "verified" || !address || submitting || !onUltra || transactionStatus === "submitted" || transactionStatus === "confirmed"}
+                    disabled={true /* No approved LOOKE/ULTRA pairing; prevent unpaired launch. */}
                     onClick={launchCoin}>
                     {submitting ? "Checking wallet / transaction…" : transactionStatus === "confirmed" ? "Verified on Ultra Testnet ✓" : transactionStatus === "submitted" ? "Awaiting independent verification" : "Launch on Ultra Testnet ↗"}
                   </button>
+                  <p className="disabled-reason">Pair creation requires independently reviewed ULTRA/LOOKE assets, liquidity and explicit wallet approval. Draft previews remain available.</p>
                   {factoryStatus !== "verified" && <p className="disabled-reason" role="status">Factory: {factoryReason || (factoryStatus === "checking" ? "Checking deployment receipt…" : "Not configured.")}</p>}
                   {factoryStatus === "verified" && !address && <p className="disabled-reason">Connect your wallet to enable launching.</p>}
                   {address && !onUltra && <p className="disabled-reason">Switch your wallet to Ultra EVM Testnet.</p>}
@@ -300,7 +346,7 @@ export default function Home() {
 
           {screen === "Uniq NFTs" && <section className="info-screen"><span className="overline">02 / COLLECT</span><div className="info-icon">▧</div><h1 className="page-title">Made to be <em>collected.</em></h1><p>Looke will support Ultra's native Uniq NFTs: collections, ownership, minting and marketplace listings. These are native Ultra assets, not ordinary EVM ERC-721 tokens.</p><a href="/uniqs" className="primary" style={{ display: "inline-flex", textDecoration: "none", margin: "12px 0 30px" }}>Open Uniq Studio on Ultra Testnet ↗</a><div className="roadmap-line"><span>01</span><strong>Native Uniq Testnet studio and ownership reads</strong><span className="pill">TESTNET BUILD · M3</span></div><div className="roadmap-line"><span>02</span><strong>Creator minting and collection tools</strong><span className="pill">PLANNED</span></div><div className="roadmap-line"><span>03</span><strong>Verified marketplace execution</strong><span className="pill">PLANNED</span></div><a className="text-link" href="https://developers.ultra.io/" target="_blank" rel="noreferrer">Ultra developer resources ↗</a></section>}
 
-          {screen === "Messages" && <section className="info-screen"><span className="overline">03 / COMMUNITY</span><div className="info-icon">✳</div><h1 className="page-title">Find your <em>people.</em></h1><p>On Looke, creators will be able to share projects, follow each other and discuss the collectibles and tokens they love. Public posting now has a database-backed foundation. Private messaging is disabled pending audited encryption.</p><div className="roadmap-line"><span>01</span><strong>Profiles & discovery</strong><span className="pill">PLANNED</span></div><div className="roadmap-line"><span>02</span><strong>Community posts & comments</strong><span className="pill">PLANNED</span></div><div className="roadmap-line"><span>03</span><strong>Secure conversations</strong><span className="pill">PLANNED</span></div></section>}
+
 
           {notice && <div className="notice" role="status">{notice}</div>}
           {txHash && <div className="tx-result">
@@ -313,6 +359,11 @@ export default function Home() {
           <footer className="footer"><span>© 2026 Looke · An original Ultra-first creator platform</span><span>{address ? `Wallet ${shortAddress(address)}` : "Wallet disconnected"} · {onUltra ? "Ultra Testnet" : "Network not connected"}</span></footer>
         </section>
       </div>
+      {showCreate&&<CreateCoinModal onClose={()=>setShowCreate(false)} onReview={reviewQuickDraft}/>}
+      {showWallet&&<WalletModal address={address} correctNetwork={onUltra}
+        onClose={()=>setShowWallet(false)}
+        onConnect={()=>{setShowWallet(false);void connectWallet();}}
+        onTrade={()=>{setShowWallet(false);window.location.assign("/trade");}}/>}
     </main>
   );
 }
