@@ -304,3 +304,16 @@ no-broadcast staging smoke, plus an **unscheduled** read-only evidence job.
 It creates no recurring builds or automated trading.
 
 [Full M10 operator acceptance runbook](deployment/M10_OPERATOR_ACCEPTANCE.md).
+
+### M10 GitHub integration status
+
+M9's five required workflows succeeded and PR #9 is merged into `main`.
+M10 PR #10 targets `main`; its initial Vercel authentication unit-test
+fixture was corrected to compare normalized deployment origins with the URL
+actually fetched. This did **not** relax live Vercel project/protection
+checks. M10 must remain in draft until **new** workflows on its final
+commit complete successfully. A previously failed workflow on an earlier
+SHA is never accepted as evidence of a passing final revision.
+
+Looke's public beta remains closed. Real protected Vercel staging is
+unavailable until the team's project-creation `403 Forbidden` is resolved.
