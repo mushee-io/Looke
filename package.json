@@ -1,6 +1,6 @@
 {
   "name": "looke-ultra",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "private": true,
   "license": "MIT",
   "engines": {
@@ -30,7 +30,9 @@
     "m8:rollback-rehearsal": "tsx scripts/m8-rollback-rehearsal.ts",
     "m9:acceptance": "tsx scripts/m9-acceptance.ts",
     "m9:liquidity": "tsx scripts/m9-liquidity.ts",
-    "m9:vercel-audit": "tsx scripts/m9-vercel-audit.ts"
+    "m9:vercel-audit": "tsx scripts/m9-vercel-audit.ts",
+    "m10:acceptance": "tsx scripts/m10-acceptance.ts",
+    "m10:crosscheck": "tsx scripts/m10-crosscheck.ts"
   },
   "dependencies": {
     "next": "^15.5.0",

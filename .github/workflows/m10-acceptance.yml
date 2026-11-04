@@ -1,0 +1,98 @@
+name: M10 independent Testnet proofs and protected-beta regression
+
+on:
+  pull_request:
+    paths:
+      - "src/lib/ops/m10-*"
+      - "src/lib/beta/**"
+      - "src/app/beta/**"
+      - "tests/m10-security.test.ts"
+      - "tests/m6-policy.test.ts"
+      - "scripts/m10-*"
+      - "scripts/m6-smoke.ts"
+      - "deployment/M10_OPERATOR_ACCEPTANCE.md"
+      - "package.json"
+      - ".github/workflows/m10-acceptance.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  strict-release-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      LOOKE_PUBLIC_BETA_ENABLED: "false"
+      LOOKE_M4_TRADING_ENABLED: "false"
+      LOOKE_SOCIAL_WRITES_ENABLED: "false"
+      LOOKE_M6_EVIDENCE_ENABLED: "false"
+      LOOKE_M4_MARKETS_JSON: "[]"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: Fail if public or transaction flags are enabled
+        run: npm run m7:preflight
+      - name: Unit/security tests
+        run: npm test
+      - name: TypeScript and production Next.js
+        run: |
+          npm run typecheck
+          npm run build
+      - name: Confirm all 12 release gates and four integrated pages in local no-broadcast preview
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run start -- -p 3100 > /tmp/looke-m10-preview.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 45); do
+            if curl -fsS "http://127.0.0.1:3100/api/beta/health?mode=live" >/dev/null; then break; fi
+            sleep 1
+          done
+          npm run m6:smoke
+          npm run m7:smoke
+      - name: In-memory only rollback rehearsal
+        run: npm run m8:rollback-rehearsal
+      - name: Record safety boundaries
+        if: always()
+        run: |
+          echo "M10 never signs, broadcasts, creates/deploys Vercel projects, or opens public beta." >> "$GITHUB_STEP_SUMMARY"
+          echo "A passing security test is not an independent audit or wallet acceptance." >> "$GITHUB_STEP_SUMMARY"
+
+  read-only-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    env:
+      LOOKE_PUBLIC_BETA_ENABLED: "false"
+      LOOKE_M4_TRADING_ENABLED: "false"
+      LOOKE_SOCIAL_WRITES_ENABLED: "false"
+      LOOKE_M6_EVIDENCE_ENABLED: "false"
+      LOOKE_M4_MARKETS_JSON: "[]"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: Collect actual independent Ultra Testnet RPC observations
+        run: npm run m10:crosscheck
+      - name: Collect operational and chain-readiness evidence without tokens or credentials
+        run: npm run m10:acceptance
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: m10-independently-verified-read-only-testnet-evidence
+          path: artifacts/m10/*.json
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Label evidence accurately
+        if: always()
+        run: |
+          echo "Inspect artifacts/m10/dual-rpc.json for allVerified; a successful observation job is NOT independent RPC consensus." >> "$GITHUB_STEP_SUMMARY"
+          echo "No second RPC URLs provided in CI means independent comparison is BLOCKED, not passed." >> "$GITHUB_STEP_SUMMARY"
+          echo "Staging, token proofs, native mint, wallet witnesses, TLS DB and liquidity remain blocked without real operator evidence." >> "$GITHUB_STEP_SUMMARY"
+          echo "No scheduled hourly builds, market-maker calls, secret access or external writes were started." >> "$GITHUB_STEP_SUMMARY"

@@ -33,7 +33,7 @@ async function main(){
   const policy=await readiness.json() as {publicBetaOpen:boolean;stage:string;gates:unknown[]};
   assert.equal(policy.publicBetaOpen,false);
   assert.equal(policy.stage,"closed");
-  assert.equal(policy.gates.length,11);
+  assert.equal(policy.gates.length,12);
   assert.equal(readiness.headers.get("cache-control"),"no-store");
 
   for(const path of ["/beta","/uniqs","/trade","/social"]){

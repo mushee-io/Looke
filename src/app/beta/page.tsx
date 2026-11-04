@@ -110,7 +110,7 @@ export default function TestnetBetaPage(){
           <div className="beta-card-title"><div><span className="beta-eyebrow">BETA RELEASE CONTROLS</span><h2>Launch readiness</h2></div>
             <span className="beta-closed">{readiness?.publicBetaOpen?"OPEN BY VERIFIED RELEASE":"CLOSED BY DEFAULT"}</span></div>
           <p className="beta-muted">These checks use real chain RPC and server configuration. Green code tests alone cannot activate public beta.</p>
-          <div className="beta-progress"><span>{readiness?.summary.passed??0} / {readiness?.summary.total??11} verified gates</span>
+          <div className="beta-progress"><span>{readiness?.summary.passed??0} / {readiness?.summary.total??12} verified gates</span>
             <div><span style={{width:`${readiness?readiness.summary.passed/readiness.summary.total*100:0}%`}}/></div></div>
           <div className="beta-gates">{(readiness?.gates||[]).map(item=><div key={item.id} className="beta-gate">
             <span className={item.status==="passed"?"beta-mark pass":"beta-mark"}>{item.status==="passed"?"✓":"×"}</span>
