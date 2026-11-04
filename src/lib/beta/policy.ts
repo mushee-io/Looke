@@ -3,7 +3,7 @@ import { getAddress, isAddress, verifyMessage, type Hex } from "viem";
 export const BETA_GATES = [
   "evmRpc", "nativeRpc", "factory", "creatorCoin", "uniqHolding",
   "liquidity", "socialDatabase", "walletAcceptance", "securityReview",
-  "operationsApproval", "releaseSignature",
+  "operationsApproval", "stagingProtection", "releaseSignature",
 ] as const;
 export type GateId = typeof BETA_GATES[number];
 export type GateStatus = "passed" | "blocked";

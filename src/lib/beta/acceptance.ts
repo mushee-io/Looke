@@ -3,6 +3,7 @@ import { assertAddress, assertHash, assertConfirmations, assertUltraTestnet, cre
 import { getFactory, getNativeTestnetInfo, ownedUniqs } from "../ultra-native-rpc";
 import { positiveId, validateNativeAccount } from "../ultra-native";
 import { ULTRA_EVM_TESTNET } from "../ultra";
+import { verifiedTargetUniq } from "../ops/m10-uniq";
 
 /** Read-only independent checks. These functions never sign or broadcast transactions. */
 export async function inspectEvmFactory(address:string,txHash:string) {
@@ -34,14 +35,13 @@ export async function inspectNativeUniq(factoryId:string,owner:string,tokenId:st
   const account=validateNativeAccount(owner);
   const token=positiveId(tokenId);
   const info=await getNativeTestnetInfo();
-  const [factory,owned]=await Promise.all([getFactory(id),ownedUniqs(account,50)]);
+  const [factory,owned]=await Promise.all([getFactory(id),ownedUniqs(account,1,token)]);
   if(!factory.factory)throw new Error("Native Testnet factory was not found.");
-  const uniq=owned.rows.find(item=>item.id===token && item.token_factory_id===id);
-  if(!uniq)throw new Error("Requested Uniq is not owned by this account in the inspected page.");
-  if(owned.more)throw new Error("Full inventory proof requires pagination before acceptance.");
+  // Primary-index exact lower_bound read: no page-1 assumption for large wallets.
+  const uniq=verifiedTargetUniq(owned,token,id);
   return {
     chainId:info.chain_id,
-    irreversibleBlock:info.last_irreversible_block_num,
+    irreversibleBlock:Math.min(info.last_irreversible_block_num,factory.irreversibleBlock,owned.irreversibleBlock),
     owner:account,factoryId:id,tokenId:token,uniq,
     factoryCreator:factory.factory.asset_creator,factoryManager:factory.factory.asset_manager,
   };

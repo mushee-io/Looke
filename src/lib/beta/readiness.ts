@@ -11,6 +11,7 @@ import {
   type Gate, type GateId, type ReleaseConfig,
 } from "./policy";
 import { ULTRA_EVM_TESTNET } from "../ultra";
+import { protectedStagingForRelease } from "../ops/m10-protection-server";
 
 export type BetaReadiness = {
   stage:"closed"|"public";
@@ -107,6 +108,9 @@ export async function computeBetaReadiness():Promise<BetaReadiness> {
       "Recent security review record supplied.","Security review evidence absent or expired."),
     safeCheck("operationsApproval",async()=>Boolean(attestation?.operationsApproval),
       "Operator release approval recorded.","Operator launch approval absent or expired."),
+    safeCheck("stagingProtection",async()=>protectedStagingForRelease(),
+      "Protected Looke staging metadata, safe flags and signed-out Vercel challenge independently verified.",
+      "Authenticated dedicated Vercel staging and safe release flags are not verified; public beta remains closed."),
     safeCheck("releaseSignature",async()=>{
       if(!publicFlag||!attestation||!validEvmAddress(candidateSignature.signer))return false;
       const deployedRevision=runtimeRevision();

@@ -269,3 +269,51 @@ but it **does not** install an hourly build, deploy to Vercel,
 execute token operations or open the public beta.
 
 Read [M9 operator and security acceptance](deployment/M9_OPERATOR_GATES.md).
+
+## M10 — Independent Testnet proof, protected deployment and beta release safety
+
+M10 adds a **twelfth, mandatory public-beta release gate** that refuses to
+open beta without live Vercel staging metadata for the dedicated Looke
+project, all-URL deployment authentication, exact safe Preview/Production
+environment flags, a READY Preview belonging to the expected project and
+immutable Git revision, and a signed-out authentication challenge.
+**M10 never opens beta or deploys a Vercel project.** The existing team is
+still returning **403 Forbidden** on project creation.
+
+The native Uniq owner reader now makes a targeted `token.b` primary-index
+lookup for the requested token ID instead of relying on a wallet's first
+50 Uniqs. Factory identity, owner scope and irreversible block evidence
+remain required. No NFT transaction is submitted.
+
+`npm run m10:crosscheck` optionally compares genuinely **different**
+HTTPS Ultra EVM Testnet providers at one real block hash and independent
+native Ultra Testnet providers at one irreversible block ID. With no
+second provider configured, independent verification is **blocked**;
+single-RPC availability never silently becomes dual-provider agreement.
+
+`npm run m10:acceptance` collects **read-only** live chain status,
+secondary-source agreement, real V2 pool checks, optionally actual
+wallet-authorized historical factory/coin/Uniq proofs, an optional
+READ ONLY TLS-backed PostgreSQL audit, and Vercel deployment protection
+state. It writes `artifacts/m10/acceptance.json` and never creates
+fake events, sends transactions or opens public beta. Human wallet-witness,
+security, audit, backup and operator approvals remain external.
+
+The separate M10 PR-only GitHub Action runs safety tests and a local
+no-broadcast staging smoke, plus an **unscheduled** read-only evidence job.
+It creates no recurring builds or automated trading.
+
+[Full M10 operator acceptance runbook](deployment/M10_OPERATOR_ACCEPTANCE.md).
+
+### M10 GitHub integration status
+
+M9's five required workflows succeeded and PR #9 is merged into `main`.
+M10 PR #10 targets `main`; its initial Vercel authentication unit-test
+fixture was corrected to compare normalized deployment origins with the URL
+actually fetched. This did **not** relax live Vercel project/protection
+checks. M10 must remain in draft until **new** workflows on its final
+commit complete successfully. A previously failed workflow on an earlier
+SHA is never accepted as evidence of a passing final revision.
+
+Looke's public beta remains closed. Real protected Vercel staging is
+unavailable until the team's project-creation `403 Forbidden` is resolved.

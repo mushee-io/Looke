@@ -16,7 +16,7 @@ function evidence(){
 
 test("M6 fails closed without a complete set of independently verified gates",()=>{
   const gates=BETA_GATES.map(id=>gate(id,false,"","blocked"));
-  assert.equal(gates.length,11);
+  assert.equal(gates.length,12);
   assert.equal(completeGates(gates,false),false);
   assert.equal(completeGates(gates,true),false);
   assert.equal(completeGates(BETA_GATES.map(id=>gate(id,true,"verified","")),false),false);
