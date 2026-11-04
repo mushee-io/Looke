@@ -346,3 +346,18 @@ authentication. There is **no staging deployment** or public beta
 release. A team administrator must unblock project creation.
 
 See [M11 real acceptance runbook](deployment/M11_REAL_TESTNET_ACCEPTANCE.md).
+
+## M12 Discover — Ultra creator marketplace
+
+Looke's homepage now opens a responsive **Discover** dashboard with market search,
+Trending / Top / New / Watchlist, modern blue/white creator navigation and shortcuts
+to Uniq NFTs, the token launchpad, trading and social community.
+
+`GET /api/discover` returns only verified, allowlisted Ultra EVM Testnet contracts.
+It explicitly labels **observed recent-block volume** rather than 24h volume;
+market caps, holder counts, price changes and launch dates stay unavailable until
+a real indexer exists. With no actual tokens and liquidity, the new interface
+shows an elegant empty state rather than fake coins. The existing trading, native
+NFT and wallet modules remain unchanged.
+
+[See M12 protected Preview release and operator guide](deployment/M12_DISCOVER_RELEASE.md).
