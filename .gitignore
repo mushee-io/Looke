@@ -10,3 +10,6 @@ coverage/
 !.env.example
 .DS_Store
 *.tsbuildinfo
+
+# M8/M9 live evidence is local or short-retention CI artifact, not committed
+artifacts/
