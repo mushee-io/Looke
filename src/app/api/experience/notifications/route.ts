@@ -103,7 +103,8 @@ export async function GET(request:NextRequest){
         actorHandle:row.handle,actorName:row.display_name,
         text:"reposted your post",timestamp:row.created_at,postId:row.post_id,
       })),
-    ].sort((a,b)=>b.timestamp.localeCompare(a.timestamp)).slice(0,40).map(e=>({
+    ].sort((a,b)=>new Date(b.timestamp).getTime()-new Date(a.timestamp).getTime())
+      .slice(0,40).map(e=>({
       ...e,unread:new Date(e.timestamp).getTime()>lastSeen,
     }));
     return NextResponse.json({authenticated:true,events,
