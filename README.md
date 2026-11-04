@@ -375,3 +375,22 @@ keeps an honest, compact empty state until genuine Testnet listings exist.
 A dedicated source-level test prevents the large hero from returning ahead
 of the market directory. The existing transaction and beta safety gates
 remain unchanged.
+
+## M13 — On-chain creator token indexing and verified market metrics
+
+M13 adds an **on-demand finalized-block CoinCreated indexer** with real factory
+deployment proof, 600-block backward cursor paging, signer/receipt/token-code
+verification and an operational health endpoint.
+
+The market-first Discover UI now supports true server-paged token rankings,
+quote filters, contract search and New creator launches sourced from genuine
+factory logs. Quote-denominated market capitalization, exact reconciled
+ERC20 holder counts, and 24-hour reserve-based price changes are **only**
+displayed if adequate real on-chain evidence exists; otherwise the relevant
+cell stays unavailable. Volume is always labeled bounded-observation, never
+a fictitious complete 24-hour statistic.
+
+**No verified factory is currently configured in Preview.** The indexer
+honestly reports unconfigured/zero creator launches. No automatic token
+deployments, trades, liquidity or public beta are enabled. Read
+[the M13 operator acceptance runbook](deployment/M13_MARKET_INDEXER.md).
