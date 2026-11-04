@@ -152,3 +152,33 @@ npm run dev
 The GitHub Actions `social_db` job provisions a **disposable PostgreSQL
 16** service for SQL integration tests; it does not touch production.
 See [M5 social acceptance runbook](docs/M5_SOCIAL_ACCEPTANCE.md).
+
+## M6 — integrated staging, Testnet proofs and fail-closed beta launch
+
+Looke's new **`/beta`** dashboard combines Ultra EVM, native Ultra Uniq,
+verified trading markets, and real PostgreSQL-backed social readiness.
+
+- `/api/beta/health`: checks live Ultra EVM, Ultra native and social DB
+  dependencies (503 if degraded); `?mode=live` is a separate CI-only
+  liveness response, **not** public readiness.
+- `/api/beta/readiness`: verifies **11 independent gates** and never
+  reports a public launch until they all pass and the explicitly configured
+  release flag is enabled.
+- `/api/beta/evidence`: read-only independent factory, creator coin and Uniq
+  ownership checks. Disabled by default, enabled only for access-protected
+  staging acceptance with `LOOKE_M6_EVIDENCE_ENABLED=true`.
+- Public beta additionally requires a real deployment-code hash, verified
+  wallet-signed token and Uniq proofs, funded reviewed AMM pools, operational
+  social DB, recent operator/security/wallet acceptance records, and a
+  **wallet-signed, immutable-Git-revision-bound, ≤24-hour release authorization**.
+- CI runs the existing unit/contracts/temporary PostgreSQL tests plus a
+  separate **no-broadcast local staging smoke** that asserts the beta is
+  closed and that the four application routes render.
+
+All release flags default **false**. The staging configuration
+[`deployment/staging.env.example`](deployment/staging.env.example) is
+a template only; **no Vercel deployment, database configuration, private
+wallet connection, on-chain transaction or public beta launch** is performed
+by this engineering milestone.
+
+See [M6 release runbook](docs/M6_INTEGRATED_TESTNET_BETA.md).

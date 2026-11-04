@@ -1,6 +1,6 @@
 {
   "name": "looke-ultra",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "private": true,
   "license": "MIT",
   "engines": {
@@ -16,7 +16,9 @@
     "m2:verify-factory": "tsx scripts/verify-factory.ts",
     "m2:verify-coin": "tsx scripts/verify-coin.ts",
     "db:migrate": "tsx scripts/social-migrate.ts",
-    "test:social-db": "node --import tsx --test tests/social-db.integration.ts"
+    "test:social-db": "node --import tsx --test tests/social-db.integration.ts",
+    "m6:smoke": "tsx scripts/m6-smoke.ts",
+    "m6:release-text": "tsx scripts/m6-release-text.ts"
   },
   "dependencies": {
     "next": "^15.5.0",

@@ -1,0 +1,47 @@
+name: M6 integrated staging acceptance (no broadcast)
+on:
+  pull_request:
+    paths:
+      - 'src/app/beta/**'
+      - 'src/lib/beta/**'
+      - 'src/app/api/beta/**'
+      - 'scripts/m6-smoke.ts'
+      - 'deployment/**'
+      - 'vercel.json'
+      - 'tests/m6-policy.test.ts'
+      - '.github/workflows/m6-staging.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  safe-staging:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      LOOKE_PUBLIC_BETA_ENABLED: 'false'
+      LOOKE_M6_EVIDENCE_ENABLED: 'false'
+      LOOKE_SOCIAL_WRITES_ENABLED: 'false'
+      LOOKE_M4_TRADING_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - run: npm test
+      - run: npm run typecheck
+      - run: npm run build
+      - name: Confirm every beta endpoint is closed in integrated local preview
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run start -- -p 3100 > /tmp/looke-m6-staging.log 2>&1 &
+          server_pid=$!
+          trap 'kill $server_pid 2>/dev/null || true' EXIT
+          npm run m6:smoke
+      - name: Record CI evidence (no production deployment)
+        if: always()
+        run: |
+          echo "M6 build/loopback smoke only; no wallet transaction, social production writes, or beta release." >> "$GITHUB_STEP_SUMMARY"
