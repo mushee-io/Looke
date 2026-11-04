@@ -6,6 +6,7 @@ const wallet="0x"+randomBytes(20).toString("hex");
 const handle="u"+wallet.slice(2,17);
 let postId="";
 after(async()=>{
+ await query("DELETE FROM social_moderation_audit WHERE moderator=$1",[wallet]);
  await query("DELETE FROM social_profiles WHERE address=$1",[wallet]);
  await socialDb().end();
 });

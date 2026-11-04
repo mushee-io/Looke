@@ -16,7 +16,7 @@ export const assetReference = z.discriminatedUnion("assetType",[
   z.object({assetType:z.literal("uniq"),assetChain:z.literal("ultra-native"),assetId:z.string().regex(/^[1-9][0-9]{0,15}$/)}),
 ]);
 export const mediaAttachment=z.object({
-  url:z.string().url().max(800),
+  url:z.string().url().max(800).refine(x=>x.startsWith("https://"),"Media URL must use HTTPS"),
   kind:z.enum(["image","video"]),
 }).strict();
 export const post = z.object({
