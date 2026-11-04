@@ -144,15 +144,26 @@ export async function portfolio(marketId:string,account:string) {
 export async function recentSwaps(marketId:string, intervalSeconds:number) {
   const market=await verifiedMarket(marketId);
   if(![300,900,3600].includes(intervalSeconds))throw new Error("Unsupported interval.");
-  const latest=BigInt(market.blockNumber);
+  // Exclude the current head block to avoid reporting reorg-prone unconfirmed logs.
+  const head=BigInt(market.blockNumber);
+  const latest=head>1n?head-1n:0n;
   const lookback=3600n;
   const from=latest>=lookback?latest-lookback+1n:0n;
-  const logs:Awaited<ReturnType<typeof ultraTradeClient.getLogs<typeof swapEvent>>> = [];
+  const logs: Array<{
+    args:{amount0In:bigint;amount1In:bigint;amount0Out:bigint;amount1Out:bigint};
+    transactionHash:Hash;blockNumber:bigint;
+  }> = [];
   // 6 bounded queries of at most 600 blocks; no unbounded explorer/history crawl.
   for(let start=from;start<=latest;start+=600n){
     const end=start+599n>latest?latest:start+599n;
     const part=await ultraTradeClient.getLogs({address:market.pair,event:swapEvent,fromBlock:start,toBlock:end});
-    logs.push(...part);
+    for (const log of part) {
+      if (!log.transactionHash || log.blockNumber === null) continue;
+      const a=log.args;
+      if (a.amount0In===undefined || a.amount1In===undefined || a.amount0Out===undefined || a.amount1Out===undefined) continue;
+      logs.push({args:{amount0In:a.amount0In,amount1In:a.amount1In,amount0Out:a.amount0Out,amount1Out:a.amount1Out},
+        transactionHash:log.transactionHash,blockNumber:log.blockNumber});
+    }
     if(logs.length>500)break;
   }
   // No sampled trades are ever invented. If network history exceeds caps, explicitly mark partial.

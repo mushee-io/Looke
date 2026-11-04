@@ -200,7 +200,11 @@ export function deriveSwap(swap: RawSwap, baseIsToken0: boolean, baseDecimals: n
 
 export function candlesFromSwaps(swaps: SwapActivity[], intervalSeconds: number): Candle[] {
   if (![300, 900, 3600].includes(intervalSeconds)) throw new Error("Unsupported candle interval.");
-  const ordered = [...swaps].sort((a, b) => a.timestamp - b.timestamp || a.blockNumber.localeCompare(b.blockNumber));
+  const ordered = [...swaps].sort((a, b) => {
+    if (a.timestamp !== b.timestamp) return a.timestamp - b.timestamp;
+    const left=BigInt(a.blockNumber),right=BigInt(b.blockNumber);
+    return left<right?-1:left>right?1:0;
+  });
   const map = new Map<number, Candle>();
   for (const swap of ordered) {
     const price = Number(swap.price), volume = Number(swap.quoteVolume);
