@@ -273,6 +273,7 @@ export default function Home() {
                 <div className="hero-actions">
                   <button className="primary" onClick={() => setScreen("Create")}>Create your coin <span>↗</span></button>
                   <button className="ghost" onClick={() => setScreen("Uniq NFTs")}>Explore Uniq NFTs <span>→</span></button>
+                  <a href="/trade" className="ghost" style={{textDecoration:"none"}}>Trading terminal <span>↗</span></a>
                 </div>
                 <div className="hero-art" aria-hidden="true"><div className="art-circle circle-one"/><div className="art-circle circle-two"/><div className="art-circle circle-three"/><div className="art-star">✳</div></div>
               </section>
