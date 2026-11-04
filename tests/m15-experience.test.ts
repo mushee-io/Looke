@@ -79,7 +79,7 @@ test("Server-side creator feed search remains bound SQL, moderation-first and no
  assert.match(api,/position\(\$4::text in lower\(pr\.handle\)\)/);
  assert.match(api,/media_status='approved'/);
  assert.match(api,/validatePublishedMedia/);
- assert.match(api,/hosted\?"pending":"none"/);
+ assert.match(api,/mediaUrl\?"pending":"none"/);
  assert.match(api,/approve_media/);
  assert.match(api,/social_moderation_audit/);
  const profile=src("src/app/api/experience/profile-posts/route.ts");
@@ -101,7 +101,7 @@ test("M15 creator interface cannot send DM, mint, fake verified ownership or pub
  assert.match(views,/search:serverSearch/);
  assert.match(assets,/indexCreatorLaunches/);
  assert.match(assets,/ownedUniqs/);
- assert.match(assets,/not found within this account/);
+ assert.match(assets,/This does NOT prove non-ownership/);
  assert.match(ready,/liveMessagingEnabled|DM_SECURITY_GATES/);
  assert.ok(!assets.includes("eth_sendTransaction"));
  assert.ok(!ready.includes("sendMessage("));

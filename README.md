@@ -427,3 +427,22 @@ audit. See [M15 operator acceptance](deployment/M15_CREATOR_ACCEPTANCE.md).
 
 No real pool/market activity, token mint, messaging, asset price or social data
 is created for the Preview. Public beta and all financial execution remain off.
+
+## M16 — Signed media upload + account-scoped notification history
+
+Looke now includes a user-approved direct-to-provider upload workflow. A signed-in
+creator explicitly requests an expiring, limited-size upload permit, sends the file
+to an approved Cloudinary account, and asks Looke to independently verify the
+asset using server-side credentials before a one-use, wallet-scoped PostgreSQL
+transaction attaches it to a pending-moderation post. **Public Preview keeps
+uploads, social writes and financial execution disabled** until the operator
+configures credentials, moderation and security gates. Private messaging still
+does not send or persist anything.
+
+Real notification follows/comments can now show persisted read/unread status
+and be marked read by their signed-in owner. Uniq evidence checks up to 3 real
+Ultra native pages; no matching page is treated as negative ownership proof.
+Future X25519 key registration is limited to offline signature verification and
+is **not** an audited E2EE messaging integration.
+
+See [M16 operator runbook](deployment/M16_OPERATOR_ACCEPTANCE.md).

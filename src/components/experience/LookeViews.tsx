@@ -7,6 +7,7 @@ import {compactOnChainNumber} from "../../lib/discover";
 import {shortAddress, testnetAddressUrl} from "../../lib/ultra";
 import {AssetEvidence,ApprovedPostMedia} from "./AssetEvidence";
 import "./m15.css";
+import "./m16.css";
 
 type SocialPost={
   id:string;author:string;handle:string;display_name:string;body:string;
@@ -21,8 +22,8 @@ type SocialProfile={
 type FeedResponse={posts:SocialPost[];nextCursor:string|null;error?:string};
 type EventType="Comments"|"Follows";
 type NotificationEvent={id:string;type:EventType;actorHandle:string;actorName:string;
-  text:string;timestamp:string;postId:string|null};
-type NotificationResult={authenticated:boolean;events:NotificationEvent[];error?:string};
+  text:string;timestamp:string;postId:string|null;unread?:boolean};
+type NotificationResult={authenticated:boolean;events:NotificationEvent[];unreadCount?:number;error?:string};
 function relativeDate(date:string){
   const t=new Date(date).getTime();
   if(!Number.isFinite(t))return "Unknown time";
@@ -200,13 +201,15 @@ export function NotificationsPanel({onCreate}:{onCreate:()=>void}){
   const [state,setState]=useState("Checking signed-in notification history…");
   const [settings,setSettings]=useState(false);
   const [checkedAt,setCheckedAt]=useState<string|null>(null);
+  const [unreadCount,setUnreadCount]=useState(0);
+  const [markingRead,setMarkingRead]=useState(false);
   const loadNotifications=useCallback(async()=>{
     try{
       const r=await fetch("/api/experience/notifications",{cache:"no-store"});
       if(!r.ok)throw new Error("Notification data is not available until the social database is configured.");
       const data=await r.json() as NotificationResult;
       if(!Array.isArray(data.events))throw new Error("Invalid notification response.");
-      setEvents(data.events);setAuthenticated(data.authenticated);
+      setEvents(data.events);setAuthenticated(data.authenticated);setUnreadCount(data.unreadCount??0);
       setState(data.authenticated?"":"Sign in to Looke social to view your actual notifications.");
       setCheckedAt(new Date().toISOString());
     }catch(e){
@@ -218,10 +221,26 @@ export function NotificationsPanel({onCreate}:{onCreate:()=>void}){
     const interval=window.setInterval(()=>{void loadNotifications();},60_000);
     return ()=>window.clearInterval(interval);
   },[loadNotifications]);
+  async function markAllRead(){
+    if(!authenticated||!unreadCount)return;
+    setMarkingRead(true);
+    try{
+      const r=await fetch("/api/experience/notifications",{
+        method:"POST",headers:{"content-type":"application/json"},credentials:"same-origin",
+        body:JSON.stringify({action:"mark_read"}),cache:"no-store",
+      });
+      if(!r.ok)throw new Error("Read/unread state is not enabled in this environment.");
+      await loadNotifications();
+    }catch(e){setState(e instanceof Error?e.message:"Notifications are read-only.");}
+    finally{setMarkingRead(false);}
+  }
   const visible=events.filter(e=>tab==="All"||e.type===tab);
   return <div className="lk-notifications">
     <div className="lk-notifications-heading"><h1>Notifications</h1>
-      <div><button className="lk-m15-refresh" type="button" onClick={()=>{void loadNotifications();}}
+      <div>{authenticated&&unreadCount>0&&<button className="lk-m15-refresh" type="button"
+        onClick={()=>void markAllRead()} disabled={markingRead} aria-label="Mark all notifications read">
+        {markingRead?"Saving…":"Mark "+unreadCount+" read ✓"}</button>}
+      <button className="lk-m15-refresh" type="button" onClick={()=>{void loadNotifications();}}
         aria-label="Refresh verified notifications">↻</button>
       <button type="button" onClick={()=>setSettings(v=>!v)} aria-label="Notification settings">⚙</button></div></div>
     {checkedAt&&<small className="lk-m15-checked">Checked {new Date(checkedAt).toLocaleTimeString()} · no invented alerts</small>}
@@ -231,7 +250,7 @@ export function NotificationsPanel({onCreate}:{onCreate:()=>void}){
     <div className="lk-notification-tabs" role="tablist" aria-label="Notification categories">
       {NOTIFICATION_TABS.map(t=><button type="button" key={t} role="tab" aria-selected={tab===t}
         className={tab===t?"active":""} onClick={()=>setTab(t)}>{t}</button>)}</div>
-    {visible.length&&authenticated?visible.map(e=><article key={e.id} className="lk-notification-item">
+    {visible.length&&authenticated?visible.map(e=><article key={e.id} className={"lk-notification-item"+(e.unread?" lk-m16-unread":"")}>
       <ProfileAvatar name={e.actorName||e.actorHandle}/><div><strong>@{e.actorHandle}</strong> {e.text}
         <small>{relativeDate(e.timestamp)} · {e.type}</small></div>
       </article>):<div className="lk-notifications-empty">
