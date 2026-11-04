@@ -80,7 +80,7 @@ test("Profile posts are genuine, public, and respect moderation/blocking",()=>{
   assert.match(profile,/p\.hidden=false/);
   assert.match(profile,/p\.deleted_at IS NULL/);
   assert.match(profile,/count\(\*\)::integer/);
-  assert.match(views,/get\?handle=/);
+  assert.ok(views.includes('"/api/social?action=profile&handle="'));
   assert.ok(views.includes('"/api/experience/profile-posts?handle="'));
 });
 test("Wallet modal reads true Ultra EVM balance and does not invent fiat valuation",()=>{
