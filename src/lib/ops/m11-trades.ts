@@ -8,7 +8,6 @@ import {
 import {createUltraPublicClient,assertConfirmations,assertHash,assertUltraTestnet} from "../verification";
 import {ULTRA_EVM_TESTNET} from "../ultra";
 import {parseMarketRegistry,verifySwapReceipt,v2PairAbi,v2RouterAbi,type MarketConfig} from "../trading";
-import {validatePairEvidence} from "./m9-liquidity";
 import {probeUltraLiquidity} from "./m9-liquidity";
 
 export type SwapDirection="buy"|"sell";
@@ -31,7 +30,7 @@ export function validateTradeSubmissions(input:unknown):TradeSubmission[]{
        /^0x0{64}$/i.test(o.txHash)||
        typeof o.wallet!=="string"||!isAddress(o.wallet)||/^0x0{40}$/i.test(o.wallet))
        throw new Error("Provide actual Ultra EVM wallet, market, direction and nonzero transaction hash.");
-    return {marketId:o.marketId,direction:o.direction,txHash:o.txHash,wallet:getAddress(o.wallet)};
+    return {marketId:o.marketId,direction:o.direction as SwapDirection,txHash:o.txHash,wallet:getAddress(o.wallet)};
   });
   if(data[0].marketId!==data[1].marketId||
      data[0].direction===data[1].direction ||
