@@ -38,6 +38,7 @@ export async function GET(req:NextRequest){
           (SELECT count(*)::integer FROM social_follows f WHERE f.followed=p.author) AS follower_count
         FROM social_posts p JOIN social_profiles pr ON pr.address=p.author
         WHERE p.hidden=false AND p.deleted_at IS NULL AND pr.suspended=false
+          AND (p.media_url IS NULL OR p.media_status='approved')
           AND ($1::uuid IS NULL OR (p.created_at,p.id) <
             (SELECT created_at,id FROM social_posts WHERE id=$1))
           AND ($2::text IS NULL OR NOT EXISTS(
@@ -83,6 +84,7 @@ export async function GET(req:NextRequest){
         JOIN social_posts original ON original.id=c.post_id
         WHERE c.post_id=$1 AND c.hidden=false AND p.suspended=false
           AND original.hidden=false AND original.deleted_at IS NULL
+          AND (original.media_url IS NULL OR original.media_status='approved')
           AND ($2::text IS NULL OR NOT EXISTS(SELECT 1 FROM social_blocks b
             WHERE (b.blocker=$2 AND b.blocked=c.author) OR (b.blocked=$2 AND b.blocker=c.author)))
         ORDER BY c.created_at ASC LIMIT 50`,[id,wallet]);
@@ -200,7 +202,8 @@ export async function POST(req:NextRequest){
       const v=comment.parse({postId:input.postId,body:input.body});
       const target=await query<{author:string}>(`
         SELECT p.author FROM social_posts p JOIN social_profiles pr ON pr.address=p.author
-        WHERE p.id=$1 AND p.hidden=false AND p.deleted_at IS NULL AND pr.suspended=false`,[v.postId]);
+        WHERE p.id=$1 AND p.hidden=false AND p.deleted_at IS NULL AND pr.suspended=false
+          AND (p.media_url IS NULL OR p.media_status='approved')`,[v.postId]);
       if(!target.rows.length)throw new HttpError(404,"Post not found.");
       await assertNotBlocked(actor,target.rows[0].author);
       const r=await query(`INSERT INTO social_comments(post_id,author,body) VALUES($1,$2,$3) RETURNING id,created_at`,[v.postId,actor,v.body]);

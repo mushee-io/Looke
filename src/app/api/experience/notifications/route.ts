@@ -42,6 +42,7 @@ export async function GET(request:NextRequest){
         WHERE post.author=$1 AND c.author<>$1
           AND c.hidden=false AND p.suspended=false
           AND post.hidden=false AND post.deleted_at IS NULL
+          AND (post.media_url IS NULL OR post.media_status='approved')
           AND NOT EXISTS (
             SELECT 1 FROM social_blocks b
             WHERE (b.blocker=$1 AND b.blocked=c.author)
