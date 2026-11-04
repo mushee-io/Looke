@@ -24,10 +24,10 @@ const reference=[{label:"Creator coins",detail:"Launch your token",href:"/trade"
  {label:"Uniq NFTs",detail:"Native Ultra collectibles",href:"/uniqs",icon:"◈",tone:"lilac"},
  {label:"Communities",detail:"Posts and creator profiles",href:"/social",icon:"↗",tone:"mint"}] as const;
 
-export default function DiscoverDashboard({onCreate,search=""}:{onCreate:()=>void;search?:string}){
+export default function DiscoverDashboard({onCreate,globalQuery=""}:{onCreate:()=>void;globalQuery?:string}){
   const [tab,setTab]=useState<DiscoverSort>("trending");
-  const [query,setQuery]=useState(search);
-  useEffect(()=>{setQuery(search);},[search]);
+  const [query,setQuery]=useState(globalQuery);
+  useEffect(()=>{setQuery(globalQuery);},[globalQuery]);
   const [search,setSearch]=useState("");
   const [page,setPage]=useState(1);
   const [quote,setQuote]=useState("");

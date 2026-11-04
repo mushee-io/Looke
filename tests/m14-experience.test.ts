@@ -94,7 +94,7 @@ test("Wallet modal reads true Ultra EVM balance and does not invent fiat valuati
 
 test("Global header market search is connected to actual Discover API filtering",()=>{
   const discover=source("src/components/discover/DiscoverDashboard.tsx");
-  assert.ok(home.includes("<DiscoverDashboard search={globalSearch}"));
+  assert.ok(home.includes("<DiscoverDashboard globalQuery={globalSearch}"));
   assert.match(discover,/setQuery\(search\)/);
   assert.match(discover,/URLSearchParams\(\{q:search/);
 });
