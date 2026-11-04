@@ -275,7 +275,7 @@ export default function TradePage(){
       <aside className="trade-sidebar">
         <div className="trade-nav-heading">MARKET ACCESS</div>
         <div className="trade-nav-highlight">◈ &nbsp; Spot Terminal</div>
-        <Link href="/uniqs" className="trade-nav-link">▧ &nbsp; Uniq NFTs ↗</Link>
+        <span className="trade-nav-link">▧ &nbsp; Uniq NFTs · M3 in review</span>
         <Link href="/" className="trade-nav-link">⌂ &nbsp; Looke Home ↗</Link>
         <div className="trade-sidebar-note">
           <strong>Trust, then trade.</strong>
