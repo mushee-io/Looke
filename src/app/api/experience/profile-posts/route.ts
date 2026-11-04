@@ -28,7 +28,8 @@ export async function GET(request:NextRequest){
    type Row={
      id:string;author:string;body:string;asset_id:string|null;asset_type:string|null;
      asset_chain:string|null;created_at:string;comment_count:number;
-     media_url:string|null;media_kind:string|null;
+     media_url:string|null;media_kind:string|null;like_count:number;repost_count:number;
+     liked_by_me:boolean;reposted_by_me:boolean;bookmarked_by_me:boolean;
    };
    const [posts,count]=await Promise.all([
      query<Row>(`
@@ -36,13 +37,18 @@ export async function GET(request:NextRequest){
          CASE WHEN p.media_status='approved' THEN p.media_url ELSE NULL END AS media_url,
          CASE WHEN p.media_status='approved' THEN p.media_kind ELSE NULL END AS media_kind,
          (SELECT count(*)::integer FROM social_comments c
-           WHERE c.post_id=p.id AND c.hidden=false) AS comment_count
+           WHERE c.post_id=p.id AND c.hidden=false) AS comment_count,
+         (SELECT count(*)::integer FROM social_post_likes l WHERE l.post_id=p.id) AS like_count,
+         (SELECT count(*)::integer FROM social_post_reposts r WHERE r.post_id=p.id) AS repost_count,
+         EXISTS(SELECT 1 FROM social_post_likes l WHERE l.post_id=p.id AND l.actor=$3) AS liked_by_me,
+         EXISTS(SELECT 1 FROM social_post_reposts r WHERE r.post_id=p.id AND r.actor=$3) AS reposted_by_me,
+         EXISTS(SELECT 1 FROM social_post_bookmarks b WHERE b.post_id=p.id AND b.actor=$3) AS bookmarked_by_me
        FROM social_posts p WHERE p.author=$1 AND p.hidden=false AND p.deleted_at IS NULL
          AND (p.media_url IS NULL OR p.media_status='approved')
          AND ($2::uuid IS NULL OR (p.created_at,p.id) <
            (SELECT created_at,id FROM social_posts WHERE id=$2 AND author=$1))
        ORDER BY p.created_at DESC,p.id DESC LIMIT 13
-     `,[owner,cursor]),
+     `,[owner,cursor,wallet]),
      query<{count:number}>(`
        SELECT count(*)::integer AS count FROM social_posts p
        WHERE p.author=$1 AND p.hidden=false AND p.deleted_at IS NULL

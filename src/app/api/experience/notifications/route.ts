@@ -9,7 +9,7 @@ export const dynamic="force-dynamic";
 
 /**
  * Read-only, actual signed-in account notifications.
- * Only existing follows and comments of visible owned posts are returned.
+ * Existing follows, comments, likes and reposts of visible owned posts only.
  * No fabricated trade, mention, subscription or message notifications.
  */
 export async function GET(request:NextRequest){
@@ -21,7 +21,8 @@ export async function GET(request:NextRequest){
       });
     type FollowRow={follower:string;handle:string;display_name:string;created_at:string};
     type CommentRow={id:string;handle:string;display_name:string;created_at:string;post_id:string};
-    const [follows,comments,seen]=await Promise.all([
+    type ReactionRow={id:string;handle:string;display_name:string;created_at:string;post_id:string};
+    const [follows,comments,likes,reposts,seen]=await Promise.all([
       query<FollowRow>(`
         SELECT f.follower,p.handle,p.display_name,f.created_at
         FROM social_follows f
@@ -50,6 +51,32 @@ export async function GET(request:NextRequest){
           )
         ORDER BY c.created_at DESC LIMIT 30
       `,[current.address]),
+      query<ReactionRow>(`
+        SELECT l.id,pr.handle,pr.display_name,l.created_at,l.post_id
+        FROM social_post_likes l
+        JOIN social_posts post ON post.id=l.post_id
+        JOIN social_profiles pr ON pr.address=l.actor
+        WHERE post.author=$1 AND l.actor<>$1
+          AND pr.suspended=false AND post.hidden=false AND post.deleted_at IS NULL
+          AND (post.media_url IS NULL OR post.media_status='approved')
+          AND NOT EXISTS(SELECT 1 FROM social_blocks b
+            WHERE (b.blocker=$1 AND b.blocked=l.actor) OR
+                  (b.blocked=$1 AND b.blocker=l.actor))
+        ORDER BY l.created_at DESC LIMIT 30
+      `,[current.address]),
+      query<ReactionRow>(`
+        SELECT r.id,pr.handle,pr.display_name,r.created_at,r.post_id
+        FROM social_post_reposts r
+        JOIN social_posts post ON post.id=r.post_id
+        JOIN social_profiles pr ON pr.address=r.actor
+        WHERE post.author=$1 AND r.actor<>$1
+          AND pr.suspended=false AND post.hidden=false AND post.deleted_at IS NULL
+          AND (post.media_url IS NULL OR post.media_status='approved')
+          AND NOT EXISTS(SELECT 1 FROM social_blocks b
+            WHERE (b.blocker=$1 AND b.blocked=r.actor) OR
+                  (b.blocked=$1 AND b.blocker=r.actor))
+        ORDER BY r.created_at DESC LIMIT 30
+      `,[current.address]),
       query<{last_seen_at:Date}>(`
         SELECT last_seen_at FROM social_notification_reads WHERE owner=$1 LIMIT 1
       `,[current.address]),
@@ -65,6 +92,16 @@ export async function GET(request:NextRequest){
         id:"comment:"+row.id,type:"Comments" as const,
         actorHandle:row.handle,actorName:row.display_name,
         text:"commented on your post",timestamp:row.created_at,postId:row.post_id,
+      })),
+      ...likes.rows.map(row=>({
+        id:"like:"+row.id,type:"Likes" as const,
+        actorHandle:row.handle,actorName:row.display_name,
+        text:"liked your post",timestamp:row.created_at,postId:row.post_id,
+      })),
+      ...reposts.rows.map(row=>({
+        id:"repost:"+row.id,type:"Reposts" as const,
+        actorHandle:row.handle,actorName:row.display_name,
+        text:"reposted your post",timestamp:row.created_at,postId:row.post_id,
       })),
     ].sort((a,b)=>b.timestamp.localeCompare(a.timestamp)).slice(0,40).map(e=>({
       ...e,unread:new Date(e.timestamp).getTime()>lastSeen,

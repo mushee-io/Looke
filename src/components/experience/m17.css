@@ -1,0 +1,14 @@
+.lk-m17-engagement{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:8px 0}
+.lk-m17-engagement button{border:1px solid #e1e8f3;border-radius:9px;padding:8px 10px;background:#f9faff;color:#50617f;font-size:11px;font-weight:750;cursor:pointer}
+.lk-m17-engagement button[aria-pressed=true]{border-color:#b9cbff;background:#eaf0ff;color:#284bd3}
+.lk-m17-engagement button:disabled{opacity:.45;cursor:not-allowed}
+.lk-m17-engagement a{font-size:11px;color:#3158d8}
+.lk-m17-engagement small{color:#a24848;font-size:11px;flex-basis:100%}
+.lk-m17-repost-banner{font-size:11px;font-weight:750;color:#5674b4;padding-bottom:10px}
+.lk-m17-activity-switch{display:flex;gap:6px;flex-wrap:wrap;margin:18px 0}
+.lk-m17-activity-switch button{border:1px solid #dfe6f6;background:#f6f8ff;border-radius:9px;padding:9px 12px;color:#62769c;font-weight:750}
+.lk-m17-activity-switch button.active{background:#3359e7;color:white}
+.lk-m17-activity-row{border:1px solid #e4e9f4;background:#fff;border-radius:13px;padding:17px;margin:12px 0}
+.lk-m17-activity-row p{font-size:13px;line-height:1.6;overflow-wrap:anywhere;color:#425271}
+.lk-m17-activity-row small{display:block;font-size:11px;color:#8c98a8;margin-top:7px}
+.lk-m17-activity-row button{background:#eff3ff;color:#3158d8;border:0;border-radius:8px;padding:9px;font-weight:750}
