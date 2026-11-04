@@ -1,0 +1,88 @@
+name: M15 genuine creator media and Testnet evidence
+
+on:
+  pull_request:
+    paths:
+      - "src/app/api/social/route.ts"
+      - "src/app/social/**"
+      - "src/app/api/experience/**"
+      - "src/components/experience/**"
+      - "src/lib/experience/**"
+      - "src/lib/social/**"
+      - "db/migrations/002_social_media_review.sql"
+      - "scripts/social-migrate.ts"
+      - "tests/m15-*"
+      - "deployment/M15_CREATOR_ACCEPTANCE.md"
+      - ".github/workflows/m15-creator-acceptance.yml"
+      - "package.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  creator-and-media-safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    env:
+      LOOKE_PUBLIC_BETA_ENABLED: "false"
+      LOOKE_M4_TRADING_ENABLED: "false"
+      LOOKE_SOCIAL_WRITES_ENABLED: "false"
+      LOOKE_M6_EVIDENCE_ENABLED: "false"
+      LOOKE_M4_MARKETS_JSON: "[]"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: Verify release flags remain closed
+        run: npm run m7:preflight
+      - name: All pure regression/security tests
+        run: npm test
+      - name: Typecheck and build production-optimized app
+        run: |
+          npm run typecheck
+          npm run build
+      - name: Read-only API and genuine empty-state smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run start -- -p 3100 >/tmp/looke-m15.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 50); do
+            if curl -fsS http://127.0.0.1:3100/ >/dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:3100/api/experience/messaging/readiness | node -e '
+            let s="";process.stdin.on("data",x=>s+=x).on("end",()=>{
+              const a=JSON.parse(s);
+              if(a.liveMessagingEnabled!==false||a.encryptionAudited!==false||
+                a.deviceRecoveryAudited!==false||a.messagesSent!==0)
+                process.exit(2);
+            });
+          '
+          curl -fsS http://127.0.0.1:3100/api/experience/notifications | node -e '
+            let s="";process.stdin.on("data",x=>s+=x).on("end",()=>{
+              const a=JSON.parse(s);if(a.authenticated!==false||
+                a.events.length!==0)process.exit(2);
+            });
+          '
+          curl -fsS 'http://127.0.0.1:3100/api/experience/assets?kind=token&id=0x1111111111111111111111111111111111111111' | node -e '
+            let s="";process.stdin.on("data",x=>s+=x).on("end",()=>{
+              const a=JSON.parse(s);
+              if(a.kind!=="token"||a.verified!==false||
+                a.transactionsSent!==0)process.exit(2);
+            });
+          '
+          npm run m6:smoke
+          npm run m7:smoke
+      - name: Read-only rollback rehearsal
+        run: npm run m8:rollback-rehearsal
+      - name: Document remaining operator gates
+        if: always()
+        run: |
+          echo "No fake posts, uploaded bytes, token trades, Uniq ownership or encrypted DMs are invented." >> "$GITHUB_STEP_SUMMARY"
+          echo "Media status defaults to pending until moderator approval in a real PostgreSQL environment." >> "$GITHUB_STEP_SUMMARY"
+          echo "Execution and public beta remain OFF. Preview is authorized only with Vercel authentication." >> "$GITHUB_STEP_SUMMARY"

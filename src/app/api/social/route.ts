@@ -3,6 +3,7 @@ import { address, comment, follow, handle, post, profile, report, uuid } from ".
 import { HttpError, requireViewer, verifyRequestOrigin, viewer, writesEnabled } from "../../../lib/social/auth";
 import { failure, readJson } from "../../../lib/social/http";
 import { query, rateLimit, socialDb } from "../../../lib/social/db";
+import {trustedMediaHosts,validatePublishedMedia} from "../../../lib/social/media";
 import { z } from "zod";
 
 export const runtime="nodejs";
@@ -27,8 +28,11 @@ export async function GET(req:NextRequest){
     }
     if(action==="feed"){
       const scope=p.get("scope")==="following"?"following":"global";
+      const search=z.string().trim().max(64).parse(p.get("search")??"").toLowerCase();
       const result=await query(`
         SELECT p.id,p.author,p.body,p.asset_chain,p.asset_type,p.asset_id,p.created_at,
+          CASE WHEN p.media_status='approved' THEN p.media_url ELSE NULL END AS media_url,
+          CASE WHEN p.media_status='approved' THEN p.media_kind ELSE NULL END AS media_kind,
           pr.handle,pr.display_name,pr.avatar_url,
           (SELECT count(*)::integer FROM social_comments c WHERE c.post_id=p.id AND c.hidden=false) AS comment_count,
           (SELECT count(*)::integer FROM social_follows f WHERE f.followed=p.author) AS follower_count
@@ -41,7 +45,10 @@ export async function GET(req:NextRequest){
               (b.blocker=$2 AND b.blocked=p.author) OR (b.blocked=$2 AND b.blocker=p.author)))
           AND ($3::text <> 'following' OR ($2::text IS NOT NULL AND
             (p.author=$2 OR EXISTS(SELECT 1 FROM social_follows f WHERE f.follower=$2 AND f.followed=p.author))))
-        ORDER BY p.created_at DESC,p.id DESC LIMIT 21`,[cursor,wallet,scope]);
+          AND ($4::text='' OR position($4::text in lower(p.body))>0
+            OR position($4::text in lower(pr.handle))>0
+            OR position($4::text in lower(pr.display_name))>0)
+        ORDER BY p.created_at DESC,p.id DESC LIMIT 21`,[cursor,wallet,scope,search]);
       return cacheData({posts:result.rows.slice(0,20),nextCursor:result.rows.length>20?result.rows[19]?.id:null});
     }
     if(action==="profile"){
@@ -97,7 +104,7 @@ async function moderate(actor:string,input:Record<string,unknown>){
     .split(",").map(x=>x.trim().toLowerCase()).filter(Boolean);
   if(!moderators.includes(actor))throw new HttpError(403,"Moderator role required.");
   const schema=z.object({
-    operation:z.enum(["hide_post","hide_comment","suspend_profile","restore_post","restore_comment","restore_profile"]),
+    operation:z.enum(["hide_post","hide_comment","suspend_profile","restore_post","restore_comment","restore_profile","approve_media","reject_media"]),
     targetId:z.string().min(1).max(90),
     reason:z.string().trim().min(8).max(500),
   });
@@ -113,6 +120,8 @@ async function moderate(actor:string,input:Record<string,unknown>){
     restore_comment:{sql:"UPDATE social_comments SET hidden=false WHERE id=$1 RETURNING id"},
     suspend_profile:{sql:"UPDATE social_profiles SET suspended=true WHERE address=$1 RETURNING address"},
     restore_profile:{sql:"UPDATE social_profiles SET suspended=false WHERE address=$1 RETURNING address"},
+    approve_media:{sql:"UPDATE social_posts SET media_status='approved' WHERE id=$1 AND media_url IS NOT NULL AND media_status='pending' AND hidden=false AND deleted_at IS NULL RETURNING id"},
+    reject_media:{sql:"UPDATE social_posts SET media_status='rejected' WHERE id=$1 AND media_url IS NOT NULL AND media_status='pending' RETURNING id"},
   };
   const conn=await socialDb().connect();
   try{
@@ -146,12 +155,15 @@ export async function POST(req:NextRequest){
     }
     if(action==="post"){
       await rateLimit(actor,"post",12,600);
-      const v=post.parse({body:input.body,asset:input.asset??null});
+      const v=post.parse({body:input.body,asset:input.asset??null,media:input.media??null});
+      const hosted=validatePublishedMedia(v.media,trustedMediaHosts(process.env.LOOKE_SOCIAL_MEDIA_HOSTS));
       const r=await query(`
-        INSERT INTO social_posts(author,body,asset_chain,asset_type,asset_id)
-        VALUES($1,$2,$3,$4,$5) RETURNING id,created_at`,
-        [actor,v.body,v.asset?.assetChain??null,v.asset?.assetType??null,v.asset?.assetId??null]);
-      return cacheData({ok:true,post:r.rows[0]});
+        INSERT INTO social_posts(author,body,asset_chain,asset_type,asset_id,media_url,media_kind,media_status)
+        VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id,created_at,media_status`,
+        [actor,v.body,v.asset?.assetChain??null,v.asset?.assetType??null,v.asset?.assetId??null,
+          hosted?.url??null,hosted?.kind??null,hosted?"pending":"none"]);
+      return cacheData({ok:true,post:r.rows[0],
+        note:hosted?"Hosted media is pending moderator approval; it is not yet public.":undefined});
     }
     if(action==="comment"){
       await rateLimit(actor,"comment",30,600);

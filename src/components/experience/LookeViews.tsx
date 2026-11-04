@@ -5,11 +5,14 @@ import Link from "next/link";
 import type {DiscoverFeed,DiscoverMarket} from "../../lib/discover";
 import {compactOnChainNumber} from "../../lib/discover";
 import {shortAddress, testnetAddressUrl} from "../../lib/ultra";
+import {AssetEvidence,ApprovedPostMedia} from "./AssetEvidence";
+import "./m15.css";
 
 type SocialPost={
   id:string;author:string;handle:string;display_name:string;body:string;
   asset_id:string|null;asset_type:string|null;asset_chain:string|null;
   avatar_url:string|null;created_at:string;comment_count:number;follower_count:number;
+  media_url?:string|null;media_kind?:string|null;
 };
 type SocialProfile={
   address:string;handle:string;display_name:string;bio:string;avatar_url:string|null;
@@ -52,11 +55,19 @@ export function TrendingFeed({search,onCreate}:{search:string;onCreate:()=>void}
   const [feedMode,setFeedMode]=useState<"latest"|"following">("latest");
   const [busy,setBusy]=useState(false);
   const [offset,setOffset]=useState(0);
+  const [serverSearch,setServerSearch]=useState("");
+  useEffect(()=>{
+    const t=window.setTimeout(()=>setServerSearch(search.trim().slice(0,64)),350);
+    return ()=>window.clearTimeout(t);
+  },[search]);
   const load=useCallback(async(nextCursor?:string|null)=>{
     if(nextCursor)setBusy(true);
     try{
-      const response=await fetch("/api/social?action=feed&scope="+(feedMode==="following"?"following":"global")+
-        (nextCursor?"&cursor="+encodeURIComponent(nextCursor):""),{cache:"no-store"});
+      const params=new URLSearchParams({
+        action:"feed",scope:feedMode==="following"?"following":"global",search:serverSearch,
+      });
+      if(nextCursor)params.set("cursor",nextCursor);
+      const response=await fetch("/api/social?"+params.toString(),{cache:"no-store"});
       if(!response.ok)throw new Error("The social database is not ready for public posts.");
       const data=await response.json() as FeedResponse;
       if(!Array.isArray(data.posts))throw new Error("Unverified feed response.");
@@ -65,7 +76,7 @@ export function TrendingFeed({search,onCreate}:{search:string;onCreate:()=>void}
     }catch(e){if(!nextCursor){setPosts([]);setCursor(null);}
       setSocialNotice(e instanceof Error?e.message:"Social feed unavailable.");}
     finally{setBusy(false);}
-  },[feedMode]);
+  },[feedMode,serverSearch]);
   useEffect(()=>{
     void load();
     const ticker=window.setInterval(()=>{void load();},90_000);
@@ -115,6 +126,7 @@ export function TrendingFeed({search,onCreate}:{search:string;onCreate:()=>void}
         <span className="lk-post-time">{relativeDate(post.created_at)} · · ·</span>
       </div>
       <p className="lk-post-text">{post.body}</p>
+      <ApprovedPostMedia url={post.media_url??null} kind={post.media_kind??null}/>
       {post.asset_id&&post.asset_type&&<div className="lk-post-asset">
         <span className="lk-post-asset-icon">◇</span><div><strong>{post.asset_type==="token"?"Creator token":"Native Uniq"}</strong>
           <small>{post.asset_chain==="ultra-evm"?shortAddress(post.asset_id):"Uniq #"+post.asset_id}</small></div>
@@ -122,6 +134,8 @@ export function TrendingFeed({search,onCreate}:{search:string;onCreate:()=>void}
           <a href={testnetAddressUrl(post.asset_id)} target="_blank" rel="noopener noreferrer">Verify ↗</a>:
           <Link href="/uniqs">Explore ↗</Link>}
       </div>}
+      {post.asset_id&&post.asset_type&&
+        <AssetEvidence kind={post.asset_type==="token"?"token":"uniq"} id={post.asset_id}/>}
       <div className="lk-post-actions">
         <span>♡</span>
         <Link href="/social">◯ {post.comment_count} comments</Link>
@@ -139,6 +153,15 @@ export function MessagesPanel(){
   const [newMessage,setNewMessage]=useState(false);
   const [requests,setRequests]=useState(false);
   const [recipient,setRecipient]=useState("");
+  const [readyNote,setReadyNote]=useState("Messaging security review pending.");
+  useEffect(()=>{
+    void fetch("/api/experience/messaging/readiness",{cache:"no-store"})
+      .then(r=>r.json())
+      .then((x:{liveMessagingEnabled:boolean;disclaimer:string})=>{
+        setReadyNote(x.liveMessagingEnabled?"Messaging was enabled after review.":"Messaging disabled · "+x.disclaimer);
+      })
+      .catch(()=>setReadyNote("Messaging has no approved encryption/recovery readiness evidence."));
+  },[]);
   return <div className="lk-messages-page">
     <div className="lk-messages-list">
       <div className="lk-messages-controls">
@@ -162,7 +185,8 @@ export function MessagesPanel(){
         <p>Private messaging is not live. No recipient data or plaintext message is stored.</p>
         <button type="button" onClick={()=>setNewMessage(false)}>Close composer</button>
       </div>:<button type="button" onClick={()=>setNewMessage(true)}>Send message</button>}
-      <small>Encrypted messaging requires independent security approval before activation.</small>
+      <div className="lk-m15-security" role="status">{readyNote}
+        <p>No messages are sent or persisted through this interface.</p></div>
     </div>
   </div>;
 }
@@ -175,21 +199,32 @@ export function NotificationsPanel({onCreate}:{onCreate:()=>void}){
   const [authenticated,setAuthenticated]=useState(false);
   const [state,setState]=useState("Checking signed-in notification history…");
   const [settings,setSettings]=useState(false);
-  useEffect(()=>{
-    let active=true;
-    void fetch("/api/experience/notifications",{cache:"no-store"})
-      .then(async r=>{if(!r.ok)throw new Error("Notification data is not available until the social database is configured.");
-        return r.json() as Promise<NotificationResult>;})
-      .then(data=>{if(!active)return;
-        setEvents(data.events);setAuthenticated(data.authenticated);
-        setState(data.authenticated?"":"Sign in to Looke social to view your actual notifications.");})
-      .catch(e=>{if(active){setEvents([]);setState(e instanceof Error?e.message:"Notifications unavailable.");}});
-    return ()=>{active=false;};
+  const [checkedAt,setCheckedAt]=useState<string|null>(null);
+  const loadNotifications=useCallback(async()=>{
+    try{
+      const r=await fetch("/api/experience/notifications",{cache:"no-store"});
+      if(!r.ok)throw new Error("Notification data is not available until the social database is configured.");
+      const data=await r.json() as NotificationResult;
+      if(!Array.isArray(data.events))throw new Error("Invalid notification response.");
+      setEvents(data.events);setAuthenticated(data.authenticated);
+      setState(data.authenticated?"":"Sign in to Looke social to view your actual notifications.");
+      setCheckedAt(new Date().toISOString());
+    }catch(e){
+      setEvents([]);setState(e instanceof Error?e.message:"Notifications unavailable.");
+    }
   },[]);
+  useEffect(()=>{
+    void loadNotifications();
+    const interval=window.setInterval(()=>{void loadNotifications();},60_000);
+    return ()=>window.clearInterval(interval);
+  },[loadNotifications]);
   const visible=events.filter(e=>tab==="All"||e.type===tab);
   return <div className="lk-notifications">
     <div className="lk-notifications-heading"><h1>Notifications</h1>
-      <button type="button" onClick={()=>setSettings(v=>!v)} aria-label="Notification settings">⚙</button></div>
+      <div><button className="lk-m15-refresh" type="button" onClick={()=>{void loadNotifications();}}
+        aria-label="Refresh verified notifications">↻</button>
+      <button type="button" onClick={()=>setSettings(v=>!v)} aria-label="Notification settings">⚙</button></div></div>
+    {checkedAt&&<small className="lk-m15-checked">Checked {new Date(checkedAt).toLocaleTimeString()} · no invented alerts</small>}
     {settings&&<div className="lk-notification-settings"><strong>Notification preferences</strong>
       <p>On-platform notifications show actual social follows and comments. Push/email subscriptions are not activated.</p>
       <button type="button" onClick={()=>setSettings(false)}>Close</button></div>}
@@ -208,11 +243,13 @@ export function NotificationsPanel({onCreate}:{onCreate:()=>void}){
   </div>;
 }
 
-type ProfilePosts={posts:SocialPost[];total:number};
+type ProfilePosts={posts:SocialPost[];total:number;nextCursor:string|null};
 export function ProfilePanel({address,onCreate}:{address:string;onCreate:()=>void}){
   const [profile,setProfile]=useState<SocialProfile|null>(null);
   const [posts,setPosts]=useState<SocialPost[]>([]);
   const [total,setTotal]=useState<number|null>(null);
+  const [nextProfileCursor,setNextProfileCursor]=useState<string|null>(null);
+  const [moreBusy,setMoreBusy]=useState(false);
   const [status,setStatus]=useState("Checking your social profile…");
   const [tab,setTab]=useState<"Posts"|"Collectibles"|"Tokens">("Posts");
   useEffect(()=>{
@@ -232,12 +269,26 @@ export function ProfilePanel({address,onCreate}:{address:string;onCreate:()=>voi
         if(!details.ok||!activity.ok)throw new Error("Verified profile activity is unavailable.");
         const a=await details.json() as {profile:SocialProfile};
         const b=await activity.json() as ProfilePosts;
-        if(alive){setProfile(a.profile);setPosts(b.posts);setTotal(b.total);setStatus("");}
+        if(alive){setProfile(a.profile);setPosts(b.posts);setTotal(b.total);
+          setNextProfileCursor(b.nextCursor);setStatus("");}
       }catch(e){if(alive){setProfile(null);setPosts([]);setTotal(null);
         setStatus(e instanceof Error?e.message:"Profile unavailable.");}}
     }
     void load();return ()=>{alive=false;};
   },[address]);
+  async function loadMoreProfilePosts(){
+    if(!profile||!nextProfileCursor||moreBusy)return;
+    setMoreBusy(true);
+    try{
+      const params=new URLSearchParams({handle:profile.handle,cursor:nextProfileCursor});
+      const response=await fetch("/api/experience/profile-posts?"+params,{cache:"no-store"});
+      if(!response.ok)throw new Error("Older profile posts are unavailable.");
+      const result=await response.json() as ProfilePosts;
+      setPosts(old=>[...old,...result.posts.filter(p=>!old.some(x=>x.id===p.id))]);
+      setNextProfileCursor(result.nextCursor);
+    }catch(e){setStatus(e instanceof Error?e.message:"Profile history unavailable.");}
+    finally{setMoreBusy(false);}
+  }
   return <div className="lk-profile-page">
     <div className="lk-profile-header">
       <ProfileAvatar name={profile?.display_name||profile?.handle||"L"} large/>
@@ -258,8 +309,12 @@ export function ProfilePanel({address,onCreate}:{address:string;onCreate:()=>voi
         {t==="Posts"?"▦":t==="Collectibles"?"♧":"ϟ"}<span>{t}</span></button>)}
     </div>
     {tab==="Posts"?(posts.length?
-      <div className="lk-profile-posts">{posts.map(p=><article key={p.id}><p>{p.body}</p>
-        <small>{relativeDate(p.created_at)} · {p.comment_count} replies</small></article>)}</div>:
+      <><div className="lk-profile-posts">{posts.map(p=><article key={p.id}><p>{p.body}</p>
+        <ApprovedPostMedia url={p.media_url??null} kind={p.media_kind??null}/>
+        <small>{relativeDate(p.created_at)} · {p.comment_count} replies</small></article>)}</div>
+      {nextProfileCursor&&<button className="lk-m15-profile-load" type="button"
+        disabled={moreBusy} onClick={()=>{void loadMoreProfilePosts();}}>
+        {moreBusy?"Loading…":"Load older verified posts ↓"}</button>}</>:
       <div className="lk-profile-empty"><h2>Get started</h2><p>Share your first creator post on Looke.</p>
         <button onClick={onCreate} type="button">Make your first post</button></div>):
       <div className="lk-profile-empty"><h2>{tab==="Tokens"?"Creator coins":"Uniq collectibles"}</h2>

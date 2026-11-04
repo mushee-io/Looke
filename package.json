@@ -1,6 +1,6 @@
 {
   "name": "looke-ultra",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "private": true,
   "license": "MIT",
   "engines": {
@@ -34,7 +34,8 @@
     "m10:acceptance": "tsx scripts/m10-acceptance.ts",
     "m10:crosscheck": "tsx scripts/m10-crosscheck.ts",
     "m11:acceptance": "tsx scripts/m11-acceptance.ts",
-    "m13:acceptance": "tsx scripts/m13-acceptance.ts"
+    "m13:acceptance": "tsx scripts/m13-acceptance.ts",
+    "test:m15-db": "node --import tsx --test tests/m15-media-db.integration.ts"
   },
   "dependencies": {
     "next": "^15.5.0",

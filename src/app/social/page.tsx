@@ -1,14 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type FormEvent, type ChangeEvent } from "react";
 import Link from "next/link";
 import { getAddress, isAddress } from "viem";
 import "./social.css";
+import "../../components/experience/m15.css";
+import {AssetEvidence,ApprovedPostMedia} from "../../components/experience/AssetEvidence";
 
 type Wallet = {request:(args:{method:string;params?:unknown[]})=>Promise<unknown>};
 type User = {address:string;handle:string;suspended:boolean};
 type Profile = {address:string;handle:string;display_name:string;bio:string;avatar_url:string|null;created_at:string;follower_count?:number;following_count?:number;is_following?:boolean};
-type Post = {id:string;author:string;body:string;asset_chain:string|null;asset_type:string|null;asset_id:string|null;created_at:string;handle:string;display_name:string;avatar_url:string|null;comment_count:number;follower_count:number};
+type Post = {id:string;author:string;body:string;asset_chain:string|null;asset_type:string|null;asset_id:string|null;media_url?:string|null;media_kind?:string|null;created_at:string;handle:string;display_name:string;avatar_url:string|null;comment_count:number;follower_count:number};
 type Comment = {id:string;post_id:string;author:string;body:string;created_at:string;handle:string;display_name:string};
 type Tab = "feed"|"discover"|"profile"|"messages";
 
@@ -58,6 +60,30 @@ export default function SocialPage(){
   const [draftBio,setDraftBio]=useState("");
   const [draftAvatar,setDraftAvatar]=useState("");
   const [newPost,setNewPost]=useState("");
+  const [feedSearchInput,setFeedSearchInput]=useState("");
+  const [feedSearch,setFeedSearch]=useState("");
+  const [mediaUrl,setMediaUrl]=useState("");
+  const [mediaKind,setMediaKind]=useState<"image"|"video">("image");
+  const [localPreview,setLocalPreview]=useState<{url:string;kind:"image"|"video"}|null>(null);
+  useEffect(()=>{
+    return ()=>{if(localPreview)URL.revokeObjectURL(localPreview.url);};
+  },[localPreview]);
+  useEffect(()=>{
+    const t=window.setTimeout(()=>{setFeedSearch(feedSearchInput.trim().slice(0,64));},350);
+    return ()=>window.clearTimeout(t);
+  },[feedSearchInput]);
+  function inspectLocalFile(e:ChangeEvent<HTMLInputElement>){
+    const file=e.target.files?.[0];if(!file)return;
+    const image=["image/jpeg","image/png","image/webp","image/gif"].includes(file.type);
+    const video=["video/mp4","video/webm"].includes(file.type);
+    if((!image&&!video)||file.size>(image?5_000_000:20_000_000)){
+      setNotice("Select JPEG, PNG, WEBP, GIF up to 5 MB or MP4, WEBM up to 20 MB.");
+      e.target.value="";return;
+    }
+    setLocalPreview({url:URL.createObjectURL(file),kind:image?"image":"video"});
+    setNotice("Local media is only a preview; it has not been uploaded or attached to your post.");
+    e.target.value="";
+  }
   const [assetType,setAssetType]=useState<"none"|"token"|"uniq">("none");
   const [assetId,setAssetId]=useState("");
   const [commentFor,setCommentFor]=useState("");
@@ -81,6 +107,7 @@ export default function SocialPage(){
 
   const loadFeed=useCallback(async(append=false,nextCursor?:string|null)=>{
     const params:Record<string,string>={action:"feed",scope:mode};
+    if(feedSearch)params.search=feedSearch;
     if(append&&nextCursor)params.cursor=nextCursor;
     try{
       const data=await get<{posts:Post[];nextCursor:string|null}>(params);
@@ -88,7 +115,7 @@ export default function SocialPage(){
       setCursor(data.nextCursor);
       setBackendStatus("online");
     }catch(error){if(!append){setFeed([]);setCursor(null);}setBackendStatus("unconfigured");setNotice(errText(error));}
-  },[mode]);
+  },[mode,feedSearch]);
 
   const lookupDirectory=useCallback(async(value:string)=>{
     try{
@@ -159,9 +186,11 @@ export default function SocialPage(){
       const asset=assetType==="none"?null:assetType==="token"
         ?{assetType:"token",assetChain:"ultra-evm",assetId}
         :{assetType:"uniq",assetChain:"ultra-native",assetId};
-      await post("social",{action:"post",body:newPost,asset});
-      setNewPost("");setAssetType("none");setAssetId("");
-      setMode("global");await loadFeed();setNotice("Post published.");
+      const media=mediaUrl.trim()?{url:mediaUrl.trim(),kind:mediaKind}:null;
+      const result=await post<{note?:string}>("social",{action:"post",body:newPost,asset,media});
+      setNewPost("");setAssetType("none");setAssetId("");setMediaUrl("");
+      setMode("global");await loadFeed();
+      setNotice(result.note||"Text post published to the moderated social database.");
     }catch(e){setNotice(errText(e));}finally{setWorking(false);}
   }
 
@@ -237,6 +266,26 @@ export default function SocialPage(){
           {user&&<form className="social-card social-composer" onSubmit={e=>void publish(e)}>
             <div className="social-eyebrow">NEW POST · @{user.handle}</div>
             <textarea aria-label="Write a Looke post" required maxLength={1000} placeholder="What are you creating on Ultra?" value={newPost} onChange={e=>setNewPost(e.target.value)}/>
+            <div className="lk-m15-media-draft">
+              <label htmlFor="looke-local-media">Preview image or video (not uploaded)</label>
+              <input id="looke-local-media" type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif,video/mp4,video/webm"
+                onChange={inspectLocalFile}/>
+              {localPreview&&(localPreview.kind==="image"?
+                <img src={localPreview.url} alt="Local, unpublished media preview" className="lk-m15-local-preview"/>:
+                <video src={localPreview.url} controls preload="none" className="lk-m15-local-preview"/>)}
+              {localPreview&&<button className="lk-m15-local-clear" type="button" onClick={()=>setLocalPreview(null)}>
+                Clear local preview</button>}
+              <label htmlFor="looke-hosted-media">Optional hosted media URL (moderator review)</label>
+              <input id="looke-hosted-media" type="url" value={mediaUrl} onChange={e=>setMediaUrl(e.target.value)}
+                maxLength={800} placeholder="https://approved-cdn.example/image.png"/>
+              <label htmlFor="looke-media-kind">Hosted media type</label>
+              <select id="looke-media-kind" value={mediaKind}
+                onChange={e=>setMediaKind(e.target.value as "image"|"video")}>
+                <option value="image">Image</option><option value="video">Video</option>
+              </select>
+              <p>Only operator-approved HTTPS hosts can be submitted. Media remains hidden until an authorized moderation review. Local file preview is never uploaded.</p>
+            </div>
             <div className="social-compose-bottom">
               <select aria-label="Reference an asset" value={assetType} onChange={e=>{setAssetType(e.target.value as "none"|"token"|"uniq");setAssetId("");}}>
                 <option value="none">No asset reference</option><option value="token">Share Ultra EVM token</option><option value="uniq">Share native Uniq NFT</option>
@@ -247,6 +296,11 @@ export default function SocialPage(){
             <small>Public, plain-text posts · No financial transaction or signature required after sign-in.</small>
           </form>}
           {!user&&<div className="social-signin-note">Sign in with your Ultra EVM Testnet wallet to create a profile, post, comment or follow creators.</div>}
+          <div className="lk-m15-social-search"><span aria-hidden="true">⌕</span>
+            <input type="search" value={feedSearchInput}
+              onChange={e=>setFeedSearchInput(e.target.value)} maxLength={64}
+              aria-label="Search real creator posts" placeholder="Search posts, handles, creators…"/>
+          </div>
           <div className="social-list-heading"><h2>Community feed</h2><div className="social-tabs">
             <button className={mode==="global"?"chosen":""} onClick={()=>setMode("global")}>Latest</button>
             <button className={mode==="following"?"chosen":""} disabled={!user} onClick={()=>setMode("following")}>Following</button></div></div>
@@ -256,7 +310,10 @@ export default function SocialPage(){
                 <button onClick={()=>void openProfile(item.handle)} className="social-handle">{item.display_name||item.handle} <span>@{item.handle}</span></button>
                 <small>{dateLabel(item.created_at)} · {abbrev(item.author)}</small></div></div>
               <p className="social-post-body">{item.body}</p>
+              <ApprovedPostMedia url={item.media_url??null} kind={item.media_kind??null}/>
               <AssetBadge item={item}/>
+              {item.asset_type&&item.asset_id&&
+                <AssetEvidence kind={item.asset_type==="token"?"token":"uniq"} id={item.asset_id}/>}
               <div className="social-post-actions">
                 <button onClick={()=>void viewComments(item.id)}>◉ {item.comment_count} comments</button>
                 <button disabled={!user||user.address===item.author||working} onClick={()=>void reportPost(item.id)}>⚑ Report</button>
