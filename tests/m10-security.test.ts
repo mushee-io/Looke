@@ -71,7 +71,7 @@ test("Vercel release requires exact project, safe env flags, matching READY Prev
         text.includes("/deployments?")?responses[2]:responses[0];
       return Promise.resolve(new Response(JSON.stringify(value),{status:200,headers:{"content-type":"application/json"}}));
     }
-    if(text===staging&&init?.redirect==="manual"){
+    if(text===new URL(staging).href&&init?.redirect==="manual"){
       return Promise.resolve(new Response(null,{status:302,
         headers:{location:"https://vercel.com/login?next=looke"}}));
     }
