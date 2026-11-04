@@ -78,7 +78,9 @@ test("Server-side creator feed search remains bound SQL, moderation-first and no
  assert.match(api,/position\(\$4::text in lower\(p\.body\)\)/);
  assert.match(api,/position\(\$4::text in lower\(pr\.handle\)\)/);
  assert.match(api,/media_status='approved'/);
- assert.match(api,/validatePublishedMedia/);
+ assert.match(api,/Raw media URLs cannot be posted/);
+ assert.match(api,/uploadId.parse\(input.mediaUploadId\)/);
+ assert.match(api,/FOR UPDATE/);
  assert.match(api,/mediaUrl\?"pending":"none"/);
  assert.match(api,/approve_media/);
  assert.match(api,/social_moderation_audit/);
@@ -94,7 +96,9 @@ test("M15 creator interface cannot send DM, mint, fake verified ownership or pub
  const ready=src("src/app/api/experience/messaging/readiness/route.ts");
  assert.match(social,/URL\.createObjectURL\(file\)/);
  assert.match(social,/URL\.revokeObjectURL/);
- assert.match(social,/only a preview/);
+ assert.match(social,/Upload file for moderator review/);
+ assert.match(social,/mediaUploadId/);
+ assert.match(social,/mediaBusy/);
  assert.match(social,/AssetEvidence/);
  assert.match(views,/loadMoreProfilePosts/);
  assert.match(views,/loadNotifications/);
