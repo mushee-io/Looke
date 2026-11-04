@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getAddress, isAddress } from "viem";
 import "./social.css";
 import "../../components/experience/m15.css";
+import "../../components/experience/m16.css";
 import {AssetEvidence,ApprovedPostMedia} from "../../components/experience/AssetEvidence";
 
 type Wallet = {request:(args:{method:string;params?:unknown[]})=>Promise<unknown>};
@@ -62,7 +63,19 @@ export default function SocialPage(){
   const [newPost,setNewPost]=useState("");
   const [feedSearchInput,setFeedSearchInput]=useState("");
   const [feedSearch,setFeedSearch]=useState("");
-  const [mediaUrl,setMediaUrl]=useState("");
+  const [selectedMedia,setSelectedMedia]=useState<File|null>(null);
+  const [mediaUploadId,setMediaUploadId]=useState<string|null>(null);
+  const [mediaUploadStatus,setMediaUploadStatus]=useState("");
+  const [mediaBusy,setMediaBusy]=useState(false);
+  const [mediaServiceReady,setMediaServiceReady]=useState(false);
+  useEffect(()=>{
+    let alive=true;
+    void fetch("/api/experience/media",{cache:"no-store"})
+      .then(async r=>r.json() as Promise<{enabled:boolean}>)
+      .then(info=>{if(alive)setMediaServiceReady(info.enabled===true);})
+      .catch(()=>{if(alive)setMediaServiceReady(false);});
+    return ()=>{alive=false;};
+  },[]);
   const [mediaKind,setMediaKind]=useState<"image"|"video">("image");
   const [localPreview,setLocalPreview]=useState<{url:string;kind:"image"|"video"}|null>(null);
   useEffect(()=>{
@@ -81,9 +94,55 @@ export default function SocialPage(){
       e.target.value="";return;
     }
     setLocalPreview({url:URL.createObjectURL(file),kind:image?"image":"video"});
-    setNotice("Local media is only a preview; it has not been uploaded or attached to your post.");
+    setSelectedMedia(file);setMediaUploadId(null);
+    setMediaUploadStatus("Selected locally. Confirm upload to your hosted account before publishing.");
+    setNotice("Media stays local until you explicitly select Upload for review.");
     e.target.value="";
   }
+  async function authorizeAndUpload(){
+    if(!user||!selectedMedia||!localPreview||mediaBusy)return;
+    setMediaBusy(true);setMediaUploadStatus("");setNotice("");
+    try{
+      const kind=localPreview.kind;
+      const permitted=await fetch("/api/experience/media",{
+        method:"POST",credentials:"same-origin",cache:"no-store",
+        headers:{"content-type":"application/json"},
+        body:JSON.stringify({action:"authorize",kind,mime:selectedMedia.type,bytes:selectedMedia.size}),
+      });
+      const auth=await permitted.json() as {
+        intentId:string;uploadUrl:string;apiKey:string;
+        fields:Record<string,string>;error?:string;
+      };
+      if(!permitted.ok)throw new Error(auth.error||"Media upload is not approved.");
+      if(!/^https:\/\/api\.cloudinary\.com\/v1_1\/[a-zA-Z0-9_-]+\/(image|video)\/upload$/.test(auth.uploadUrl))
+        throw new Error("Media authorization returned an unsupported provider endpoint.");
+      if(!auth.intentId||!auth.fields?.signature||!auth.apiKey)throw new Error("Incomplete upload authorization.");
+      const payload=new FormData();
+      payload.append("file",selectedMedia,selectedMedia.name);
+      for(const [key,value] of Object.entries(auth.fields))payload.append(key,value);
+      payload.append("api_key",auth.apiKey);
+      setMediaUploadStatus("Uploading the selected file to authorized hosting…");
+      const upload=await fetch(auth.uploadUrl,{method:"POST",body:payload,cache:"no-store"});
+      if(!upload.ok)throw new Error("Hosting provider rejected the upload.");
+      // Browser metadata is NOT trusted; the server independently inspects
+      // the asset through the provider's authenticated administration API.
+      setMediaUploadStatus("Checking provider evidence and wallet ownership…");
+      const verify=await fetch("/api/experience/media",{
+        method:"POST",credentials:"same-origin",cache:"no-store",
+        headers:{"content-type":"application/json"},
+        body:JSON.stringify({action:"confirm",intentId:auth.intentId}),
+      });
+      const proof=await verify.json() as {confirmed:boolean;intentId:string;error?:string};
+      if(!verify.ok||!proof.confirmed||proof.intentId!==auth.intentId)
+        throw new Error(proof.error||"Provider verification did not complete.");
+      setMediaUploadId(proof.intentId);
+      setMediaUploadStatus("Upload verified. It will be hidden from the public feed until moderator approval.");
+    }catch(error){
+      setMediaUploadId(null);
+      setMediaUploadStatus(errText(error));
+    }finally{setMediaBusy(false);}
+  }
+
   const [assetType,setAssetType]=useState<"none"|"token"|"uniq">("none");
   const [assetId,setAssetId]=useState("");
   const [commentFor,setCommentFor]=useState("");
@@ -186,9 +245,13 @@ export default function SocialPage(){
       const asset=assetType==="none"?null:assetType==="token"
         ?{assetType:"token",assetChain:"ultra-evm",assetId}
         :{assetType:"uniq",assetChain:"ultra-native",assetId};
-      const media=mediaUrl.trim()?{url:mediaUrl.trim(),kind:mediaKind}:null;
-      const result=await post<{note?:string}>("social",{action:"post",body:newPost,asset,media});
-      setNewPost("");setAssetType("none");setAssetId("");setMediaUrl("");
+      if(selectedMedia&&!mediaUploadId)throw new Error("Upload and verify your selected file before publishing, or remove the file.");
+      const result=await post<{note?:string}>("social",{
+        action:"post",body:newPost,asset,mediaUploadId,
+      });
+      setNewPost("");setAssetType("none");setAssetId("");
+      setSelectedMedia(null);setMediaUploadId(null);setLocalPreview(null);
+      setMediaUploadStatus("");
       setMode("global");await loadFeed();
       setNotice(result.note||"Text post published to the moderated social database.");
     }catch(e){setNotice(errText(e));}finally{setWorking(false);}
@@ -274,24 +337,23 @@ export default function SocialPage(){
               {localPreview&&(localPreview.kind==="image"?
                 <img src={localPreview.url} alt="Local, unpublished media preview" className="lk-m15-local-preview"/>:
                 <video src={localPreview.url} controls preload="none" className="lk-m15-local-preview"/>)}
-              {localPreview&&<button className="lk-m15-local-clear" type="button" onClick={()=>setLocalPreview(null)}>
-                Clear local preview</button>}
-              <label htmlFor="looke-hosted-media">Optional hosted media URL (moderator review)</label>
-              <input id="looke-hosted-media" type="url" value={mediaUrl} onChange={e=>setMediaUrl(e.target.value)}
-                maxLength={800} placeholder="https://approved-cdn.example/image.png"/>
-              <label htmlFor="looke-media-kind">Hosted media type</label>
-              <select id="looke-media-kind" value={mediaKind}
-                onChange={e=>setMediaKind(e.target.value as "image"|"video")}>
-                <option value="image">Image</option><option value="video">Video</option>
-              </select>
-              <p>Only operator-approved HTTPS hosts can be submitted. Media remains hidden until an authorized moderation review. Local file preview is never uploaded.</p>
+              {localPreview&&<button className="lk-m15-local-clear" type="button" onClick={()=>{
+                setLocalPreview(null);setSelectedMedia(null);setMediaUploadId(null);setMediaUploadStatus("");
+              }}>Remove selected media</button>}
+              {selectedMedia&&<button className="lk-m15-upload-action" type="button"
+                disabled={!mediaServiceReady||mediaBusy||!!mediaUploadId||working} onClick={()=>void authorizeAndUpload()}>
+                {mediaBusy?"Uploading / verifying…":mediaUploadId?"Provider verified ✓":mediaServiceReady?"Upload file for moderator review ↗":"Upload for review (hosting not enabled)"}
+              </button>}
+              {mediaUploadStatus&&<p role="status">{mediaUploadStatus}</p>}
+              {!mediaServiceReady&&<p role="status">Secure uploads require a configured hosted-media provider and approved moderation.</p>}
+              <p>Files are transferred only when you press Upload. An authorized hosting provider and operator moderation must be configured. Your file is not publicized on Looke before approval.</p>
             </div>
             <div className="social-compose-bottom">
               <select aria-label="Reference an asset" value={assetType} onChange={e=>{setAssetType(e.target.value as "none"|"token"|"uniq");setAssetId("");}}>
                 <option value="none">No asset reference</option><option value="token">Share Ultra EVM token</option><option value="uniq">Share native Uniq NFT</option>
               </select>
               {assetType!=="none"&&<input aria-label="Asset identifier" required placeholder={assetType==="token"?"0x creator token address":"Native Uniq token ID"} value={assetId} onChange={e=>setAssetId(e.target.value)}/>}
-              <button type="submit" disabled={working||!newPost.trim()}>Publish →</button>
+              <button type="submit" disabled={working||!newPost.trim()||mediaBusy||(!!selectedMedia&&!mediaUploadId)}>Publish →</button>
             </div>
             <small>Public, plain-text posts · No financial transaction or signature required after sign-in.</small>
           </form>}

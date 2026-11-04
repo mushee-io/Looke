@@ -38,6 +38,7 @@ export async function GET(request:NextRequest){
          (SELECT count(*)::integer FROM social_comments c
            WHERE c.post_id=p.id AND c.hidden=false) AS comment_count
        FROM social_posts p WHERE p.author=$1 AND p.hidden=false AND p.deleted_at IS NULL
+         AND (p.media_url IS NULL OR p.media_status='approved')
          AND ($2::uuid IS NULL OR (p.created_at,p.id) <
            (SELECT created_at,id FROM social_posts WHERE id=$2 AND author=$1))
        ORDER BY p.created_at DESC,p.id DESC LIMIT 13
@@ -45,6 +46,7 @@ export async function GET(request:NextRequest){
      query<{count:number}>(`
        SELECT count(*)::integer AS count FROM social_posts p
        WHERE p.author=$1 AND p.hidden=false AND p.deleted_at IS NULL
+         AND (p.media_url IS NULL OR p.media_status='approved')
      `,[owner]),
    ]);
    return NextResponse.json({

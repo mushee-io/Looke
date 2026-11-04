@@ -1,0 +1,80 @@
+name: M16 authorized media, scoped notifications and Ultra proofs
+on:
+  pull_request:
+    paths:
+      - "src/app/social/**"
+      - "src/app/api/social/**"
+      - "src/app/api/experience/**"
+      - "src/components/experience/**"
+      - "src/lib/social/**"
+      - "src/lib/experience/**"
+      - "db/migrations/003_signed_media_and_notification_state.sql"
+      - "scripts/social-migrate.ts"
+      - "tests/m15-*"
+      - "tests/m16-*"
+      - "deployment/M16_OPERATOR_ACCEPTANCE.md"
+      - "package.json"
+      - ".github/workflows/m16-secure-creator.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  closed-preview-security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    env:
+      LOOKE_PUBLIC_BETA_ENABLED: "false"
+      LOOKE_M4_TRADING_ENABLED: "false"
+      LOOKE_SOCIAL_WRITES_ENABLED: "false"
+      LOOKE_M6_EVIDENCE_ENABLED: "false"
+      LOOKE_M4_MARKETS_JSON: "[]"
+      LOOKE_MEDIA_UPLOADS_ENABLED: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: Fail-closed feature flags
+        run: npm run m7:preflight
+      - name: All deterministic unit and security regression tests
+        run: npm test
+      - name: Typecheck Next.js and build
+        run: |
+          npm run typecheck
+          npm run build
+      - name: Fail-closed API acceptance in a running Next.js server
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run start -- -p 3100 >/tmp/m16-next.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 50); do
+            if curl -fsS http://127.0.0.1:3100/ >/dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:3100/api/experience/media | node -e '
+            let s="";process.stdin.on("data",x=>s+=x).on("end",()=>{
+              const a=JSON.parse(s);
+              if(a.enabled!==false||a.moderationRequired!==true)process.exit(2);
+            });
+          '
+          status=$(curl -s -o /tmp/m16-denied.json -w "%{http_code}"             -X POST http://127.0.0.1:3100/api/experience/media             -H 'Origin: http://localhost:3000' -H 'Content-Type: application/json'             -d '{"action":"authorize","kind":"image","mime":"image/png","bytes":500}')
+          test "$status" = "503"
+          curl -fsS http://127.0.0.1:3100/api/experience/messaging/readiness | node -e '
+            let s="";process.stdin.on("data",x=>s+=x).on("end",()=>{
+              const a=JSON.parse(s);
+              if(a.liveMessagingEnabled!==false||a.messagesSent!==0)process.exit(2);
+            });
+          '
+          npm run m7:smoke
+      - name: Existing in-memory rollback rehearsal
+        run: npm run m8:rollback-rehearsal
+      - name: Safety statement
+        if: always()
+        run: |
+          echo "M16 media uploads require an approved hosted provider and separate social-write flag." >> "$GITHUB_STEP_SUMMARY"
+          echo "One-time wallet-scoped intents, provider admin inspection, and moderation are separate gates." >> "$GITHUB_STEP_SUMMARY"
+          echo "No actual external uploads, on-chain financial actions or live end-to-end encrypted messaging were executed." >> "$GITHUB_STEP_SUMMARY"
+          echo "Public beta remains closed and only authenticated Preview deployment is permitted." >> "$GITHUB_STEP_SUMMARY"

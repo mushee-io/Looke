@@ -2,6 +2,7 @@ import {NextRequest,NextResponse} from "next/server";
 import {indexCreatorLaunches} from "../../../../lib/ops/m13-index";
 import {getNativeTestnetInfo,ownedUniqs} from "../../../../lib/ultra-native-rpc";
 import {parseAssetLookup,type AssetProof} from "../../../../lib/experience/assets";
+import {findNativeUniq} from "../../../../lib/experience/uniq-lookup";
 
 export const runtime="nodejs";
 export const dynamic="force-dynamic";
@@ -28,16 +29,18 @@ export async function GET(req:NextRequest){
      };
      return NextResponse.json(result,{headers});
    }
-   const [info,page]=await Promise.all([
-     getNativeTestnetInfo(),ownedUniqs(input.account,50),
+   const [info,lookup]=await Promise.all([
+     getNativeTestnetInfo(),
+     findNativeUniq(input.account,input.id,ownedUniqs,3),
    ]);
-   const token=page.rows.find(t=>t.id===input.id);
+   const token=lookup.found;
    const result:AssetProof={
      kind:"uniq",id:input.id,network:"Ultra native Testnet",
      verified:!!token,status:token?"verified":"unindexed",
      proof:token?"Uniq token found in actual native account scope on correct Testnet.":
-       "Token not found within this account's current 50-row page; non-ownership is NOT proven.",
-     block:String(Math.min(info.last_irreversible_block_num,page.irreversibleBlock)),
+       "No matching Uniq in the first "+lookup.scanned+" actual scoped rows across "+
+       lookup.pages+" page(s). This does NOT prove non-ownership.",
+     block:String(Math.min(info.last_irreversible_block_num,lookup.irreversibleBlock)),
      source:token?.token_factory_id??null,owner:token?input.account:null,transactionsSent:0,
    };
    return NextResponse.json(result,{headers});

@@ -3,7 +3,7 @@ import { address, comment, follow, handle, post, profile, report, uuid } from ".
 import { HttpError, requireViewer, verifyRequestOrigin, viewer, writesEnabled } from "../../../lib/social/auth";
 import { failure, readJson } from "../../../lib/social/http";
 import { query, rateLimit, socialDb } from "../../../lib/social/db";
-import {trustedMediaHosts,validatePublishedMedia} from "../../../lib/social/media";
+import {uploadId,uploadEnabled} from "../../../lib/social/upload-provider";
 import { z } from "zod";
 
 export const runtime="nodejs";
@@ -38,6 +38,7 @@ export async function GET(req:NextRequest){
           (SELECT count(*)::integer FROM social_follows f WHERE f.followed=p.author) AS follower_count
         FROM social_posts p JOIN social_profiles pr ON pr.address=p.author
         WHERE p.hidden=false AND p.deleted_at IS NULL AND pr.suspended=false
+          AND (p.media_url IS NULL OR p.media_status='approved')
           AND ($1::uuid IS NULL OR (p.created_at,p.id) <
             (SELECT created_at,id FROM social_posts WHERE id=$1))
           AND ($2::text IS NULL OR NOT EXISTS(
@@ -83,6 +84,7 @@ export async function GET(req:NextRequest){
         JOIN social_posts original ON original.id=c.post_id
         WHERE c.post_id=$1 AND c.hidden=false AND p.suspended=false
           AND original.hidden=false AND original.deleted_at IS NULL
+          AND (original.media_url IS NULL OR original.media_status='approved')
           AND ($2::text IS NULL OR NOT EXISTS(SELECT 1 FROM social_blocks b
             WHERE (b.blocker=$2 AND b.blocked=c.author) OR (b.blocked=$2 AND b.blocker=c.author)))
         ORDER BY c.created_at ASC LIMIT 50`,[id,wallet]);
@@ -156,21 +158,52 @@ export async function POST(req:NextRequest){
     if(action==="post"){
       await rateLimit(actor,"post",12,600);
       const v=post.parse({body:input.body,asset:input.asset??null,media:input.media??null});
-      const hosted=validatePublishedMedia(v.media,trustedMediaHosts(process.env.LOOKE_SOCIAL_MEDIA_HOSTS));
-      const r=await query(`
-        INSERT INTO social_posts(author,body,asset_chain,asset_type,asset_id,media_url,media_kind,media_status)
-        VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id,created_at,media_status`,
-        [actor,v.body,v.asset?.assetChain??null,v.asset?.assetType??null,v.asset?.assetId??null,
-          hosted?.url??null,hosted?.kind??null,hosted?"pending":"none"]);
-      return cacheData({ok:true,post:r.rows[0],
-        note:hosted?"Hosted media is pending moderator approval; it is not yet public.":undefined});
+      // M16: a hosted URL alone is not provenance or upload permission.
+      // Only one-use, provider-confirmed and owner-bound upload intents can attach media.
+      if(v.media!==null)throw new HttpError(400,"Raw media URLs cannot be posted. Authorize and verify a hosted upload first.");
+      const intentId=input.mediaUploadId==null?null:uploadId.parse(input.mediaUploadId);
+      if(intentId&&!uploadEnabled())throw new HttpError(503,"Media posting is disabled pending hosting/moderation approval.");
+      const conn=await socialDb().connect();
+      try{
+        await conn.query("BEGIN");
+        let mediaUrl:string|null=null,kind:string|null=null;
+        if(intentId){
+          const signed=await conn.query<{verified_url:string;kind:string}>(`
+            SELECT verified_url,kind FROM social_media_uploads
+            WHERE id=$1 AND owner=$2 AND state='verified'
+              AND verified_at>now()-interval '30 minutes'
+            FOR UPDATE
+          `,[intentId,actor]);
+          if(signed.rowCount!==1||!signed.rows[0].verified_url)
+            throw new HttpError(409,"Upload verification expired, consumed or belongs to another wallet.");
+          mediaUrl=signed.rows[0].verified_url;
+          kind=signed.rows[0].kind;
+        }
+        const created=await conn.query<{id:string;created_at:Date;media_status:string}>(`
+          INSERT INTO social_posts(author,body,asset_chain,asset_type,asset_id,media_url,media_kind,media_status)
+          VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id,created_at,media_status
+        `,[actor,v.body,v.asset?.assetChain??null,v.asset?.assetType??null,v.asset?.assetId??null,
+          mediaUrl,kind,mediaUrl?"pending":"none"]);
+        if(intentId){
+          const consumed=await conn.query(`
+            UPDATE social_media_uploads SET state='attached',post_id=$3,attached_at=now()
+            WHERE id=$1 AND owner=$2 AND state='verified' AND post_id IS NULL
+          `,[intentId,actor,created.rows[0].id]);
+          if(consumed.rowCount!==1)throw new HttpError(409,"Upload permission already used.");
+        }
+        await conn.query("COMMIT");
+        return cacheData({ok:true,post:created.rows[0],
+          note:mediaUrl?"Verified hosted media awaits moderator approval before it appears in Looke.":undefined});
+      }catch(error){await conn.query("ROLLBACK");throw error;}
+      finally{conn.release();}
     }
     if(action==="comment"){
       await rateLimit(actor,"comment",30,600);
       const v=comment.parse({postId:input.postId,body:input.body});
       const target=await query<{author:string}>(`
         SELECT p.author FROM social_posts p JOIN social_profiles pr ON pr.address=p.author
-        WHERE p.id=$1 AND p.hidden=false AND p.deleted_at IS NULL AND pr.suspended=false`,[v.postId]);
+        WHERE p.id=$1 AND p.hidden=false AND p.deleted_at IS NULL AND pr.suspended=false
+          AND (p.media_url IS NULL OR p.media_status='approved')`,[v.postId]);
       if(!target.rows.length)throw new HttpError(404,"Post not found.");
       await assertNotBlocked(actor,target.rows[0].author);
       const r=await query(`INSERT INTO social_comments(post_id,author,body) VALUES($1,$2,$3) RETURNING id,created_at`,[v.postId,actor,v.body]);

@@ -67,3 +67,7 @@ jobs:
         run: npm run test:m15-db
         env:
           DATABASE_URL: postgres://looke_ci:ci_only_password@localhost:5432/looke_social_ci
+      - name: Verify signed upload ownership, one-time attachment and account-scoped notifications
+        run: npm run test:m16-db
+        env:
+          DATABASE_URL: postgres://looke_ci:ci_only_password@localhost:5432/looke_social_ci
