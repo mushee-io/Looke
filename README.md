@@ -209,3 +209,34 @@ with Next.js build/tests and local no-broadcast smoke. The existing M6 smoke
 also remains active.
 
 See [M7 staging/acceptance/rollback runbook](deployment/m7-protected-staging.md).
+
+## M8 — live RPC observations, wallet acceptance evidence and operational audit
+
+- `npm run m8:rpc-evidence` makes **actual read-only** Ultra EVM (chain ID
+  18881, recent block hash and timestamp) and Ultra-native (canonical
+  chain ID, head and irreversible block) calls and saves a machine-readable
+  `artifacts/m8/rpc-evidence.json` report. Missing/rejected RPCs are
+  **blocked**, never simulated.
+- `npm run m8:wallet-acceptance -- ./public-wallet-evidence.json`
+  verifies two separately provided EIP-191 text signatures bound to a
+  specific review issue, Git revision, staging origin and time, plus native
+  Ultra account existence. This is intentionally **not** independently
+  approved until a real human verifies the review issue and witnessed
+  native wallet connection; no signing takes place in the tool.
+- `npm run m8:db-audit` uses a **READ ONLY** PostgreSQL transaction
+  to verify PostgreSQL 15+, TLS, social schema and indexes. A disposable
+  localhost CI database may explicitly waive TLS; real environments may not.
+- `npm run m8:alert-summary` emits clear one-time GitHub Actions
+  annotations about absent live evidence; `npm run m8:rollback-rehearsal`
+  simulates a safe flag shutdown in memory without touching Vercel.
+- A dedicated M8 CI workflow makes live RPC observations and uploads a
+  short-retention evidence artifact. Its green status is **not** proof
+  the chain checks passed: review `allVerified` in the actual JSON.
+  No hourly or scheduled build tasks are created.
+
+**Staging still not deployed:** The connected Vercel team again returned
+`403 Forbidden` when asked to create the protected Looke project. No
+public preview URL, real wallet evidence or production social database
+is claimed. Public beta is **closed**.
+
+See [M8 operator acceptance runbook](deployment/M8_OPERATOR_ACCEPTANCE.md).
