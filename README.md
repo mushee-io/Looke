@@ -317,3 +317,32 @@ SHA is never accepted as evidence of a passing final revision.
 
 Looke's public beta remains closed. Real protected Vercel staging is
 unavailable until the team's project-creation `403 Forbidden` is resolved.
+
+## M11 — Real Ultra Testnet transaction acceptance
+
+M10 PR #10 is merged after six successful CI workflows. M11 introduces
+**read-only historical receipt verification** for real creator coin deployment,
+native `issue.b` Uniq mint/owner state and completed **wallet-submitted**
+Ultra EVM BUY/SELL trades. A successful receipt is real on-chain evidence,
+not proof a user consented to any proposed trade; user wallet acceptance
+requires separate witnessing.
+
+`npm run m11:acceptance` produces a machine-readable **16-check**
+evidence packet. Without actual owner-authorized Testnet receipts,
+reviewed V2 liquidity, a TLS-backed real PostgreSQL staging database,
+protected Vercel preview and security approvals, it reports
+`status=blocked`, `publicBetaOpen=false`.
+
+The social operational inspector verifies the staging role is not a DB
+superuser, along with M8 TLS/schema checks, and leaves backup restore
+and moderation approvals pending. M11's CI only runs **read-only**
+Testnet observations and deterministic security tests; no wallet
+signing, contract deployment, minting, buying/selling, synthetic
+market data, Vercel deploy or hourly scheduled build is performed.
+
+Vercel still returns **403 Forbidden** when attempting to create
+`looke-ultra-staging` under the intended team with all-URL
+authentication. There is **no staging deployment** or public beta
+release. A team administrator must unblock project creation.
+
+See [M11 real acceptance runbook](deployment/M11_REAL_TESTNET_ACCEPTANCE.md).

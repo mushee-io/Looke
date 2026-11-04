@@ -1,0 +1,90 @@
+name: M11 real Ultra Testnet acceptance (read-only)
+
+on:
+  pull_request:
+    paths:
+      - "src/lib/ops/m11-*"
+      - "scripts/m11-*"
+      - "tests/m11-activation.test.ts"
+      - "deployment/M11_REAL_TESTNET_ACCEPTANCE.md"
+      - ".github/workflows/m11-activation.yml"
+      - "package.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  closed-beta-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      LOOKE_PUBLIC_BETA_ENABLED: "false"
+      LOOKE_M4_TRADING_ENABLED: "false"
+      LOOKE_SOCIAL_WRITES_ENABLED: "false"
+      LOOKE_M6_EVIDENCE_ENABLED: "false"
+      LOOKE_M4_MARKETS_JSON: "[]"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - run: npm run m7:preflight
+      - name: Unit tests and type safety
+        run: |
+          npm test
+          npm run typecheck
+      - name: Production build
+        run: npm run build
+      - name: Local closed-by-default preview smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run start -- -p 3100 > /tmp/looke-m11.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 45); do
+            if curl -fsS "http://127.0.0.1:3100/api/beta/health?mode=live" >/dev/null; then break; fi
+            sleep 1
+          done
+          npm run m6:smoke
+          npm run m7:smoke
+      - name: Rehearse rollback without touching Vercel
+        run: npm run m8:rollback-rehearsal
+      - name: Release control status
+        if: always()
+        run: |
+          echo "All M11 receipt verification is READ ONLY; no wallet signatures or transactions." >> "$GITHUB_STEP_SUMMARY"
+          echo "Public beta, market execution and social writes remain disabled." >> "$GITHUB_STEP_SUMMARY"
+
+  live-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      LOOKE_PUBLIC_BETA_ENABLED: "false"
+      LOOKE_M4_TRADING_ENABLED: "false"
+      LOOKE_SOCIAL_WRITES_ENABLED: "false"
+      LOOKE_M6_EVIDENCE_ENABLED: "false"
+      LOOKE_M4_MARKETS_JSON: "[]"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: Inspect real Ultra EVM/native chain heads and report missing receipts
+        run: npm run m11:acceptance
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: m11-read-only-activation-evidence
+          path: artifacts/m11/acceptance.json
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Distinguish CI success from genuine market activation
+        if: always()
+        run: |
+          echo "Inspect artifacts/m11/acceptance.json: missing receipt, liquidity and DB gates are BLOCKED." >> "$GITHUB_STEP_SUMMARY"
+          echo "No seed words, private keys, real wallet signing, token mint, swap or Vercel deploy is performed." >> "$GITHUB_STEP_SUMMARY"
+          echo "No recurring hourly builds/automations have been created." >> "$GITHUB_STEP_SUMMARY"
