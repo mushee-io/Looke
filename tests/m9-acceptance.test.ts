@@ -33,6 +33,7 @@ test("V2 pool proof requires correct router, factory, pair, deployed code and ge
 test("liquidity observation never fabricates a funded market or turns on execution",()=>{
   const missing=liquidityReport([]);
   assert.equal(missing.allVerified,false);
+  assert.equal(liquidityReport([{id:"allowlist",status:"blocked",reason:"No registry"}]).configuredMarkets,0);
   assert.equal(missing.tradingActivated,false);
   const observed:LiquidityObservation={id:"real-market",status:"verified",reason:"on-chain"};
   const report=liquidityReport([observed]);

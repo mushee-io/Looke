@@ -66,11 +66,12 @@ export function validatePairEvidence(
 export function liquidityReport(
   observations:LiquidityObservation[],now=new Date(),
 ):LiquidityReport{
-  const ok=observations.filter(x=>x.status==="verified").length;
+  const configured=observations.filter(x=>x.id!=="allowlist");
+  const ok=configured.filter(x=>x.status==="verified").length;
   return {
     observedAt:now.toISOString(),chainId:18881,source:"on-chain-read-only",
-    configuredMarkets:observations.length,verifiedMarkets:ok,
-    observations,allVerified:observations.length>0&&ok===observations.length,
+    configuredMarkets:configured.length,verifiedMarkets:ok,
+    observations,allVerified:configured.length>0&&ok===configured.length,
     tradingActivated:false,betaActivated:false,
   };
 }
