@@ -1,6 +1,6 @@
 {
   "name": "looke-ultra",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "private": true,
   "license": "MIT",
   "engines": {
@@ -14,13 +14,17 @@
     "typecheck": "tsc --noEmit",
     "m2:preflight": "tsx scripts/preflight.ts",
     "m2:verify-factory": "tsx scripts/verify-factory.ts",
-    "m2:verify-coin": "tsx scripts/verify-coin.ts"
+    "m2:verify-coin": "tsx scripts/verify-coin.ts",
+    "db:migrate": "tsx scripts/social-migrate.ts",
+    "test:social-db": "node --import tsx --test tests/social-db.integration.ts"
   },
   "dependencies": {
     "next": "^15.5.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "viem": "^2.37.0",
+    "pg": "^8.16.0",
+    "zod": "^4.1.0",
     "@ultraos/wallet-sdk": "^0.6.1"
   },
   "devDependencies": {
@@ -28,6 +32,7 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "tsx": "^4.20.0",
-    "typescript": "^5.8.0"
+    "typescript": "^5.8.0",
+    "@types/pg": "^8.15.0"
   }
 }

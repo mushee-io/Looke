@@ -288,10 +288,10 @@ export default function Home() {
                   <div className="feature-glyph uniq-glyph">▧</div><span className="feature-index">02 / COLLECT</span>
                   <h3>Native Uniq NFTs</h3><p>Ultra-native digital collectibles. Wallet and NFT market integration are next on the roadmap.</p><span className="card-link">See roadmap ↗</span>
                 </button>
-                <button className="feature-card" onClick={() => setScreen("Messages")}>
+                <a href="/social" className="feature-card" style={{textDecoration:"none"}}>
                   <div className="feature-glyph social-glyph">✳</div><span className="feature-index">03 / CONNECT</span>
-                  <h3>Social & community</h3><p>Discovery, conversations and creator communities without pretending that a live feed exists yet.</p><span className="card-link">See the vision ↗</span>
-                </button>
+                  <h3>Social & community</h3><p>Wallet-authenticated profiles, real posts, follows and creator communities. A database is required; private messaging is still disabled.</p><span className="card-link">Open the social network ↗</span>
+                </a>
               </div>
 
               <div className="empty-strip"><div className="strip-icon">◇</div><div><strong>Real activity, when it's real.</strong><p>Live tokens and market data appear only after verified deployment and event indexing. No fabricated trades or volumes.</p></div><span className="pill">INDEXER PENDING</span></div>
@@ -331,7 +331,7 @@ export default function Home() {
 
           {screen === "Uniq NFTs" && <section className="info-screen"><span className="overline">02 / COLLECT</span><div className="info-icon">▧</div><h1 className="page-title">Made to be <em>collected.</em></h1><p>Looke will support Ultra's native Uniq NFTs: collections, ownership, minting and marketplace listings. These are native Ultra assets, not ordinary EVM ERC-721 tokens.</p><a href="/uniqs" className="primary" style={{ display: "inline-flex", textDecoration: "none", margin: "12px 0 30px" }}>Open Uniq Studio on Ultra Testnet ↗</a><div className="roadmap-line"><span>01</span><strong>Native Uniq Testnet studio and ownership reads</strong><span className="pill">IN REVIEW · M3</span></div><div className="roadmap-line"><span>02</span><strong>Creator minting and collection tools</strong><span className="pill">PLANNED</span></div><div className="roadmap-line"><span>03</span><strong>Verified marketplace execution</strong><span className="pill">PLANNED</span></div><a className="text-link" href="https://developers.ultra.io/" target="_blank" rel="noreferrer">Ultra developer resources ↗</a></section>}
 
-          {screen === "Messages" && <section className="info-screen"><span className="overline">03 / COMMUNITY</span><div className="info-icon">✳</div><h1 className="page-title">Find your <em>people.</em></h1><p>On Looke, creators will be able to share projects, follow each other and discuss the collectibles and tokens they love. Messaging and activity feeds require dedicated backend services and moderation before launch.</p><div className="roadmap-line"><span>01</span><strong>Profiles & discovery</strong><span className="pill">PLANNED</span></div><div className="roadmap-line"><span>02</span><strong>Community posts & comments</strong><span className="pill">PLANNED</span></div><div className="roadmap-line"><span>03</span><strong>Secure conversations</strong><span className="pill">PLANNED</span></div></section>}
+          {screen === "Messages" && <section className="info-screen"><span className="overline">03 / COMMUNITY</span><div className="info-icon">✳</div><h1 className="page-title">Find your <em>people.</em></h1><p>On Looke, creators will be able to share projects, follow each other and discuss the collectibles and tokens they love. Public posting now has a database-backed foundation. Private messaging is disabled pending audited encryption.</p><div className="roadmap-line"><span>01</span><strong>Profiles & discovery</strong><span className="pill">PLANNED</span></div><div className="roadmap-line"><span>02</span><strong>Community posts & comments</strong><span className="pill">PLANNED</span></div><div className="roadmap-line"><span>03</span><strong>Secure conversations</strong><span className="pill">PLANNED</span></div></section>}
 
           {notice && <div className="notice" role="status">{notice}</div>}
           {txHash && <div className="tx-result">

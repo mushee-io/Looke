@@ -117,3 +117,38 @@ No real wallet transactions have been executed by this milestone.
 
 See [M3 Testnet acceptance runbook](docs/M3_NATIVE_UNIQ_RUNBOOK.md) for
 prerequisites, Testnet/extension support and operator test cases.
+
+## M5 — creator profiles, public social feed and moderation
+
+`/social` provides a distinct, wallet-signed Ultra EVM Testnet (18881)
+social identity. The PostgreSQL-backed API implements real user profiles,
+following, public posts, comments, token/Uniq references, search, blocking,
+abuse reports, and audit-logged moderator controls.
+
+- Sign-in is a **purpose-limited text signature** with a 5-minute
+  single-use nonce, not a transaction, approval or token authorization.
+- Sessions are hashed in Postgres and delivered in an HttpOnly
+  SameSite=Strict cookie. Writes check same-origin and rate-limit actors.
+- No fake posts, likes, follower counts, token holdings or sample conversations.
+- The social backend fails closed without `DATABASE_URL`, and
+  `LOOKE_SOCIAL_WRITES_ENABLED=false` **by default**.
+- Private messaging is **not enabled**; encrypted-envelope table stubs
+  await audited client-side encryption, key exchange and recovery.
+- Public content links are not wallet-ownership attestations.
+
+**Quick local setup (after reviewing the schema):**
+
+```bash
+npm install
+# PostgreSQL connection is required; do not commit the credential
+export DATABASE_URL=postgres://...
+npm run db:migrate
+export LOOKE_SOCIAL_APP_ORIGIN=http://localhost:3000
+export LOOKE_SOCIAL_WRITES_ENABLED=true
+npm run dev
+# Visit http://localhost:3000/social
+```
+
+The GitHub Actions `social_db` job provisions a **disposable PostgreSQL
+16** service for SQL integration tests; it does not touch production.
+See [M5 social acceptance runbook](docs/M5_SOCIAL_ACCEPTANCE.md).
