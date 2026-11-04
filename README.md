@@ -240,3 +240,32 @@ public preview URL, real wallet evidence or production social database
 is claimed. Public beta is **closed**.
 
 See [M8 operator acceptance runbook](deployment/M8_OPERATOR_ACCEPTANCE.md).
+
+## M9 — Protected staging and genuine beta acceptance
+
+M9 expands the read-only Testnet acceptance system with a **new independent
+liquidity verifier** for explicitly configured Ultra EVM (18881) V2 AMM
+router/factory/pair contracts, creator-token identities and real two-sided
+reserves. Without a real, reviewed market allowlist, liquidity stays
+**blocked**, and neither trades nor price candles are fabricated.
+
+Run `npm run m9:acceptance` to produce a **12-stage blocked/verified
+operator packet**, with actual EVM and native Ultra RPC responses,
+optional real wallet-authorized factory/coin/Uniq transaction evidence
+and optional TLS-backed PostgreSQL diagnostics. The command cannot
+change any launch flag or sign a wallet transaction.
+
+`npm run m9:vercel-audit` performs a **read-only** Vercel project
+metadata/environment inspection using an operator's private `VERCEL_TOKEN`.
+It requires a dedicated Looke staging project, Vercel Authentication
+on **all URLs**, the expected repository and safe Preview/Production flags.
+A successful metadata audit still requires an independent signed-out
+browser check before staging is accepted.
+
+Connected Vercel project creation remains **HTTP 403 Forbidden**:
+there is no deployed or protected Looke staging URL. M9's new CI job
+generates a one-shot real evidence artifact and runs safety tests,
+but it **does not** install an hourly build, deploy to Vercel,
+execute token operations or open the public beta.
+
+Read [M9 operator and security acceptance](deployment/M9_OPERATOR_GATES.md).

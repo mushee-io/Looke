@@ -1,0 +1,77 @@
+name: M9 Review-only liquidity and protected staging gates
+
+on:
+  pull_request:
+    paths:
+      - "src/lib/ops/m9-*"
+      - "scripts/m9-*"
+      - "tests/m9-acceptance.test.ts"
+      - "deployment/M9_OPERATOR_GATES.md"
+      - "package.json"
+      - ".github/workflows/m9-acceptance.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release-safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    env:
+      LOOKE_PUBLIC_BETA_ENABLED: "false"
+      LOOKE_M4_TRADING_ENABLED: "false"
+      LOOKE_SOCIAL_WRITES_ENABLED: "false"
+      LOOKE_M6_EVIDENCE_ENABLED: "false"
+      LOOKE_M4_MARKETS_JSON: "[]"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - run: npm run m7:preflight
+      - name: All unit tests / types / production build
+        run: |
+          npm test
+          npm run typecheck
+          npm run build
+      - name: Dry-run-only rollback protection rehearsal
+        run: npm run m8:rollback-rehearsal
+      - name: No mutation proof
+        if: always()
+        run: |
+          echo "M9 does not provision Vercel, open beta, contact wallets or send blockchain transactions." >> "$GITHUB_STEP_SUMMARY"
+
+  real-observation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    env:
+      LOOKE_PUBLIC_BETA_ENABLED: "false"
+      LOOKE_M4_TRADING_ENABLED: "false"
+      LOOKE_SOCIAL_WRITES_ENABLED: "false"
+      LOOKE_M6_EVIDENCE_ENABLED: "false"
+      LOOKE_M4_MARKETS_JSON: "[]"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: Read real Testnet chain heads and capture all M9 gate status
+        run: npm run m9:acceptance
+      - name: Read real allowlisted pool code/reserves without trading
+        run: npm run m9:liquidity
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: m9-real-testnet-acceptance-packet
+          path: artifacts/m9/acceptance-report.json
+          retention-days: 7
+          if-no-files-found: warn
+      - name: Document remaining approvals
+        if: always()
+        run: |
+          echo "CI success is NOT release approval; inspect the acceptance packet's missing[] gates." >> "$GITHUB_STEP_SUMMARY"
+          echo "No liquidity proof, wallet signatures, staging protection, social production DB or security review is assumed." >> "$GITHUB_STEP_SUMMARY"
+          echo "No cron, hourly builds or auto deploys are created." >> "$GITHUB_STEP_SUMMARY"
