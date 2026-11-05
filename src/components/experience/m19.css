@@ -1,0 +1,39 @@
+.lk-m19-page{max-width:1100px;margin:auto;padding:25px;display:flex;flex-direction:column;gap:18px;color:#23314c}
+.lk-m19-hero{background:linear-gradient(135deg,#1e3478,#375cdc);border-radius:17px;color:#fff;padding:28px 32px}
+.lk-m19-hero span{letter-spacing:.12em;font-size:11px;opacity:.8;font-weight:700}
+.lk-m19-hero h1{font-size:30px;line-height:1.25;margin:14px 0 8px}.lk-m19-hero p{font-size:13px;max-width:650px;color:#e4eaff;line-height:1.7}
+.lk-m19-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.lk-m19-stats>div,.lk-m19-season,.lk-m19-history,.lk-m19-empty{background:#fff;border:1px solid #e4e9f4;border-radius:14px;padding:22px}
+.lk-m19-stats small{display:block;color:#687a9a;font-size:11px}.lk-m19-stats strong{display:block;font-size:24px;margin:8px 0}
+.lk-m19-stats span{font-size:11px;color:#6d7d98}.lk-m19-notice{padding:14px;border-radius:11px;border:1px solid #d9e3f8;background:#f5f8ff;color:#40567b}
+.lk-m19-notice a{margin-left:8px;text-decoration:underline;color:#2a50ca}
+.lk-m19-season-top{display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap}
+.lk-m19-season-top small{font-size:11px;color:#6481b9;text-transform:uppercase}
+.lk-m19-season-top h2{margin:7px 0;font-size:21px}.lk-m19-season-top p{font-size:12px;color:#7c899e}
+.lk-m19-season-top strong{font-size:23px;color:#3158cc}
+.lk-m19-breakdown{display:flex;gap:7px;flex-wrap:wrap;margin:15px 0}
+.lk-m19-breakdown span{background:#f0f4ff;border-radius:8px;color:#4663a9;font-weight:700;font-size:11px;padding:8px}
+.lk-m19-vesting{background:#f8faff;border-radius:12px;padding:17px}
+.lk-m19-vesting>div:first-child{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.lk-m19-vesting h3{margin:0;font-size:13px}.lk-m19-vesting>div:first-child span{font-size:11px;color:#5067a6}
+.lk-m19-track{height:11px;border-radius:10px;background:#dae3f7;margin:15px 0;overflow:hidden}
+.lk-m19-track>div{background:#4166e7;height:100%;border-radius:10px}
+.lk-m19-vest-values{display:flex;gap:20px;flex-wrap:wrap;margin:12px 0}.lk-m19-vest-values span{display:flex;flex-direction:column;gap:5px}
+.lk-m19-vest-values b{font-size:17px}.lk-m19-vesting small,.lk-m19-history>small{color:#72839b;font-size:11px}
+.lk-m19-vesting p,.lk-m19-history p,.lk-m19-empty p{font-size:12px;line-height:1.7;color:#697895}
+.lk-m19-history h2{font-size:20px;margin:0 0 8px}.lk-m19-history button{background:#3158db;color:white;border:none;padding:10px 12px;border-radius:8px;margin:12px 0}
+.lk-m19-ledger{margin:17px 0}.lk-m19-entry{display:flex;align-items:center;flex-wrap:wrap;gap:15px;padding:13px;border-top:1px solid #edf0f8}
+.lk-m19-entry>span:first-child{flex:1;display:flex;flex-direction:column;gap:5px;min-width:140px}
+.lk-m19-entry strong{font-size:13px;text-transform:capitalize}.lk-m19-entry small{font-size:11px;color:#8490a1}
+.lk-m19-state{font-size:11px;border-radius:20px;padding:6px 10px;background:#eceefa;color:#536384;text-transform:capitalize}
+.lk-m19-state.approved{background:#e4f5ef;color:#216d50}.lk-m19-state.rejected,.lk-m19-state.reversed{background:#fcefee;color:#a3453b}
+.lk-m19-points{font-size:13px;font-weight:700;color:#3158db}.lk-m19-entry .lk-m19-review{flex-basis:100%}
+.lk-m19-operator{padding:22px;display:flex;flex-direction:column;gap:12px}
+.lk-m19-operator h2{font-size:21px}.lk-m19-operator h3{font-size:14px;margin:15px 0 0}
+.lk-m19-operator p{font-size:12px;color:#6f7b91;line-height:1.7}
+.lk-m19-candidate{border:1px solid #e2e9f8;border-radius:12px;padding:13px;display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.lk-m19-candidate strong{font-size:13px}.lk-m19-candidate small{font-size:11px;color:#7c8a9d;overflow-wrap:anywhere}
+.lk-m19-candidate button{border:1px solid #c5d3f8;color:#3158ca;background:#eff3ff;border-radius:7px;padding:9px 11px;font-size:11px;font-weight:700}
+.lk-m19-candidate button:disabled{opacity:.5}.lk-m19-reason{display:flex;flex-direction:column;gap:8px;font-size:12px;font-weight:700}
+.lk-m19-reason textarea{min-height:72px;border:1px solid #d4dff2;border-radius:9px;padding:10px}
+.lk-m19-buttons{display:flex;gap:8px;flex-wrap:wrap}
