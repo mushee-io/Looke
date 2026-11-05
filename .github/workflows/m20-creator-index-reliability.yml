@@ -1,0 +1,93 @@
+name: M20 durable creator index, reconciliation and recovery
+on:
+  pull_request:
+    paths:
+      - "src/app/api/social/index/**"
+      - "src/app/api/social/ops/**"
+      - "src/app/social/**"
+      - "src/components/experience/M20*"
+      - "src/components/experience/m20.css"
+      - "src/lib/social/m20*"
+      - "db/migrations/007_durable_creator_index_and_review.sql"
+      - "scripts/social-migrate.ts"
+      - "tests/m20-*"
+      - "deployment/M20_BACKEND_ACCEPTANCE.md"
+      - "package.json"
+      - ".github/workflows/m20-creator-index-reliability.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  m20-closed-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      LOOKE_PUBLIC_BETA_ENABLED: "false"
+      LOOKE_M4_TRADING_ENABLED: "false"
+      LOOKE_SOCIAL_WRITES_ENABLED: "false"
+      LOOKE_POINTS_ACCOUNTING_ENABLED: "false"
+      LOOKE_M20_INDEX_WRITES_ENABLED: "false"
+      LOOKE_MEDIA_UPLOADS_ENABLED: "false"
+      LOOKE_M6_EVIDENCE_ENABLED: "false"
+      LOOKE_M4_MARKETS_JSON: "[]"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: Verify fail-closed public and wallet release gates
+        run: npm run m7:preflight
+      - name: All pure security and deterministic index tests
+        run: npm test
+      - name: Typecheck and build
+        run: |
+          npm run typecheck
+          npm run build
+      - name: Running Preview denial and read-only smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run start -- -p 3100 >/tmp/m20-next.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 50); do
+            if curl -fsS http://127.0.0.1:3100/ >/dev/null; then break; fi
+            sleep 1
+          done
+          for route in index ops/health ops/risk ops/activity; do
+            code=$(curl -s -o /tmp/m20-get.json -w "%{http_code}" \
+              http://127.0.0.1:3100/api/social/"$route")
+            test "$code" = "401"
+          done
+          code=$(curl -s -o /tmp/m20-post.json -w "%{http_code}" \
+            -X POST http://127.0.0.1:3100/api/social/index \
+            -H 'Origin: http://localhost:3000' -H 'Content-Type: application/json' \
+            -d '{"action":"scan"}')
+          test "$code" = "503"
+          code=$(curl -s -o /tmp/m20-risk.json -w "%{http_code}" \
+            -X POST http://127.0.0.1:3100/api/social/ops/risk \
+            -H 'Origin: http://localhost:3000' -H 'Content-Type: application/json' \
+            -d '{"action":"claim"}')
+          test "$code" = "503"
+          code=$(curl -s -o /tmp/m20-claim.json -w "%{http_code}" \
+            -X POST http://127.0.0.1:3100/api/social/points \
+            -H 'Origin: http://localhost:3000' -H 'Content-Type: application/json' \
+            -d '{"action":"claim"}')
+          test "$code" = "405"
+          curl -fsS http://127.0.0.1:3100/api/experience/messaging/readiness | node -e '
+            let s="";process.stdin.on("data",x=>s+=x).on("end",()=>{
+              const a=JSON.parse(s);
+              if(a.liveMessagingEnabled!==false||a.messagesSent!==0)process.exit(2);
+            });
+          '
+          npm run m7:smoke
+      - name: Existing rollback rehearsal
+        run: npm run m8:rollback-rehearsal
+      - name: No synthetic indexing or financial approvals
+        if: always()
+        run: |
+          echo "All indexed events originate in actual PostgreSQL creator event tables." >> "$GITHUB_STEP_SUMMARY"
+          echo "Index scans are moderator-initiated, bounded, transaction-locked and replayable." >> "$GITHUB_STEP_SUMMARY"
+          echo "Points reconciliation is read-only; anti-sybil signals are not automatic punishments." >> "$GITHUB_STEP_SUMMARY"
+          echo "Production unchanged; public beta, Points accounting, social/media writes and live messaging off." >> "$GITHUB_STEP_SUMMARY"

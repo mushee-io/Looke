@@ -1,0 +1,16 @@
+.lk-m20-panel{padding:25px;display:flex;flex-direction:column;gap:13px}
+.lk-m20-panel h2{font-size:21px;margin:0}.lk-m20-panel h3{font-size:15px;margin:15px 0 0}
+.lk-m20-panel p{color:#687b9b;font-size:12px;line-height:1.65}
+.lk-m20-panel small{font-size:11px;color:#8291ad}
+.lk-m20-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:10px}
+.lk-m20-metrics>div{border:1px solid #e5eafa;background:#f7f9ff;border-radius:12px;padding:13px}
+.lk-m20-metrics strong{font-size:22px;display:block;margin-top:6px;color:#2e457e}
+.lk-m20-status{border:1px solid #dfebfa;background:#f8faff;border-radius:12px;padding:14px}
+.lk-m20-status p{margin:7px 0}
+.lk-m20-input{font-size:12px;font-weight:700;display:flex;flex-direction:column;gap:9px}
+.lk-m20-input textarea{min-height:70px;max-width:100%;border:1px solid #d7e0f2;border-radius:8px;padding:10px;resize:vertical}
+.lk-m20-controls{display:flex;gap:9px;flex-wrap:wrap}
+.lk-m20-controls button{border:1px solid #c4d0ee;background:#eaf0ff;color:#244aab;font-size:12px;font-weight:700;padding:10px;border-radius:9px}
+.lk-m20-controls button:disabled{opacity:.48;cursor:not-allowed}
+.lk-m20-entry{background:#f8faff;border:1px solid #e6ecf9;border-radius:10px;padding:13px;display:flex;flex-direction:column;gap:8px;overflow-wrap:anywhere}
+.lk-m20-entry strong{font-size:13px}.lk-m20-note{border-left:2px solid #c8d7f4;padding-left:12px}
