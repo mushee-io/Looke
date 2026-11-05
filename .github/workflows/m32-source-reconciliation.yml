@@ -1,0 +1,128 @@
+name: M32 genuine legacy-to-current reconciliation, strict TLS and NO-GO
+on:
+  pull_request:
+    paths:
+      - "src/lib/beta/m32-*"
+      - "src/app/api/experience/m32-reconciliation/**"
+      - "src/components/experience/M32*"
+      - "src/app/social/**"
+      - "scripts/m32-*"
+      - "tests/m32-*"
+      - "deployment/M32_REAL_SOURCE_RECONCILIATION.md"
+      - "package.json"
+      - ".github/workflows/m32-source-reconciliation.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+env:
+  LOOKE_PUBLIC_BETA_ENABLED: "false"
+  LOOKE_M4_TRADING_ENABLED: "false"
+  LOOKE_SOCIAL_WRITES_ENABLED: "false"
+  LOOKE_MEDIA_UPLOADS_ENABLED: "false"
+  LOOKE_POINTS_ACCOUNTING_ENABLED: "false"
+  LOOKE_M20_INDEX_WRITES_ENABLED: "false"
+  LOOKE_M23_ACCEPTANCE_WRITES_ENABLED: "false"
+  LOOKE_M24_INCIDENT_WRITES_ENABLED: "false"
+  LOOKE_M25_REVIEW_WRITES_ENABLED: "false"
+  LOOKE_M26_WITNESS_WRITES_ENABLED: "false"
+  LOOKE_M6_EVIDENCE_ENABLED: "false"
+  LOOKE_M4_MARKETS_JSON: "[]"
+  LOOKE_SOCIAL_APP_ORIGIN: "https://looke-ci.invalid"
+jobs:
+  m32-protected-preview-safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      VERCEL_ENV: preview
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: Actual source credentials absent from CI always produces NO-GO
+        run: |
+          npm run m32:reconcile
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const a=JSON.parse(fs.readFileSync('artifacts/m32/reconciliation.json','utf8'));
+          if(a.releaseDecision!=='NO_GO'||a.legacyConnected||a.currentConnected||
+             a.realUsersMigrated!==0||a.approvedMediaMigrated!==0||
+             a.migrationsExecuted!==0||a.financialBroadcasts!==0||
+             a.originalSourceRecordsCopied!==0||a.publicBetaOpen!==false)
+            process.exit(2);
+          console.log('No real credentials, records, approvals or data movement invented in CI.');
+          NODE
+      - name: Historical unit and adversarial tests, typecheck and complete Next.js build
+        run: |
+          npm run m7:preflight
+          npm test
+          npm run typecheck
+          npm run build
+      - name: M32 Preview status, forbidden POST and no release writes
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run start -- -p 3120 >/tmp/m32-next.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 50); do
+            if curl -fsS http://127.0.0.1:3120/ >/dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:3120/api/experience/m32-reconciliation | node -e '
+            let s="";process.stdin.on("data",x=>s+=x).on("end",()=>{
+              const r=JSON.parse(s);
+              if(r.sourceStatus!=="missing_authorized_dual_source"||
+                 r.releaseDecision!=="NO_GO"||r.publicBetaOpen!==false||
+                 r.originalSourcesQueried!==false||r.realUsersMigrated!==0||
+                 r.approvedMediaMigrated!==0)process.exit(2);
+            });
+          '
+          status=$(curl -s -o /tmp/m32-post.json -w "%{http_code}" \
+            -X POST http://127.0.0.1:3120/api/experience/m32-reconciliation \
+            -H 'Content-Type: application/json' -d '{"migrate":true}')
+          test "$status" = "405"
+          npm run m7:smoke
+      - name: Non-destructive rollback rehearsal and retained safety gates
+        run: npm run m8:rollback-rehearsal
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: looke-m32-read-only-reconciliation-no-go
+          path: artifacts/m32/reconciliation.json
+          retention-days: 7
+          if-no-files-found: warn
+  m32-disposable-postgresql:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: looke_social_ci
+          POSTGRES_USER: looke_ci
+          POSTGRES_PASSWORD: ci_only_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U looke_ci -d looke_social_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://looke_ci:ci_only_password@localhost:5432/looke_social_ci
+      LOOKE_M32_DISPOSABLE_DB_TESTS: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: Apply all existing actual PostgreSQL social migrations ONLY to CI fixture
+        run: npm run db:migrate
+      - name: PostgreSQL 19-table actual metadata, source lineage and READ ONLY transaction denial
+        run: npm run test:m32-db
+      - name: CI fixture cannot be treated as independent user or human approval
+        run: |
+          echo "All temporary rows are disposable CI fixtures; no authorized Neon data, original media, wallets, or human reviewer approvals are asserted." >> "$GITHUB_STEP_SUMMARY"
