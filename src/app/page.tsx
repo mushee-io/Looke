@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import DiscoverDashboard from "../components/discover/DiscoverDashboard";
 import {TrendingFeed,MessagesPanel,NotificationsPanel,ProfilePanel} from "../components/experience/LookeViews";
+import {PointsDashboard} from "../components/experience/M19PointsDashboard";
 import {CreateCoinModal,WalletModal,type CoinQuickDraft} from "../components/experience/LookeOverlays";
 import "../components/experience/experience.css";
 import { isAddress } from "viem";
@@ -13,7 +14,7 @@ import {
   shortAddress, testnetAddressUrl, testnetTxUrl,
 } from "../lib/ultra";
 
-type Screen = "Discover" | "Trending" | "Create" | "Uniq NFTs" | "Messages" | "Notifications" | "Wallet" | "Profile";
+type Screen = "Discover" | "Trending" | "Create" | "Uniq NFTs" | "Messages" | "Notifications" | "Wallet" | "Profile" | "Points";
 
 type EthereumProvider = {
   request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
@@ -76,10 +77,10 @@ export default function Home() {
   const [confirmedCoin, setConfirmedCoin] = useState("");
   const factoryConfigured = isAddress(LOOKE_FACTORY_ADDRESS) && /^0x[\da-fA-F]{64}$/.test(LOOKE_FACTORY_DEPLOY_TX);
   const onUltra = chain.toLowerCase() === ULTRA_EVM_TESTNET.chainIdHex;
-  const screens: Screen[] = ["Discover","Trending","Messages","Create","Notifications","Wallet","Profile","Uniq NFTs"];
+  const screens: Screen[] = ["Discover","Trending","Messages","Create","Notifications","Points","Wallet","Profile","Uniq NFTs"];
   const icons: Record<Screen,string> = {
     Discover:"⌂",Trending:"ϟ",Messages:"➤",Create:"＋",
-    Notifications:"♧",Wallet:"▣",Profile:"◉","Uniq NFTs":"◇",
+    Notifications:"♧",Points:"✧",Wallet:"▣",Profile:"◉","Uniq NFTs":"◇",
   };
   function chooseNavigation(item:Screen){
     setNotice("");
@@ -230,6 +231,7 @@ export default function Home() {
           {screen === "Messages" && <MessagesPanel/>}
           {screen === "Notifications" && <NotificationsPanel onCreate={()=>{setShowCreate(true);}}/>}
           {screen === "Profile" && <ProfilePanel address={address} onCreate={()=>setShowCreate(true)}/>}
+           {screen === "Points" && <PointsDashboard/>}
           {screen === "Wallet" && <div className="lk-wallet-route">
             <h1>Wallet</h1><p>Inspect your real Ultra Testnet account in the wallet popup.</p>
             <button type="button" onClick={()=>address?setShowWallet(true):void connectWallet()}>
