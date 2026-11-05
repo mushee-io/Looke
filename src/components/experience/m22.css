@@ -1,0 +1,22 @@
+.lk-m22{padding:23px;display:flex;flex-direction:column;gap:13px}
+.lk-m22 header small{font-size:11px;letter-spacing:.1em;font-weight:800;color:#4e69a9}
+.lk-m22 h2{font-size:22px;margin:6px 0}.lk-m22 h3{font-size:15px;margin:12px 0 3px}
+.lk-m22 p,.lk-m22 li{font-size:12px;line-height:1.65;color:#657592}
+.lk-m22-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}
+.lk-m22-summary>div{padding:12px;background:#f4f7ff;border:1px solid #e0e8f8;border-radius:11px}
+.lk-m22-summary small{font-size:10px;color:#6f84a4;display:block}
+.lk-m22-summary strong{display:block;font-size:17px;color:#2b4276;margin-top:7px}
+.lk-m22 .lk-m22-warning{background:#fff3ec;border-left:3px solid #b6613c;padding:10px 13px;color:#8c4c31}
+.lk-m22-rows,.lk-m22-gates{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:8px}
+.lk-m22-item{padding:12px;background:#f9fbff;border:1px solid #e3e9f4;border-radius:10px;overflow-wrap:anywhere;display:flex;flex-direction:column;gap:6px}
+.lk-m22-item strong{font-size:12px}.lk-m22-item small{font-size:10px;color:#7c8ca4}
+.lk-m22-section{padding:17px;border-radius:12px;border:1px solid #e1e7f7;display:flex;flex-direction:column;gap:10px}
+.lk-m22-controls{display:flex;gap:9px;flex-wrap:wrap}
+.lk-m22 button{font-size:11px;border:1px solid #c6d3f5;background:#eef3ff;color:#3155ab;border-radius:8px;padding:10px 12px;font-weight:700}
+.lk-m22 button:disabled{opacity:.5;cursor:not-allowed}
+.lk-m22-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:9px}
+.lk-m22 label{font-size:12px;color:#5f7190;font-weight:700;display:flex;flex-direction:column;gap:7px}
+.lk-m22 input,.lk-m22 textarea{padding:10px;border-radius:8px;border:1px solid #d8e0f4;font-size:12px;width:100%;color:#243758;resize:vertical}
+.lk-m22-guide{display:flex;flex-direction:column;gap:7px;margin:0 0 3px;padding-left:23px}
+.lk-m22 .lk-m22-status{border-left:3px solid #bccdf2;background:#f8faff;padding:12px;color:#49618a;overflow-wrap:anywhere}
+.lk-m22-foot{border-top:1px solid #e5e9f4;padding-top:12px}
