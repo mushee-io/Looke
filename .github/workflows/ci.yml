@@ -17,6 +17,37 @@ jobs:
       - run: npm test
       - run: npm run typecheck
       - run: npm run build
+      - name: M34 protected end-to-end acceptance smoke and POST denial
+        env:
+          VERCEL_ENV: preview
+          LOOKE_PUBLIC_BETA_ENABLED: 'false'
+          LOOKE_SOCIAL_WRITES_ENABLED: 'false'
+          LOOKE_MEDIA_UPLOADS_ENABLED: 'false'
+          LOOKE_M4_TRADING_ENABLED: 'false'
+          LOOKE_POINTS_ACCOUNTING_ENABLED: 'false'
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run start -- -p 3100 >/tmp/m34-next.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 50); do
+            if curl -fsS http://127.0.0.1:3100/ >/dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS 'http://127.0.0.1:3100/api/experience/m34-final?mode=config' | node -e '
+            let x="";process.stdin.on("data",s=>x+=s).on("end",()=>{
+              const r=JSON.parse(x);
+              if(r.milestone!=="M34_FINAL"||r.releaseDecision!=="NO_GO"||
+                 r.publicBetaOpen!==false||r.liveSourcesQueried!==false||
+                 r.transactionsSent!==0||r.databasesModified!==0||
+                 r.originalHumanApprovals!==0)process.exit(2);
+            });
+          '
+          code=$(curl -s -o /tmp/m34-post.json -w "%{http_code}" -X POST \
+            http://127.0.0.1:3100/api/experience/m34-final \
+            -H 'Content-Type: application/json' -d '{"approve":true}')
+          test "$code" = "405"
 
   contracts:
     runs-on: ubuntu-latest
@@ -244,3 +275,12 @@ jobs:
           LOOKE_SOCIAL_WRITES_ENABLED: 'false'
           LOOKE_MEDIA_UPLOADS_ENABLED: 'false'
           LOOKE_POINTS_ACCOUNTING_ENABLED: 'false'
+
+      - name: M34 genuine disposable PostgreSQL final acceptance
+        run: npm run test:m34-db
+        env:
+          DATABASE_URL: postgres://looke_ci:ci_only_password@localhost:5432/looke_social_ci
+          LOOKE_M34_CI_DATABASE: 'true'
+          LOOKE_PUBLIC_BETA_ENABLED: 'false'
+          LOOKE_SOCIAL_WRITES_ENABLED: 'false'
+          LOOKE_MEDIA_UPLOADS_ENABLED: 'false'
