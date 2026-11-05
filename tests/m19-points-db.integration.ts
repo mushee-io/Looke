@@ -82,8 +82,8 @@ before(async()=>{
   [fan,creatorPost])).rows[0].id;
 });
 after(async()=>{
- const q=await query("SELECT id FROM social_points_ledger WHERE season_id=$1",[seasonId]);
- const ids=q.rows.map((x:{id:string})=>x.id);
+ const q=await query<{id:string}>("SELECT id FROM social_points_ledger WHERE season_id=$1",[seasonId]);
+ const ids=q.rows.map(x=>x.id);
  if(ids.length)await query("DELETE FROM social_points_review_audit WHERE ledger_id=ANY($1::uuid[])",[ids]);
  await query("DELETE FROM social_points_ledger WHERE season_id=$1",[seasonId]);
  await query("DELETE FROM social_points_seasons WHERE id=$1",[seasonId]);
