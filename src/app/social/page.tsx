@@ -8,16 +8,17 @@ import "../../components/experience/m15.css";
 import "../../components/experience/m16.css";
 import {AssetEvidence,ApprovedPostMedia} from "../../components/experience/AssetEvidence";
 import {EngagementActions} from "../../components/experience/EngagementActions";
+import {CreatorAnalytics,AccountControls,ModerationConsole} from "../../components/experience/M18CreatorPanels";
 import "../../components/experience/m17.css";
 
 type Wallet = {request:(args:{method:string;params?:unknown[]})=>Promise<unknown>};
 type User = {address:string;handle:string;suspended:boolean};
-type Profile = {address:string;handle:string;display_name:string;bio:string;avatar_url:string|null;created_at:string;follower_count?:number;following_count?:number;is_following?:boolean};
+type Profile = {address:string;handle:string;display_name:string;bio:string;avatar_url:string|null;created_at:string;follower_count?:number;following_count?:number;is_following?:boolean;post_count?:number;engagement_30d?:number};
 type Post = {id:string;author:string;body:string;asset_chain:string|null;asset_type:string|null;asset_id:string|null;media_url?:string|null;media_kind?:string|null;created_at:string;handle:string;display_name:string;avatar_url:string|null;comment_count:number;follower_count:number;
  event_id?:string;reposted_by_handle?:string|null;like_count:number;repost_count:number;
  liked_by_me:boolean;reposted_by_me:boolean;bookmarked_by_me:boolean};
 type Comment = {id:string;post_id:string;author:string;body:string;created_at:string;handle:string;display_name:string};
-type Tab = "feed"|"discover"|"profile"|"activity"|"messages";
+type Tab = "feed"|"discover"|"profile"|"activity"|"analytics"|"controls"|"moderation"|"messages";
 type ActivityFilter="all"|"likes"|"reposts"|"bookmarks"|"following";
 type ActivityEvent={event_id:string;kind:"likes"|"reposts"|"bookmarks";created_at:string;
  post_id:string;body:string;handle:string;display_name:string;author:string;
@@ -66,6 +67,7 @@ export default function SocialPage(){
   const [feed,setFeed]=useState<Post[]>([]);
   const [cursor,setCursor]=useState<string|null>(null);
   const [search,setSearch]=useState("");
+  const [directorySort,setDirectorySort]=useState<"recent"|"engaged">("recent");
   const [directory,setDirectory]=useState<Profile[]>([]);
   const [focused,setFocused]=useState<Profile|null>(null);
   const [myProfile,setMyProfile]=useState<Profile|null>(null);
@@ -215,16 +217,19 @@ export default function SocialPage(){
   useEffect(()=>{if(tab==="activity")void loadPersonalActivity();},[tab,loadPersonalActivity]);
   const lookupDirectory=useCallback(async(value:string)=>{
     try{
-      const r=await get<{profiles:Profile[]}>({action:"directory",search:value});
+      const r=await get<{profiles:Profile[]}>({action:"directory",search:value,sort:directorySort});
       setDirectory(r.profiles);
     }catch(e){setNotice(errText(e));}
-  },[]);
+  },[directorySort]);
 
   useEffect(()=>{void refreshMe().catch(e=>setNotice(errText(e)));},[refreshMe]);
   useEffect(()=>{void loadFeed();},[loadFeed]);
   useEffect(()=>{
-    const linked=new URLSearchParams(window.location.search).get("profile");
+    const params=new URLSearchParams(window.location.search);
+    const linked=params.get("profile");
     if(linked&&/^[a-z][a-z0-9_]{2,23}$/.test(linked))void openProfile(linked);
+    if(params.get("tab")==="controls")setTab("controls");
+    if(params.get("tab")==="analytics")setTab("analytics");
   },[]);
   useEffect(()=>{if(tab==="discover")void lookupDirectory(search);},[tab,lookupDirectory,search]);
 
@@ -263,7 +268,7 @@ export default function SocialPage(){
   async function signOut(){
     setWorking(true);setNotice("");
     try{await post("auth",{action:"logout"});setUser(null);setMyProfile(null);setFocused(null);
-      setActivityEvents([]);setFollowingProfiles([]);setNotice("Signed out.");}
+      setActivityEvents([]);setFollowingProfiles([]);setTab("feed");setNotice("Signed out.");}
     catch(e){setNotice(errText(e));}finally{setWorking(false);}
   }
 
@@ -351,15 +356,15 @@ export default function SocialPage(){
       <aside className="social-aside">
         <span className="social-eyebrow">LOOKE COMMUNITY</span>
         <nav>
-          {([["feed","⌂ Feed"],["discover","◇ Discover"],["profile","◎ Profile"],["activity","♡ My Activity"],["messages","▤ Messages"]] as const)
+          {([["feed","⌂ Feed"],["discover","◇ Discover"],["profile","◎ Profile"],["activity","♡ My Activity"],["analytics","▥ Analytics"],["controls","⚙ Account controls"],["moderation","⚑ Moderation"],["messages","▤ Messages"]] as const)
             .map(([key,label])=><button key={key} type="button" className={tab===key?"selected":""} onClick={()=>{setTab(key);setFocused(null);}}>{label}<span>↗</span></button>)}
         </nav>
         <div className="social-sidefoot"><strong>For the creators.</strong><p>Follow projects, talk about tokens and Uniq NFTs, and build real communities.</p>
           <p>Posts reference assets; they do not verify holdings or represent investment advice.</p></div>
       </aside>
       <section className="social-main">
-        <div className="social-overline">M5 / SOCIAL NETWORK FOUNDATION</div>
-        <div className="social-hero"><h1>{tab==="feed"?"People. Ideas. Culture.":tab==="discover"?"Find your people.":tab==="messages"?"Conversations.":tab==="activity"?"Your real activity.":"Your identity."}</h1>
+        <div className="social-overline">M18 / VERIFIED CREATOR NETWORK</div>
+        <div className="social-hero"><h1>{tab==="feed"?"People. Ideas. Culture.":tab==="discover"?"Find your people.":tab==="messages"?"Conversations.":tab==="activity"?"Your real activity.":tab==="analytics"?"Creator analytics.":tab==="controls"?"Your account.":tab==="moderation"?"Review queue.":"Your identity."}</h1>
           <p>Share what you create. Discover the people shaping Ultra. All displayed activity comes from the Looke social database.</p></div>
         {backendStatus==="unconfigured"&&<div className="social-warning"><strong>Backend not ready.</strong> Social database or sign-in configuration is unavailable. No demo profiles or fake posts are shown.</div>}
         {notice&&<div className="social-notice" role="status">{notice}</div>}
@@ -435,9 +440,14 @@ export default function SocialPage(){
         {tab==="discover"&&<div className="social-card">
           <div className="social-card-title"><h2>Discover creators</h2><span>REAL DATABASE PROFILES</span></div>
           <input className="social-search" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search handle or display name" aria-label="Search creators"/>
+          <div className="lk-m18-sort" aria-label="Order real creator discovery">
+            <button type="button" className={directorySort==="recent"?"active":""} onClick={()=>setDirectorySort("recent")}>Newest accounts</button>
+            <button type="button" className={directorySort==="engaged"?"active":""} onClick={()=>setDirectorySort("engaged")}>Engagement · 30 days</button>
+          </div>
           {directory.length===0?<div className="social-empty">No matching public profiles.</div>:directory.map(p=><div className="social-directory" key={p.address}>
             <div className="social-avatar">{p.display_name?.slice(0,1).toUpperCase()||"L"}</div>
-            <div><strong>{p.display_name}</strong><small>@{p.handle} · {abbrev(p.address)}</small></div>
+            <div><strong>{p.display_name}</strong><small>@{p.handle} · {abbrev(p.address)}</small>
+              <small className="lk-m18-counts">{p.follower_count??0} genuine followers · {p.post_count??0} visible posts · {p.engagement_30d??0} recent interactions</small></div>
             <button onClick={()=>void openProfile(p.handle)}>View profile ↗</button>
           </div>)}
         </div>}
@@ -467,6 +477,11 @@ export default function SocialPage(){
                 <button type="button" onClick={()=>void openProfile(item.handle)}>View creator ↗</button>
               </article>):<div className="social-empty">No real {activityFilter==="all"?"account activity":activityFilter} found for this wallet.</div>)}
         </section>:<div className="social-signin-note">Sign in with your Ultra EVM Testnet wallet to view your private bookmarks and engagement history.</div>)}
+        {tab==="analytics"&&(user?<CreatorAnalytics/>:<div className="social-signin-note">Sign in with your Ultra EVM wallet to see your own verified engagement figures.</div>)}
+        {tab==="controls"&&(user?<AccountControls onChanged={()=>{void loadFeed();}}/>:
+          <div className="social-signin-note">Sign in to change private notification preferences and muted accounts.</div>)}
+        {tab==="moderation"&&(user?<ModerationConsole/>:
+          <div className="social-signin-note">An authorized moderator wallet session is required to inspect reports or media.</div>)}
         {tab==="profile"&&(focused?<div className="social-card social-profile">
           <div className="social-profile-avatar">{(focused.display_name||focused.handle).slice(0,1).toUpperCase()}</div>
           <h2>{focused.display_name}</h2><span>@{focused.handle}</span><p>{focused.bio||"This creator hasn't written a bio yet."}</p>
