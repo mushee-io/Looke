@@ -28,6 +28,7 @@ jobs:
       LOOKE_M20_INDEX_WRITES_ENABLED: "false"
       LOOKE_M6_EVIDENCE_ENABLED: "false"
       LOOKE_M4_MARKETS_JSON: "[]"
+      LOOKE_SOCIAL_APP_ORIGIN: "https://looke-ci.invalid"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -79,21 +80,24 @@ jobs:
           for route in ops/beta ops/acceptance; do
             code=$(curl -s -o /tmp/m22-get.json -w "%{http_code}" \
               http://127.0.0.1:3100/api/social/"$route")
+            echo "M22 protected $route HTTP=$code"
             test "$code" = "401"
           done
           code=$(curl -s -o /tmp/m22-witness.json -w "%{http_code}" \
             -X POST http://127.0.0.1:3100/api/social/ops/beta/witness \
             -H 'Origin: https://evil.example' -H 'Content-Type: application/json' \
             -d '{}')
+          echo "M22 foreign-origin witness denial HTTP=$code"
           test "$code" = "403"
           code=$(curl -s -o /tmp/m22-auth.json -w "%{http_code}" \
             -X POST http://127.0.0.1:3100/api/social/auth \
-            -H 'Origin: http://localhost:3000' -H 'Content-Type: application/json' \
+            -H 'Origin: https://looke-ci.invalid' -H 'Content-Type: application/json' \
             -d '{"action":"challenge","address":"0x1111111111111111111111111111111111111111"}')
+          echo "M22 auth-write denial HTTP=$code"
           test "$code" = "503"
           code=$(curl -s -o /tmp/m22-claim.json -w "%{http_code}" \
             -X POST http://127.0.0.1:3100/api/social/points \
-            -H 'Origin: http://localhost:3000' -H 'Content-Type: application/json' \
+            -H 'Origin: https://looke-ci.invalid' -H 'Content-Type: application/json' \
             -d '{"action":"claim"}')
           test "$code" = "405"
           curl -fsS http://127.0.0.1:3100/api/experience/media | node -e '
