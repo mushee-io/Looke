@@ -85,3 +85,25 @@ export function m33ProofResult(input:M33ProofInput,proof:Record<string,unknown>)
    {factory:address,txHash:input.tx,coinCount:String(proof.coinCount||"0")},
   transactionsSent:0,releaseDecision:"NO_GO",publicBetaOpen:false};
 }
+
+/** Current source: real TLS PostgreSQL, bounded metadata, consistent READ ONLY snapshot.
+ * A compatible schema does not establish user records or any acceptance signature.
+ */
+export async function inspectM33CurrentSource(db:Pick<import("pg").PoolClient,"query">,enforceTLS=true){
+ if(enforceTLS){
+  const ssl=await db.query<{ssl:boolean}>("SELECT ssl FROM pg_stat_ssl WHERE pid=pg_backend_pid()");
+  if(ssl.rows[0]?.ssl!==true)throw Error("Actual TLS PostgreSQL source required.");
+ }
+ await db.query("BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY");
+ try{
+  const mode=await db.query<{transaction_read_only:string}>("SHOW transaction_read_only");
+  if(mode.rows[0]?.transaction_read_only!=="on")throw Error("Read-only PostgreSQL transaction not active.");
+  const inspected=await (await import("./m31-source-compatibility")).inspectM31Schema(db,false);
+  await db.query("COMMIT");
+  return {schemaCompatible:inspected.schemaCompatible,
+   actualCurrentTables:inspected.actualCurrentTables,
+   missingTables:inspected.missingTables,missingColumns:inspected.missingColumns,
+   releaseDecision:"NO_GO" as const,verifiedUserRecords:false as const,
+   recordsModified:0 as const};
+ }catch(e){await db.query("ROLLBACK");throw e;}
+}
