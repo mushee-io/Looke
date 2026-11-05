@@ -1,0 +1,111 @@
+name: M21 independent Testnet security evidence and closed-preview regression
+on:
+  pull_request:
+    paths:
+      - "src/app/api/social/auth/**"
+      - "src/app/api/social/ops/acceptance/**"
+      - "src/app/social/**"
+      - "src/components/experience/M21*"
+      - "src/components/experience/m21.css"
+      - "src/lib/ops/m21-*"
+      - "scripts/m21-acceptance.ts"
+      - "tests/m21-*"
+      - "deployment/M21_SECURITY_ACCEPTANCE.md"
+      - "package.json"
+      - ".github/workflows/m21-testnet-security-acceptance.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  m21-closed-preview-security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      LOOKE_PUBLIC_BETA_ENABLED: "false"
+      LOOKE_M4_TRADING_ENABLED: "false"
+      LOOKE_SOCIAL_WRITES_ENABLED: "false"
+      LOOKE_MEDIA_UPLOADS_ENABLED: "false"
+      LOOKE_POINTS_ACCOUNTING_ENABLED: "false"
+      LOOKE_M20_INDEX_WRITES_ENABLED: "false"
+      LOOKE_M6_EVIDENCE_ENABLED: "false"
+      LOOKE_M4_MARKETS_JSON: "[]"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: Read-only preflight and full unit / adversarial regression
+        run: |
+          npm run m7:preflight
+          npm test
+      - name: Typecheck and release build
+        run: |
+          npm run typecheck
+          npm run build
+      - name: Independent one-shot Testnet RPC evidence (never claims human acceptance)
+        run: |
+          npm run m21:acceptance
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const x=JSON.parse(fs.readFileSync('artifacts/m21/acceptance.json'));
+          const report=x.report;
+          if(report.required!==18 || report.transactionsSent!==0 || report.publicBetaOpen!==false ||
+             report.privateMessagingEnabled!==false || report.tokenClaimsEnabled!==false ||
+             report.financialBroadcastEnabled!==false || x.noTransactionsSent!==true)
+            process.exit(2);
+          console.log('M21 evidence report saved; real user wallet and human security signoff remain external gates.');
+          NODE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: looke-m21-read-only-evidence
+          path: artifacts/m21/acceptance.json
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Closed Preview API isolation and nonfinancial HTTP smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run start -- -p 3100 >/tmp/m21-next.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 50); do
+            if curl -fsS http://127.0.0.1:3100/ >/dev/null; then break; fi
+            sleep 1
+          done
+          code=$(curl -s -o /tmp/m21-acceptance.json -w "%{http_code}" \
+            http://127.0.0.1:3100/api/social/ops/acceptance)
+          test "$code" = "401"
+          code=$(curl -s -o /tmp/m21-challenge.json -w "%{http_code}" \
+            -X POST http://127.0.0.1:3100/api/social/auth \
+            -H 'Origin: http://localhost:3000' -H 'Content-Type: application/json' \
+            -d '{"action":"challenge","address":"0x1111111111111111111111111111111111111111"}')
+          test "$code" = "503"
+          code=$(curl -s -o /tmp/m21-claim.json -w "%{http_code}" \
+            -X POST http://127.0.0.1:3100/api/social/points \
+            -H 'Origin: http://localhost:3000' -H 'Content-Type: application/json' \
+            -d '{"action":"claim"}')
+          test "$code" = "405"
+          curl -fsS http://127.0.0.1:3100/api/experience/media | node -e '
+            let s="";process.stdin.on("data",x=>s+=x).on("end",()=>{
+              const a=JSON.parse(s);
+              if(a.enabled!==false||a.moderationRequired!==true)process.exit(2);
+            });
+          '
+          curl -fsS http://127.0.0.1:3100/api/experience/messaging/readiness | node -e '
+            let s="";process.stdin.on("data",x=>s+=x).on("end",()=>{
+              const a=JSON.parse(s);
+              if(a.liveMessagingEnabled!==false||a.messagesSent!==0)process.exit(2);
+            });
+          '
+          npm run m7:smoke
+      - name: Read-only rollback-policy rehearsal
+        run: npm run m8:rollback-rehearsal
+      - name: State operational acceptance limitations
+        if: always()
+        run: |
+          echo "M21 CI uses disposable local wallets and PostgreSQL records, not live end-user session evidence." >> "$GITHUB_STEP_SUMMARY"
+          echo "Read-only Testnet RPC probes may be blocked when remote endpoints are unavailable; never substitute synthetic chain receipts." >> "$GITHUB_STEP_SUMMARY"
+          echo "No independent audit, real Cloudinary upload, live wallet approval, beta signoff or database restore is claimed." >> "$GITHUB_STEP_SUMMARY"
+          echo "Production alias must stay unchanged; public beta, Points, social/media writes, E2EE and financial operations disabled." >> "$GITHUB_STEP_SUMMARY"

@@ -9,7 +9,10 @@ export const dynamic="force-dynamic";
 export async function GET(req:NextRequest){
   try{
     const user=await viewer(req);
-    return NextResponse.json({authenticated:Boolean(user),user},{headers:{"cache-control":"no-store"}});
+    // Suspended accounts must never be advertised as authenticated sessions.
+    const active=Boolean(user&&!user.suspended);
+    return NextResponse.json({authenticated:active,user:active?user:null},
+      {headers:{"cache-control":"private, no-store"}});
   }catch(error){return failure(error);}
 }
 
