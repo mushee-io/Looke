@@ -192,3 +192,17 @@ jobs:
           LOOKE_M23_ACCEPTANCE_WRITES_ENABLED: 'false'
           LOOKE_M25_REVIEW_WRITES_ENABLED: 'false'
           LOOKE_M26_WITNESS_WRITES_ENABLED: 'false'
+
+      - name: M29 genuine consumed wallet signatures, independent observers, eight evidence files, Points and PostgreSQL integrity
+        run: npm run test:m29-db
+        env:
+          DATABASE_URL: postgres://looke_ci:ci_only_password@localhost:5432/looke_social_ci
+          LOOKE_SOCIAL_APP_ORIGIN: http://localhost:3000
+          LOOKE_PUBLIC_BETA_ENABLED: 'false'
+          LOOKE_SOCIAL_WRITES_ENABLED: 'false'
+          LOOKE_MEDIA_UPLOADS_ENABLED: 'false'
+          LOOKE_POINTS_ACCOUNTING_ENABLED: 'false'
+          LOOKE_M23_ACCEPTANCE_WRITES_ENABLED: 'true'
+          LOOKE_M24_INCIDENT_WRITES_ENABLED: 'false'
+          LOOKE_M25_REVIEW_WRITES_ENABLED: 'false'
+          LOOKE_M26_WITNESS_WRITES_ENABLED: 'false'
