@@ -6,9 +6,9 @@ import {Pool} from "pg";
 import {createUltraPublicClient,assertUltraTestnet} from "../../../../lib/verification";
 import {ULTRA_EVM_TESTNET} from "../../../../lib/ultra";
 import {getNativeTestnetInfo} from "../../../../lib/ultra-native-rpc";
-import {inspectM31Schema} from "../../../../lib/beta/m31-source-compatibility";
+
 import {inspectEvmCoin,inspectEvmFactory,inspectNativeUniq} from "../../../../lib/beta/acceptance";
-import {M33InvalidInput,m33Configuration,m33ProofResult,parseM33ProofInput} from "../../../../lib/beta/m33-live-integration";
+import {M33InvalidInput,m33Configuration,m33ProofResult,parseM33ProofInput,inspectM33CurrentSource} from "../../../../lib/beta/m33-live-integration";
 
 export const runtime="nodejs";
 export const dynamic="force-dynamic";
@@ -42,7 +42,7 @@ async function postgresStatus(){
  try{
   const c=await p.connect();
   try{
-   const x=await inspectM31Schema(c,true);
+   const x=await inspectM33CurrentSource(c,true);
    return {source:"postgres",status:x.schemaCompatible?"schema_verified_only" as const:
     "incompatible" as const,verified:x.schemaCompatible,
     currentTables:x.actualCurrentTables,requiredTables:19,
