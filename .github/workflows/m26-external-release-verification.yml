@@ -1,0 +1,121 @@
+name: M26 external acceptance, dual-role evidence and protected release NO-GO
+on:
+  pull_request:
+    paths:
+      - "db/migrations/011_dual_role_release_witness.sql"
+      - "src/app/api/social/ops/m26/**"
+      - "src/lib/beta/m26-*"
+      - "src/lib/beta/m24-full-restore.ts"
+      - "src/components/experience/M26*"
+      - "src/components/experience/m26.css"
+      - "src/app/social/**"
+      - "scripts/m26-*"
+      - "tests/m26-*"
+      - "scripts/social-migrate.ts"
+      - "deployment/M26_EXTERNAL_ACCEPTANCE.md"
+      - "package.json"
+      - ".github/workflows/m26-external-release-verification.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  m26-closed-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      LOOKE_PUBLIC_BETA_ENABLED: "false"
+      LOOKE_M4_TRADING_ENABLED: "false"
+      LOOKE_SOCIAL_WRITES_ENABLED: "false"
+      LOOKE_MEDIA_UPLOADS_ENABLED: "false"
+      LOOKE_POINTS_ACCOUNTING_ENABLED: "false"
+      LOOKE_M20_INDEX_WRITES_ENABLED: "false"
+      LOOKE_M23_ACCEPTANCE_WRITES_ENABLED: "false"
+      LOOKE_M24_INCIDENT_WRITES_ENABLED: "false"
+      LOOKE_M25_REVIEW_WRITES_ENABLED: "false"
+      LOOKE_M26_WITNESS_WRITES_ENABLED: "false"
+      LOOKE_M6_EVIDENCE_ENABLED: "false"
+      LOOKE_M4_MARKETS_JSON: "[]"
+      LOOKE_SOCIAL_APP_ORIGIN: "https://looke-ci.invalid"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: Preflight and all pure adversarial security tests
+        run: |
+          npm run m7:preflight
+          npm test
+      - name: Full static TypeScript and release build
+        run: |
+          npm run typecheck
+          npm run build
+      - name: Independently read real Ultra Testnet heads without broadcasting
+        run: |
+          npm run m21:acceptance
+          npm run m22:preflight
+          node - <<'NODE'
+          const fs=require("node:fs");
+          const p=JSON.parse(fs.readFileSync("artifacts/m22/preflight.json","utf8"));
+          if(p.report.releaseDecision!=="NO_GO"||p.report.publicBetaOpen!==false||
+             p.report.flagsClosed!==true||p.transactionsSent!==0)process.exit(2);
+          console.log("M26 public release NO-GO: independent external witnesses are still unverified.");
+          NODE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: m26-readonly-release-no-go
+          path: |
+            artifacts/m21/acceptance.json
+            artifacts/m22/preflight.json
+          retention-days: 7
+          if-no-files-found: warn
+      - name: Closed HTTP smoke for protected M26 and legacy routes
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run start -- -p 3100 >/tmp/m26-next.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 50); do
+            if curl -fsS http://127.0.0.1:3100/ >/dev/null; then break; fi
+            sleep 1
+          done
+          for route in ops/m26 ops/m25 ops/m24 ops/m23 ops/acceptance; do
+            code=$(curl -s -o /tmp/m26-read.json -w "%{http_code}" http://127.0.0.1:3100/api/social/"$route")
+            echo "M26 protected $route: HTTP=$code"
+            test "$code" = "401"
+          done
+          code=$(curl -s -o /tmp/m26-disabled.json -w "%{http_code}" \
+            -X POST http://127.0.0.1:3100/api/social/ops/m26 \
+            -H 'Origin: https://looke-ci.invalid' -H 'Content-Type: application/json' \
+            -d '{"action":"record_witness"}')
+          test "$code" = "503"
+          code=$(curl -s -o /tmp/m26-csrf.json -w "%{http_code}" \
+            -X POST http://127.0.0.1:3100/api/social/ops/m26 \
+            -H 'Origin: https://evil.example' -H 'Content-Type: application/json' -d '{}')
+          test "$code" = "403"
+          code=$(curl -s -o /tmp/m26-claim.json -w "%{http_code}" \
+            -X POST http://127.0.0.1:3100/api/social/points \
+            -H 'Origin: https://looke-ci.invalid' -H 'Content-Type: application/json' -d '{"action":"claim"}')
+          test "$code" = "405"
+          curl -fsS http://127.0.0.1:3100/api/experience/media | node -e '
+            let s="";process.stdin.on("data",x=>s+=x).on("end",()=>{
+              const a=JSON.parse(s);if(a.enabled!==false||a.moderationRequired!==true)process.exit(2);
+            });
+          '
+          curl -fsS http://127.0.0.1:3100/api/experience/messaging/readiness | node -e '
+            let s="";process.stdin.on("data",x=>s+=x).on("end",()=>{
+              const a=JSON.parse(s);if(a.liveMessagingEnabled!==false||a.messagesSent!==0)process.exit(2);
+            });
+          '
+          npm run m7:smoke
+      - name: Non-destructive rollback rehearsal
+        run: npm run m8:rollback-rehearsal
+      - name: Required independent operational evidence limits
+        if: always()
+        run: |
+          echo "Only CI ephemeral wallets and disposable database records were used; no real users, media or Ultra token/Uniq proofs have been invented." >> "$GITHUB_STEP_SUMMARY"
+          echo "A pair of signed distinct role references does not verify independent humans, original audit contents or launch authority." >> "$GITHUB_STEP_SUMMARY"
+          echo "Full 18-table PostgreSQL restore comparison is a separate read-only operator CLI requiring two real TLS endpoints, an actual restore and a witnessed cutoff." >> "$GITHUB_STEP_SUMMARY"
+          echo "Production, public beta, financial actions, claims, media/social writes, Points, messaging and recurring builds remain disabled." >> "$GITHUB_STEP_SUMMARY"
