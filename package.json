@@ -1,6 +1,6 @@
 {
   "name": "looke-ultra",
-  "version": "0.25.0",
+  "version": "0.26.0",
   "private": true,
   "license": "MIT",
   "engines": {
@@ -50,6 +50,8 @@
     "test:m23-db": "node --import tsx --test tests/m23-acceptance-db.integration.ts",
     "test:m24-db": "node --import tsx --test tests/m24-release-db.integration.ts",
     "test:m25-db": "node --import tsx --test tests/m25-acceptance-db.integration.ts",
+    "test:m26-db": "node --import tsx --test tests/m26-release-db.integration.ts",
+    "m26:full-restore-audit": "tsx scripts/m26-full-restore-audit.ts",
     "m24:full-restore-audit": "tsx scripts/m24-full-restore-audit.ts",
     "m24:verify-evidence": "tsx scripts/m24-verify-evidence.ts"
   },

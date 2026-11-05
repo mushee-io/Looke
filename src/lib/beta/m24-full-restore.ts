@@ -34,6 +34,7 @@ export function validateFullRestorePair(primary:string|undefined,restored:string
  */
 export async function digestFullDatabase(client:Pick<PoolClient,"query">,params:{
  pageSize?:number;maxRowsPerTable?:number;enforceTLS?:boolean;
+ tableSpec?:ReadonlyArray<readonly [string,string]>;
 }={}):Promise<FullTableDigest[]>{
  const pageSize=params.pageSize??100,maxRows=params.maxRowsPerTable??100000;
  if(!Number.isInteger(pageSize)||pageSize<1||pageSize>500||
@@ -44,13 +45,21 @@ export async function digestFullDatabase(client:Pick<PoolClient,"query">,params:
    SELECT ssl FROM pg_stat_ssl WHERE pid=pg_backend_pid()`);
   if(!tls.rows[0]?.ssl)throw Error("Actual PostgreSQL connection is NOT using TLS.");
  }
+ const selected=params.tableSpec??tables;
+ // Caller-selected extended schema MUST include every original M24 table, and
+ // cannot introduce free-form SQL identifiers that could become SQL injection.
+ const known=new Set([...tables.map(x=>x[0]),"social_beta_release_reviews"]);
+ if(selected.length<tables.length || new Set(selected.map(x=>x[0])).size!==selected.length ||
+    selected.some(([name,order])=>!known.has(name)||!/^[a-z_]+(?:,[a-z_]+)?$/.test(order)) ||
+    tables.some(([name])=>!selected.some(x=>x[0]===name)))
+  throw Error("Explicit complete allowlisted full-table manifest required.");
  const output:FullTableDigest[]=[];
  await client.query("BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY");
  try{
   const check=await client.query<{transaction_read_only:string}>(`
    SHOW transaction_read_only`);
   if(check.rows[0]?.transaction_read_only!=="on")throw Error("Read-only transaction was not enforced.");
-  for(const [table,order] of tables){
+  for(const [table,order] of selected){
    const columns=await client.query<{column_name:string;data_type:string;is_nullable:string;ordinal_position:number}>(`
     SELECT column_name,data_type,is_nullable,ordinal_position
     FROM information_schema.columns WHERE table_schema=current_schema() AND table_name=$1
@@ -83,7 +92,8 @@ export async function digestFullDatabase(client:Pick<PoolClient,"query">,params:
   return output;
  }catch(e){await client.query("ROLLBACK");throw e;}
 }
-export function compareFullDatabase(primary:FullTableDigest[],restored:FullTableDigest[]){
+export function compareFullDatabase(primary:FullTableDigest[],restored:FullTableDigest[],
+ expected:ReadonlyArray<readonly [string,string]>=tables){
  const differences=primary.flatMap(a=>{
   const b=restored.find(x=>x.table===a.table);
   if(!b)return [{table:a.table,reason:"restore_table_missing"}];
@@ -93,10 +103,11 @@ export function compareFullDatabase(primary:FullTableDigest[],restored:FullTable
   if(a.sha256!==b.sha256)return [{table:a.table,reason:"full_row_digest_mismatch"}];
   return [];
  });
- if(primary.length!==tables.length||
-    new Set(primary.map(x=>x.table)).size!==tables.length ||
-    restored.length!==tables.length ||
-    new Set(restored.map(x=>x.table)).size!==tables.length)
+ if(primary.length!==expected.length||
+    new Set(primary.map(x=>x.table)).size!==expected.length ||
+    restored.length!==expected.length ||
+    new Set(restored.map(x=>x.table)).size!==expected.length ||
+    expected.some(([name])=>!primary.some(x=>x.table===name)||!restored.some(x=>x.table===name)))
   differences.push({table:"overall",reason:"missing_required_tables"});
  return {
   comparison: differences.length?"MISMATCH":"MATCHED_FULL_ROWS" as "MISMATCH"|"MATCHED_FULL_ROWS",
