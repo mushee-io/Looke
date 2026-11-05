@@ -1,0 +1,141 @@
+name: M30 actual operator prerequisites, real-source denial and immutable beta NO-GO
+on:
+  pull_request:
+    paths:
+      - "src/lib/beta/m30-*"
+      - "src/app/api/social/ops/m30/**"
+      - "src/app/api/experience/m30-readiness/**"
+      - "src/components/experience/M30*"
+      - "src/components/experience/m30.css"
+      - "src/app/social/**"
+      - "scripts/m30-*"
+      - "tests/m30-*"
+      - "deployment/M30_GENUINE_SOURCE_ACCEPTANCE.md"
+      - "package.json"
+      - ".github/workflows/m30-operator-source-acceptance.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  m30-no-go-source-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      LOOKE_PUBLIC_BETA_ENABLED: "false"
+      LOOKE_M4_TRADING_ENABLED: "false"
+      LOOKE_SOCIAL_WRITES_ENABLED: "false"
+      LOOKE_MEDIA_UPLOADS_ENABLED: "false"
+      LOOKE_POINTS_ACCOUNTING_ENABLED: "false"
+      LOOKE_M20_INDEX_WRITES_ENABLED: "false"
+      LOOKE_M23_ACCEPTANCE_WRITES_ENABLED: "false"
+      LOOKE_M24_INCIDENT_WRITES_ENABLED: "false"
+      LOOKE_M25_REVIEW_WRITES_ENABLED: "false"
+      LOOKE_M26_WITNESS_WRITES_ENABLED: "false"
+      LOOKE_M6_EVIDENCE_ENABLED: "false"
+      LOOKE_M4_MARKETS_JSON: "[]"
+      LOOKE_SOCIAL_APP_ORIGIN: "https://looke-ci.invalid"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: Real configuration-only operator prerequisite inspection, never mock external data
+        run: |
+          npm run m30:operator-acceptance
+          node - <<'NODE'
+          const fs=require("node:fs");
+          const v=JSON.parse(fs.readFileSync("artifacts/m30/operator-acceptance.json","utf8"));
+          if(v.releaseDecision!=="NO_GO"||v.publicBetaOpen!==false||
+            v.configuration.exposedCredentialValues!==false||
+            v.configuration.releaseFlagsClosed!==true||
+            v.technicallyVerifiedCount!==0||v.humanAcceptanceVerifiedCount!==0||
+            !v.configuration.missingEnvironmentKeys.includes("DATABASE_URL")||
+            v.actualFinanceOrUserWritesPerformed!==false)process.exit(2);
+          console.log("M30 real external source availability: BLOCKED, not fabricated.");
+          NODE
+      - name: Adversarial pure tests, exact TypeScript and release build
+        run: |
+          npm run m7:preflight
+          npm test
+          npm run typecheck
+          npm run build
+      - name: Existing genuine Testnet RPC head inspection and closed release report
+        run: |
+          npm run m21:acceptance
+          npm run m22:preflight
+          node - <<'NODE'
+          const fs=require("node:fs");
+          const x=JSON.parse(fs.readFileSync("artifacts/m22/preflight.json","utf8"));
+          if(x.report.releaseDecision!=="NO_GO"||x.report.publicBetaOpen!==false||
+             x.report.flagsClosed!==true||x.transactionsSent!==0)process.exit(2);
+          console.log("No source report may authorize beta, finance, messaging or production.");
+          NODE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: looke-m30-operator-blocked-source-evidence
+          path: |
+            artifacts/m30/operator-acceptance.json
+            artifacts/m21/acceptance.json
+            artifacts/m22/preflight.json
+          retention-days: 7
+          if-no-files-found: warn
+      - name: Readiness transparency, denied moderator endpoints and disabled user writes
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run start -- -p 3100 >/tmp/m30-next.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 50); do
+            if curl -fsS http://127.0.0.1:3100/ >/dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:3100/api/experience/m30-readiness | node -e '
+            let s="";process.stdin.on("data",x=>s+=x).on("end",()=>{
+              const v=JSON.parse(s);
+              if(v.releaseDecision!=="NO_GO"||v.publicBetaOpen!==false||
+                v.configuration.credentialPresence.DATABASE_URL!==false||
+                v.configuration.exposedCredentialValues!==false||
+                v.configuration.releaseFlagsClosed!==true)process.exit(2);
+            });
+          '
+          for route in ops/m30 ops/m29 ops/m28 ops/m27 ops/acceptance; do
+            code=$(curl -s -o /tmp/m30-private.json -w "%{http_code}" \
+              http://127.0.0.1:3100/api/social/"$route")
+            echo "Protected $route HTTP=$code"
+            test "$code" = "401"
+          done
+          code=$(curl -s -o /tmp/m30-post.json -w "%{http_code}" \
+            -X POST http://127.0.0.1:3100/api/social/ops/m30 \
+            -H 'Origin: https://looke-ci.invalid' -H 'Content-Type: application/json' \
+            -d '{"action":"approve_go_live"}')
+          test "$code" = "405"
+          code=$(curl -s -o /tmp/m30-claim.json -w "%{http_code}" \
+            -X POST http://127.0.0.1:3100/api/social/points \
+            -H 'Origin: https://looke-ci.invalid' -H 'Content-Type: application/json' \
+            -d '{"action":"claim"}')
+          test "$code" = "405"
+          curl -fsS http://127.0.0.1:3100/api/experience/media | node -e '
+            let s="";process.stdin.on("data",x=>s+=x).on("end",()=>{
+              const a=JSON.parse(s);
+              if(a.enabled!==false||a.moderationRequired!==true)process.exit(2);
+            });
+          '
+          curl -fsS http://127.0.0.1:3100/api/experience/messaging/readiness | node -e '
+            let s="";process.stdin.on("data",x=>s+=x).on("end",()=>{
+              const a=JSON.parse(s);
+              if(a.liveMessagingEnabled!==false||a.messagesSent!==0)process.exit(2);
+            });
+          '
+          npm run m7:smoke
+      - name: Non-destructive incident response and rollback rehearsal preflight
+        run: npm run m8:rollback-rehearsal
+      - name: External human/source evidence cannot be simulated into acceptance
+        if: always()
+        run: |
+          echo "GitHub CI has NO operator's real PostgreSQL, Cloudinary, separate restored TLS backup or security audit keys. Source status must remain BLOCKED." >> "$GITHUB_STEP_SUMMARY"
+          echo "M30 one-shot --live acceptance is reserved for authorized operator real credentials and artifacts; no scheduled jobs, fake user sessions or media are generated." >> "$GITHUB_STEP_SUMMARY"
+          echo "Real human witnesses, original audit findings, independent restore and production rollback remain operational, externally reviewed tasks." >> "$GITHUB_STEP_SUMMARY"
+          echo "Public beta, production promotion, social/media/Points writes, token mint/claim, finance and E2EE remain NO-GO." >> "$GITHUB_STEP_SUMMARY"
