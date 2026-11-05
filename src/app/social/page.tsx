@@ -20,6 +20,7 @@ import {M25OperatorAcceptance} from "../../components/experience/M25OperatorAcce
 import {M26ExternalVerification} from "../../components/experience/M26ExternalVerification";
 import {M27VerificationLab} from "../../components/experience/M27VerificationLab";
 import {M28RealProofLab} from "../../components/experience/M28RealProofLab";
+import {M29OperatorEvidence} from "../../components/experience/M29OperatorEvidence";
 import "../../components/experience/m17.css";
 
 type Wallet = {request:(args:{method:string;params?:unknown[]})=>Promise<unknown>};
@@ -29,7 +30,7 @@ type Post = {id:string;author:string;body:string;asset_chain:string|null;asset_t
  event_id?:string;reposted_by_handle?:string|null;like_count:number;repost_count:number;
  liked_by_me:boolean;reposted_by_me:boolean;bookmarked_by_me:boolean};
 type Comment = {id:string;post_id:string;author:string;body:string;created_at:string;handle:string;display_name:string};
-type Tab = "feed"|"discover"|"profile"|"activity"|"analytics"|"points"|"points-review"|"integrity"|"backend"|"security"|"beta"|"acceptance"|"audit"|"operations"|"verification"|"rehearsal"|"real-evidence"|"controls"|"moderation"|"messages";
+type Tab = "feed"|"discover"|"profile"|"activity"|"analytics"|"points"|"points-review"|"integrity"|"backend"|"security"|"beta"|"acceptance"|"audit"|"operations"|"verification"|"rehearsal"|"real-evidence"|"operator-evidence"|"controls"|"moderation"|"messages";
 type ActivityFilter="all"|"likes"|"reposts"|"bookmarks"|"following";
 type ActivityEvent={event_id:string;kind:"likes"|"reposts"|"bookmarks";created_at:string;
  post_id:string;body:string;handle:string;display_name:string;author:string;
@@ -368,15 +369,15 @@ export default function SocialPage(){
       <aside className="social-aside">
         <span className="social-eyebrow">LOOKE COMMUNITY</span>
         <nav>
-          {([["feed","⌂ Feed"],["discover","◇ Discover"],["profile","◎ Profile"],["activity","♡ My Activity"],["analytics","▥ Analytics"],["points","◆ Looke Points"],["points-review","⊞ Points review"],["integrity","▤ Integrity"],["backend","◈ Backend checks"],["security","⛨ Security acceptance"],["beta","◈ Testnet beta prep"],["acceptance","⛨ Controlled acceptance"],["audit","⛨ Launch audit"],["operations","◈ Final acceptance"],["verification","⛨ External verification"],["rehearsal","◈ M27 release rehearsal"],["real-evidence","◈ M28 real evidence"],["controls","⚙ Account controls"],["moderation","⚑ Moderation"],["messages","▤ Messages"]] as const)
+          {([["feed","⌂ Feed"],["discover","◇ Discover"],["profile","◎ Profile"],["activity","♡ My Activity"],["analytics","▥ Analytics"],["points","◆ Looke Points"],["points-review","⊞ Points review"],["integrity","▤ Integrity"],["backend","◈ Backend checks"],["security","⛨ Security acceptance"],["beta","◈ Testnet beta prep"],["acceptance","⛨ Controlled acceptance"],["audit","⛨ Launch audit"],["operations","◈ Final acceptance"],["verification","⛨ External verification"],["rehearsal","◈ M27 release rehearsal"],["real-evidence","◈ M28 real evidence"],["operator-evidence","⛨ M29 evidence collection"],["controls","⚙ Account controls"],["moderation","⚑ Moderation"],["messages","▤ Messages"]] as const)
             .map(([key,label])=><button key={key} type="button" className={tab===key?"selected":""} onClick={()=>{setTab(key);setFocused(null);}}>{label}<span>↗</span></button>)}
         </nav>
         <div className="social-sidefoot"><strong>For the creators.</strong><p>Follow projects, talk about tokens and Uniq NFTs, and build real communities.</p>
           <p>Posts reference assets; they do not verify holdings or represent investment advice.</p></div>
       </aside>
       <section className="social-main">
-        <div className="social-overline">M28 / GENUINE EXTERNAL TESTNET EVIDENCE VERIFICATION</div>
-        <div className="social-hero"><h1>{tab==="feed"?"People. Ideas. Culture.":tab==="discover"?"Find your people.":tab==="messages"?"Conversations.":tab==="activity"?"Your real activity.":tab==="analytics"?"Creator analytics.":tab==="points"?"Looke Points.":tab==="points-review"?"Points evidence review.":tab==="integrity"?"Account integrity.":tab==="backend"?"Backend verification.":tab==="security"?"Testnet & security.":tab==="beta"?"Protected Testnet beta.":tab==="acceptance"?"Controlled Testnet acceptance.":tab==="audit"?"Independent launch audit.":tab==="operations"?"Operator acceptance.":tab==="verification"?"External acceptance verification.":tab==="rehearsal"?"Protected release rehearsal.":tab==="real-evidence"?"Real independent evidence.":tab==="controls"?"Your account.":tab==="moderation"?"Review queue.":"Your identity."}</h1>
+        <div className="social-overline">M29 / REAL OPERATOR EVIDENCE COLLECTION AND VERIFICATION</div>
+        <div className="social-hero"><h1>{tab==="feed"?"People. Ideas. Culture.":tab==="discover"?"Find your people.":tab==="messages"?"Conversations.":tab==="activity"?"Your real activity.":tab==="analytics"?"Creator analytics.":tab==="points"?"Looke Points.":tab==="points-review"?"Points evidence review.":tab==="integrity"?"Account integrity.":tab==="backend"?"Backend verification.":tab==="security"?"Testnet & security.":tab==="beta"?"Protected Testnet beta.":tab==="acceptance"?"Controlled Testnet acceptance.":tab==="audit"?"Independent launch audit.":tab==="operations"?"Operator acceptance.":tab==="verification"?"External acceptance verification.":tab==="rehearsal"?"Protected release rehearsal.":tab==="real-evidence"?"Real independent evidence.":tab==="operator-evidence"?"Original operator evidence collection.":tab==="controls"?"Your account.":tab==="moderation"?"Review queue.":"Your identity."}</h1>
           <p>Share what you create. Discover the people shaping Ultra. All displayed activity comes from the Looke social database.</p></div>
         {backendStatus==="unconfigured"&&<div className="social-warning"><strong>Backend not ready.</strong> Social database or sign-in configuration is unavailable. No demo profiles or fake posts are shown.</div>}
         {notice&&<div className="social-notice" role="status">{notice}</div>}
@@ -502,6 +503,7 @@ export default function SocialPage(){
         {tab==="verification"&&(user?<M26ExternalVerification/>:<div className="social-signin-note">Independent external release verification requires an authenticated operator. Public beta remains NO-GO.</div>)}
         {tab==="rehearsal"&&(user?<M27VerificationLab/>:<div className="social-signin-note">M27 release rehearsal requires an authenticated operator and real evidence. Public beta stays NO-GO.</div>)}
         {tab==="real-evidence"&&(user?<M28RealProofLab/>:<div className="social-signin-note">M28 real evidence inspection requires an authenticated moderator. Public beta remains NO-GO.</div>)}
+        {tab==="operator-evidence"&&(user?<M29OperatorEvidence/>:<div className="social-signin-note">M29 evidence collection requires an authenticated moderator and actual source proofs. Public beta remains NO-GO.</div>)}
         {tab==="controls"&&(user?<AccountControls onChanged={()=>{void loadFeed();}}/>:
           <div className="social-signin-note">Sign in to change private notification preferences and muted accounts.</div>)}
         {tab==="moderation"&&(user?<ModerationConsole/>:
