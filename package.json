@@ -1,6 +1,6 @@
 {
   "name": "looke-ultra",
-  "version": "0.31.0",
+  "version": "0.32.0",
   "private": true,
   "license": "MIT",
   "engines": {
@@ -66,7 +66,9 @@
     "m27:release-rehearsal": "tsx scripts/m27-readonly-release-rehearsal.ts",
     "m26:full-restore-audit": "tsx scripts/m26-full-restore-audit.ts",
     "m24:full-restore-audit": "tsx scripts/m24-full-restore-audit.ts",
-    "m24:verify-evidence": "tsx scripts/m24-verify-evidence.ts"
+    "m24:verify-evidence": "tsx scripts/m24-verify-evidence.ts",
+    "m32:reconcile": "tsx scripts/m32-reconcile.ts",
+    "test:m32-db": "node --import tsx --test tests/m32-source-db.integration.ts"
   },
   "dependencies": {
     "next": "^15.5.0",
