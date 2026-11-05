@@ -14,6 +14,7 @@ import {PointsOperator} from "../../components/experience/M19PointsOperator";
 import {AccountIntegrity,BackendOperations} from "../../components/experience/M20BackendPanels";
 import {M21SecurityLab} from "../../components/experience/M21SecurityLab";
 import {M22BetaLab} from "../../components/experience/M22BetaLab";
+import {M23AcceptanceLab} from "../../components/experience/M23AcceptanceLab";
 import "../../components/experience/m17.css";
 
 type Wallet = {request:(args:{method:string;params?:unknown[]})=>Promise<unknown>};
@@ -23,7 +24,7 @@ type Post = {id:string;author:string;body:string;asset_chain:string|null;asset_t
  event_id?:string;reposted_by_handle?:string|null;like_count:number;repost_count:number;
  liked_by_me:boolean;reposted_by_me:boolean;bookmarked_by_me:boolean};
 type Comment = {id:string;post_id:string;author:string;body:string;created_at:string;handle:string;display_name:string};
-type Tab = "feed"|"discover"|"profile"|"activity"|"analytics"|"points"|"points-review"|"integrity"|"backend"|"security"|"beta"|"controls"|"moderation"|"messages";
+type Tab = "feed"|"discover"|"profile"|"activity"|"analytics"|"points"|"points-review"|"integrity"|"backend"|"security"|"beta"|"acceptance"|"controls"|"moderation"|"messages";
 type ActivityFilter="all"|"likes"|"reposts"|"bookmarks"|"following";
 type ActivityEvent={event_id:string;kind:"likes"|"reposts"|"bookmarks";created_at:string;
  post_id:string;body:string;handle:string;display_name:string;author:string;
@@ -362,15 +363,15 @@ export default function SocialPage(){
       <aside className="social-aside">
         <span className="social-eyebrow">LOOKE COMMUNITY</span>
         <nav>
-          {([["feed","⌂ Feed"],["discover","◇ Discover"],["profile","◎ Profile"],["activity","♡ My Activity"],["analytics","▥ Analytics"],["points","◆ Looke Points"],["points-review","⊞ Points review"],["integrity","▤ Integrity"],["backend","◈ Backend checks"],["security","⛨ Security acceptance"],["beta","◈ Testnet beta prep"],["controls","⚙ Account controls"],["moderation","⚑ Moderation"],["messages","▤ Messages"]] as const)
+          {([["feed","⌂ Feed"],["discover","◇ Discover"],["profile","◎ Profile"],["activity","♡ My Activity"],["analytics","▥ Analytics"],["points","◆ Looke Points"],["points-review","⊞ Points review"],["integrity","▤ Integrity"],["backend","◈ Backend checks"],["security","⛨ Security acceptance"],["beta","◈ Testnet beta prep"],["acceptance","⛨ Controlled acceptance"],["controls","⚙ Account controls"],["moderation","⚑ Moderation"],["messages","▤ Messages"]] as const)
             .map(([key,label])=><button key={key} type="button" className={tab===key?"selected":""} onClick={()=>{setTab(key);setFocused(null);}}>{label}<span>↗</span></button>)}
         </nav>
         <div className="social-sidefoot"><strong>For the creators.</strong><p>Follow projects, talk about tokens and Uniq NFTs, and build real communities.</p>
           <p>Posts reference assets; they do not verify holdings or represent investment advice.</p></div>
       </aside>
       <section className="social-main">
-        <div className="social-overline">M22 / PROTECTED TESTNET BETA PREPARATION</div>
-        <div className="social-hero"><h1>{tab==="feed"?"People. Ideas. Culture.":tab==="discover"?"Find your people.":tab==="messages"?"Conversations.":tab==="activity"?"Your real activity.":tab==="analytics"?"Creator analytics.":tab==="points"?"Looke Points.":tab==="points-review"?"Points evidence review.":tab==="integrity"?"Account integrity.":tab==="backend"?"Backend verification.":tab==="security"?"Testnet & security.":tab==="beta"?"Protected Testnet beta.":tab==="controls"?"Your account.":tab==="moderation"?"Review queue.":"Your identity."}</h1>
+        <div className="social-overline">M23 / CONTROLLED TESTNET ACCEPTANCE</div>
+        <div className="social-hero"><h1>{tab==="feed"?"People. Ideas. Culture.":tab==="discover"?"Find your people.":tab==="messages"?"Conversations.":tab==="activity"?"Your real activity.":tab==="analytics"?"Creator analytics.":tab==="points"?"Looke Points.":tab==="points-review"?"Points evidence review.":tab==="integrity"?"Account integrity.":tab==="backend"?"Backend verification.":tab==="security"?"Testnet & security.":tab==="beta"?"Protected Testnet beta.":tab==="acceptance"?"Controlled Testnet acceptance.":tab==="controls"?"Your account.":tab==="moderation"?"Review queue.":"Your identity."}</h1>
           <p>Share what you create. Discover the people shaping Ultra. All displayed activity comes from the Looke social database.</p></div>
         {backendStatus==="unconfigured"&&<div className="social-warning"><strong>Backend not ready.</strong> Social database or sign-in configuration is unavailable. No demo profiles or fake posts are shown.</div>}
         {notice&&<div className="social-notice" role="status">{notice}</div>}
@@ -490,6 +491,7 @@ export default function SocialPage(){
         {tab==="backend"&&(user?<BackendOperations/>:<div className="social-signin-note">An authorized moderator wallet is required for backend integrity or risk review.</div>)}
         {tab==="security"&&(user?<M21SecurityLab/>:<div className="social-signin-note">An authorized reviewer wallet is required to inspect Testnet acceptance evidence. No wallet sign-in or transaction will be initiated by this page.</div>)}
         {tab==="beta"&&(user?<M22BetaLab/>:<div className="social-signin-note">The protected Testnet beta preparation page requires an existing authorized moderator session; it does not sign in or broadcast financial transactions.</div>)}
+        {tab==="acceptance"&&(user?<M23AcceptanceLab/>:<div className="social-signin-note">An existing authorized moderator session is required. Wallet acceptance is nonfinancial and release is still NO-GO.</div>)}
         {tab==="controls"&&(user?<AccountControls onChanged={()=>{void loadFeed();}}/>:
           <div className="social-signin-note">Sign in to change private notification preferences and muted accounts.</div>)}
         {tab==="moderation"&&(user?<ModerationConsole/>:
