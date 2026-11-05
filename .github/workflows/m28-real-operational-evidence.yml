@@ -1,0 +1,116 @@
+name: M28 genuine evidence inspection, protected beta NO-GO and offline wallet witness
+on:
+  pull_request:
+    paths:
+      - "src/lib/beta/m28-*"
+      - "src/app/api/social/ops/m28/**"
+      - "src/components/experience/M28*"
+      - "src/components/experience/m28.css"
+      - "src/app/social/**"
+      - "scripts/m28-*"
+      - "tests/m28-*"
+      - "deployment/M28_REAL_OPERATOR_EVIDENCE.md"
+      - "package.json"
+      - ".github/workflows/m28-real-operational-evidence.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  m28-protected-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      LOOKE_PUBLIC_BETA_ENABLED: "false"
+      LOOKE_M4_TRADING_ENABLED: "false"
+      LOOKE_SOCIAL_WRITES_ENABLED: "false"
+      LOOKE_MEDIA_UPLOADS_ENABLED: "false"
+      LOOKE_POINTS_ACCOUNTING_ENABLED: "false"
+      LOOKE_M20_INDEX_WRITES_ENABLED: "false"
+      LOOKE_M23_ACCEPTANCE_WRITES_ENABLED: "false"
+      LOOKE_M24_INCIDENT_WRITES_ENABLED: "false"
+      LOOKE_M25_REVIEW_WRITES_ENABLED: "false"
+      LOOKE_M26_WITNESS_WRITES_ENABLED: "false"
+      LOOKE_M6_EVIDENCE_ENABLED: "false"
+      LOOKE_M4_MARKETS_JSON: "[]"
+      LOOKE_SOCIAL_APP_ORIGIN: "https://looke-ci.invalid"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: Existing release preflight and all adversarial M28 pure checks
+        run: |
+          npm run m7:preflight
+          npm test
+      - name: Full static typecheck and Next.js build
+        run: |
+          npm run typecheck
+          npm run build
+      - name: Real read-only Testnet RPC head probes with NO-GO evidence manifest
+        run: |
+          npm run m21:acceptance
+          npm run m22:preflight
+          node - <<'NODE'
+          const fs=require("node:fs");
+          const p=JSON.parse(fs.readFileSync("artifacts/m22/preflight.json","utf8"));
+          if(p.report.releaseDecision!=="NO_GO"||p.report.publicBetaOpen!==false||
+             p.report.mayActivate!==false||p.report.flagsClosed!==true||
+             p.transactionsSent!==0)process.exit(2);
+          console.log("M28 NO-GO: independent humans, provider content and real restores are not witnessed by CI.");
+          NODE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: looke-m28-genuine-evidence-no-go
+          path: |
+            artifacts/m21/acceptance.json
+            artifacts/m22/preflight.json
+          retention-days: 7
+          if-no-files-found: warn
+      - name: Protected HTTP negative checks for real evidence routes and disabled finance
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run start -- -p 3100 >/tmp/m28-next.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 50); do
+            if curl -fsS http://127.0.0.1:3100/ >/dev/null; then break; fi
+            sleep 1
+          done
+          for route in ops/m28 ops/m27 ops/m26 ops/m25 ops/acceptance; do
+            code=$(curl -s -o /tmp/m28-private.json -w "%{http_code}" \
+              http://127.0.0.1:3100/api/social/"$route")
+            echo "Unauthenticated $route HTTP=$code"
+            test "$code" = "401"
+          done
+          code=$(curl -s -o /tmp/m28-no-write.json -w "%{http_code}" \
+            -X POST http://127.0.0.1:3100/api/social/ops/m28 \
+            -H 'Origin: https://looke-ci.invalid' -H 'Content-Type: application/json' \
+            -d '{"action":"approve_release"}')
+          test "$code" = "405"
+          code=$(curl -s -o /tmp/m28-claim.json -w "%{http_code}" \
+            -X POST http://127.0.0.1:3100/api/social/points \
+            -H 'Origin: https://looke-ci.invalid' -H 'Content-Type: application/json' -d '{"action":"claim"}')
+          test "$code" = "405"
+          curl -fsS http://127.0.0.1:3100/api/experience/media | node -e '
+            let s="";process.stdin.on("data",x=>s+=x).on("end",()=>{
+              const a=JSON.parse(s);if(a.enabled!==false||a.moderationRequired!==true)process.exit(2);
+            });
+          '
+          curl -fsS http://127.0.0.1:3100/api/experience/messaging/readiness | node -e '
+            let s="";process.stdin.on("data",x=>s+=x).on("end",()=>{
+              const a=JSON.parse(s);if(a.liveMessagingEnabled!==false||a.messagesSent!==0)process.exit(2);
+            });
+          '
+          npm run m7:smoke
+      - name: Existing non-destructive operator rollback rehearsal
+        run: npm run m8:rollback-rehearsal
+      - name: Accurate operational limitations
+        if: always()
+        run: |
+          echo "M28 CI includes synthetic disposable wallet keys ONLY; no claim that two genuine unrelated humans or real provider assets were observed." >> "$GITHUB_STEP_SUMMARY"
+          echo "Cloudinary authorization and both Ultra asset proofs need actual approved provider and canonical live chain records, checked by the read-only operator endpoint when supplied." >> "$GITHUB_STEP_SUMMARY"
+          echo "Existing 19-table recovery CLI needs an actual separately restored TLS database and independent human witness, not present in CI." >> "$GITHUB_STEP_SUMMARY"
+          echo "Public beta, production, financial broadcasting, token mint/claims, social/media writes, Points and private messages stay closed." >> "$GITHUB_STEP_SUMMARY"

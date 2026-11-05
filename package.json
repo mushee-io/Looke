@@ -1,6 +1,6 @@
 {
   "name": "looke-ultra",
-  "version": "0.27.0",
+  "version": "0.28.0",
   "private": true,
   "license": "MIT",
   "engines": {
@@ -52,6 +52,8 @@
     "test:m25-db": "node --import tsx --test tests/m25-acceptance-db.integration.ts",
     "test:m26-db": "node --import tsx --test tests/m26-release-db.integration.ts",
     "test:m27-db": "node --import tsx --test tests/m27-release-db.integration.ts",
+    "test:m28-db": "node --import tsx --test tests/m28-real-evidence-db.integration.ts",
+    "m28:verify-wallet-evidence": "tsx scripts/m28-verify-wallet-evidence.ts",
     "m27:full-restore-audit": "tsx scripts/m27-full-restore-audit.ts",
     "m27:full-points-audit": "tsx scripts/m27-full-points-audit.ts",
     "m27:release-rehearsal": "tsx scripts/m27-readonly-release-rehearsal.ts",
