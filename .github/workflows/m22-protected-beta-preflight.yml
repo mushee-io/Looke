@@ -1,0 +1,123 @@
+name: M22 protected Testnet beta preflight, no public activation
+on:
+  pull_request:
+    paths:
+      - "src/app/social/**"
+      - "src/app/api/social/ops/beta/**"
+      - "src/components/experience/M22*"
+      - "src/components/experience/m22.css"
+      - "src/lib/beta/m22-*"
+      - "scripts/m22-*"
+      - "tests/m22-*"
+      - "deployment/M22_PROTECTED_BETA_ACCEPTANCE.md"
+      - "package.json"
+      - ".github/workflows/m22-protected-beta-preflight.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  m22-beta-closed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      LOOKE_PUBLIC_BETA_ENABLED: "false"
+      LOOKE_M4_TRADING_ENABLED: "false"
+      LOOKE_SOCIAL_WRITES_ENABLED: "false"
+      LOOKE_MEDIA_UPLOADS_ENABLED: "false"
+      LOOKE_POINTS_ACCOUNTING_ENABLED: "false"
+      LOOKE_M20_INDEX_WRITES_ENABLED: "false"
+      LOOKE_M6_EVIDENCE_ENABLED: "false"
+      LOOKE_M4_MARKETS_JSON: "[]"
+      LOOKE_SOCIAL_APP_ORIGIN: "https://looke-ci.invalid"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: Nonfinancial preflight, pure security and signed-witness checks
+        run: |
+          npm run m7:preflight
+          npm test
+      - name: Typecheck and Next.js release build
+        run: |
+          npm run typecheck
+          npm run build
+      - name: Read-only independent Testnet probes (no human witness inferred)
+        run: npm run m21:acceptance
+      - name: Create mandatory NO-GO M22 public-beta release report
+        run: |
+          npm run m22:preflight
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const x=JSON.parse(fs.readFileSync('artifacts/m22/preflight.json','utf8'));
+          if(x.report.releaseDecision!=='NO_GO'||x.report.mayActivate!==false||
+             x.publicBetaActivated!==false||x.report.publicBetaOpen!==false||
+             x.transactionsSent!==0||x.report.requiredWitnesses.length!==9||
+             x.report.flagsClosed!==true)process.exit(2);
+          console.log('Protected engineering Preview only: NO-GO until actual operator security signoff.');
+          NODE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: looke-m22-protected-beta-no-go
+          path: |
+            artifacts/m21/acceptance.json
+            artifacts/m22/preflight.json
+          retention-days: 7
+          if-no-files-found: warn
+      - name: Closed Preview endpoint denial and protected-beta HTTP smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run start -- -p 3100 >/tmp/m22-next.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 50); do
+            if curl -fsS http://127.0.0.1:3100/ >/dev/null; then break; fi
+            sleep 1
+          done
+          for route in ops/beta ops/acceptance; do
+            code=$(curl -s -o /tmp/m22-get.json -w "%{http_code}" \
+              http://127.0.0.1:3100/api/social/"$route")
+            echo "M22 protected $route HTTP=$code"
+            test "$code" = "401"
+          done
+          code=$(curl -s -o /tmp/m22-witness.json -w "%{http_code}" \
+            -X POST http://127.0.0.1:3100/api/social/ops/beta/witness \
+            -H 'Origin: https://evil.example' -H 'Content-Type: application/json' \
+            -d '{}')
+          echo "M22 foreign-origin witness denial HTTP=$code"
+          test "$code" = "403"
+          code=$(curl -s -o /tmp/m22-auth.json -w "%{http_code}" \
+            -X POST http://127.0.0.1:3100/api/social/auth \
+            -H 'Origin: https://looke-ci.invalid' -H 'Content-Type: application/json' \
+            -d '{"action":"challenge","address":"0x1111111111111111111111111111111111111111"}')
+          echo "M22 auth-write denial HTTP=$code"
+          test "$code" = "503"
+          code=$(curl -s -o /tmp/m22-claim.json -w "%{http_code}" \
+            -X POST http://127.0.0.1:3100/api/social/points \
+            -H 'Origin: https://looke-ci.invalid' -H 'Content-Type: application/json' \
+            -d '{"action":"claim"}')
+          test "$code" = "405"
+          curl -fsS http://127.0.0.1:3100/api/experience/media | node -e '
+            let s="";process.stdin.on("data",x=>s+=x).on("end",()=>{
+              const a=JSON.parse(s);
+              if(a.enabled!==false||a.moderationRequired!==true)process.exit(2);
+            });
+          '
+          curl -fsS http://127.0.0.1:3100/api/experience/messaging/readiness | node -e '
+            let s="";process.stdin.on("data",x=>s+=x).on("end",()=>{
+              const a=JSON.parse(s);
+              if(a.liveMessagingEnabled!==false||a.messagesSent!==0)process.exit(2);
+            });
+          '
+          npm run m7:smoke
+      - name: Existing rollback rehearsal
+        run: npm run m8:rollback-rehearsal
+      - name: Operational acceptance remains external
+        if: always()
+        run: |
+          echo "M22 signed CI keys and PostgreSQL fixtures are NOT real user sessions, live media, tokens, Uniqs or actual restore evidence." >> "$GITHUB_STEP_SUMMARY"
+          echo "No public-beta release signoff is inferred from code, a signed public wallet message, RPC heads, a DB snapshot sample or a protected Preview deployment." >> "$GITHUB_STEP_SUMMARY"
+          echo "All financial broadcasting, claims, public social/media writes, E2EE messaging and automation remain disabled." >> "$GITHUB_STEP_SUMMARY"
