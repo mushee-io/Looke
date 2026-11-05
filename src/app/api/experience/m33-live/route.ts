@@ -8,7 +8,8 @@ import {ULTRA_EVM_TESTNET} from "../../../../lib/ultra";
 import {getNativeTestnetInfo} from "../../../../lib/ultra-native-rpc";
 
 import {inspectEvmCoin,inspectEvmFactory,inspectNativeUniq} from "../../../../lib/beta/acceptance";
-import {M33InvalidInput,m33Configuration,m33ProofResult,parseM33ProofInput,inspectM33CurrentSource} from "../../../../lib/beta/m33-live-integration";
+import {uploadConfig} from "../../../../lib/social/upload-provider";
+import {M33InvalidInput,m33Configuration,m33ProofResult,parseM33ProofInput,inspectM33CurrentSource,inspectM33HostedMedia} from "../../../../lib/beta/m33-live-integration";
 
 export const runtime="nodejs";
 export const dynamic="force-dynamic";
@@ -51,6 +52,15 @@ async function postgresStatus(){
  }catch{return {source:"postgres",status:"unavailable" as const,verified:false,currentTables:0,requiredTables:19};}
  finally{await p.end().catch(()=>{});}
 }
+async function hostedMediaStatus(){
+ let config:ReturnType<typeof uploadConfig>;
+ try{config=uploadConfig();}
+ catch{return {source:"cloudinary",status:"not_configured",providerVerified:false,
+  matchingLookePrefixAssets:null,realModerationVerified:false};}
+ try{return await inspectM33HostedMedia(config);}
+ catch{return {source:"cloudinary",status:"unavailable",providerVerified:false,
+  matchingLookePrefixAssets:null,realModerationVerified:false};}
+}
 export async function GET(request:NextRequest){
  if(process.env.VERCEL_ENV!=="preview")
   return answer({error:"M33 proof console is available only in the SSO-protected Preview."},404);
@@ -68,12 +78,10 @@ export async function GET(request:NextRequest){
  if(mode==="live"){
   if([...request.nextUrl.searchParams.keys()].some(k=>k!=="mode"))
    return answer({error:"Unexpected live inspection parameters."},400);
-  const [evm,native,postgres]=await Promise.all([evmStatus(),nativeStatus(),postgresStatus()]);
+  const [evm,native,postgres,hostedMedia]=await Promise.all([evmStatus(),nativeStatus(),postgresStatus(),hostedMediaStatus()]);
   return answer({...cfg,mode,evm,native,postgres,
-   hostedMedia:{source:"cloudinary",status:cfg.cloudinaryConfigured?
-    "credentials_present_asset_unverified":"not_configured",
-    assetVerified:false,moderatorApproved:false},
-   liveRPCChecksPerformed:true,cloudinaryAssetsQueried:false,
+   hostedMedia,
+   liveRPCChecksPerformed:true,cloudinaryAssetsQueried:hostedMedia.providerVerified,
    restoreVerified:false,sourceBackedPointsReconciled:false,
    note:"These are genuine current read-only network/schema checks. A live chain head, correct schema or provider key never establishes a creator coin, moderated media, a real user or independent release authorization."});
  }
