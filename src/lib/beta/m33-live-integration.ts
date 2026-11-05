@@ -107,3 +107,31 @@ export async function inspectM33CurrentSource(db:Pick<import("pg").PoolClient,"q
    recordsModified:0 as const};
  }catch(e){await db.query("ROLLBACK");throw e;}
 }
+
+/** Real authenticated Cloudinary Search API, aggregate metadata only. Search is
+ * a read-only provider query despite the Search API's POST transport.
+ */
+export async function inspectM33HostedMedia(
+ config:import("../social/upload-provider").UploadProviderConfig,
+ fetcher:typeof fetch=fetch
+){
+ if(!/^[a-zA-Z0-9_-]{2,60}$/.test(config.cloudName))
+  throw Error("Invalid provider cloud identifier.");
+ const url="https://api.cloudinary.com/v1_1/"+
+  config.cloudName+"/resources/search";
+ const response=await fetcher(url,{
+  method:"POST",redirect:"error",cache:"no-store",
+  headers:{"authorization":"Basic "+Buffer.from(config.apiKey+":"+config.apiSecret).toString("base64"),
+   "content-type":"application/json"},
+  body:JSON.stringify({expression:"public_id:looke*",max_results:1}),
+  signal:AbortSignal.timeout(9000),
+ });
+ if(!response.ok)throw Error("Authenticated provider source unavailable.");
+ const data=await response.json() as {total_count?:unknown};
+ if(!Number.isSafeInteger(data.total_count)||Number(data.total_count)<0)
+  throw Error("Malformed provider count; no assets accepted.");
+ return {source:"cloudinary" as const,status:"authenticated_prefix_search" as const,
+  providerVerified:true as const,matchingLookePrefixAssets:data.total_count as number,
+  realModerationVerified:false as const,mediaOwnershipVerified:false as const,
+  approvedCreatorUploads:0 as const};
+}
