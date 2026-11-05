@@ -22,7 +22,7 @@ export type DBColumn={table_name:string;column_name:string};
 export function classifyM31Schema(rows:readonly DBColumn[]){
  const cols=new Map<string,Set<string>>();
  for(const r of rows){
-  if(!/^[a-z_]+$/.test(r.table_name)||!/^[a-z_]+$/.test(r.column_name))
+  if(!/^[a-z_][a-z0-9_]*$/.test(r.table_name)||!/^[a-z_][a-z0-9_]*$/.test(r.column_name))
    continue; // Never interpolate or trust returned metadata as arbitrary SQL.
   if(!cols.has(r.table_name))cols.set(r.table_name,new Set());
   cols.get(r.table_name)!.add(r.column_name);
