@@ -103,6 +103,6 @@ export function compareFullDatabase(primary:FullTableDigest[],restored:FullTable
   tableCount:primary.length,differences,
   allRowsHashed: differences.length===0,operatorRestoreWitnessAccepted:false as const,
   backupOriginVerified:false as const,releaseAuthorized:false as const,
-  note:"Read-only 16-table full-row/schema comparison, not a backup authenticity, common-snapshot, TLS certificate authority, disaster-recovery RTO or independent human witness attestation.",
+  note:"Read-only 17-table full-row/schema comparison, not a backup authenticity, common-snapshot, TLS certificate authority, disaster-recovery RTO or independent human witness attestation.",
  };
 }

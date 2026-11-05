@@ -1,0 +1,124 @@
+name: M25 independent operational acceptance and NO-GO release controls
+on:
+  pull_request:
+    paths:
+      - "db/migrations/010_operator_release_evidence.sql"
+      - "src/app/api/social/ops/m25/**"
+      - "src/lib/beta/m25-*"
+      - "src/components/experience/M25*"
+      - "src/components/experience/m25.css"
+      - "src/app/social/**"
+      - "scripts/social-migrate.ts"
+      - "tests/m25-*"
+      - "deployment/M25_OPERATOR_ACCEPTANCE.md"
+      - "package.json"
+      - ".github/workflows/m25-operational-release-acceptance.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  m25-audit-closed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      LOOKE_PUBLIC_BETA_ENABLED: "false"
+      LOOKE_M4_TRADING_ENABLED: "false"
+      LOOKE_SOCIAL_WRITES_ENABLED: "false"
+      LOOKE_MEDIA_UPLOADS_ENABLED: "false"
+      LOOKE_POINTS_ACCOUNTING_ENABLED: "false"
+      LOOKE_M20_INDEX_WRITES_ENABLED: "false"
+      LOOKE_M23_ACCEPTANCE_WRITES_ENABLED: "false"
+      LOOKE_M24_INCIDENT_WRITES_ENABLED: "false"
+      LOOKE_M25_REVIEW_WRITES_ENABLED: "false"
+      LOOKE_M6_EVIDENCE_ENABLED: "false"
+      LOOKE_M4_MARKETS_JSON: "[]"
+      LOOKE_SOCIAL_APP_ORIGIN: "https://looke-ci.invalid"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: Existing closed-beta preflight and all adversarial pure tests
+        run: |
+          npm run m7:preflight
+          npm test
+      - name: Full TypeScript checks and production-style build
+        run: |
+          npm run typecheck
+          npm run build
+      - name: Genuine read-only Ultra Testnet head probes and unconditional NO-GO report
+        run: |
+          npm run m21:acceptance
+          npm run m22:preflight
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const x=JSON.parse(fs.readFileSync('artifacts/m22/preflight.json','utf8'));
+          if(x.report.releaseDecision!=='NO_GO'||x.report.publicBetaOpen!==false||
+             x.report.mayActivate!==false||x.report.flagsClosed!==true||
+             x.transactionsSent!==0)process.exit(2);
+          console.log('M25 launch is NO-GO pending genuine independent external audit/human acceptance.');
+          NODE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: looke-m25-protected-acceptance-no-go
+          path: |
+            artifacts/m21/acceptance.json
+            artifacts/m22/preflight.json
+          retention-days: 7
+          if-no-files-found: warn
+      - name: Closed Preview denies anonymous reads, review writes and public activity
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run start -- -p 3100 >/tmp/m25-next.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 50); do
+            if curl -fsS http://127.0.0.1:3100/ >/dev/null; then break; fi
+            sleep 1
+          done
+          for route in ops/m25 ops/m24 ops/m23 ops/beta ops/acceptance; do
+            code=$(curl -s -o /tmp/m25-get.json -w "%{http_code}" \
+              http://127.0.0.1:3100/api/social/"$route")
+            echo "M25 closed $route: HTTP=$code"
+            test "$code" = "401"
+          done
+          code=$(curl -s -o /tmp/m25-post.json -w "%{http_code}" \
+            -X POST http://127.0.0.1:3100/api/social/ops/m25 \
+            -H 'Origin: https://looke-ci.invalid' -H 'Content-Type: application/json' \
+            -d '{"action":"record_review"}')
+          echo "M25 independent-review writes closed HTTP=$code"
+          test "$code" = "503"
+          code=$(curl -s -o /tmp/m25-cross-origin.json -w "%{http_code}" \
+            -X POST http://127.0.0.1:3100/api/social/ops/m25 \
+            -H 'Origin: https://evil.example' -H 'Content-Type: application/json' -d '{}')
+          test "$code" = "403"
+          code=$(curl -s -o /tmp/m25-claim.json -w "%{http_code}" \
+            -X POST http://127.0.0.1:3100/api/social/points \
+            -H 'Origin: https://looke-ci.invalid' -H 'Content-Type: application/json' \
+            -d '{"action":"claim"}')
+          test "$code" = "405"
+          curl -fsS http://127.0.0.1:3100/api/experience/media | node -e '
+            let s="";process.stdin.on("data",x=>s+=x).on("end",()=>{
+              const a=JSON.parse(s);
+              if(a.enabled!==false||a.moderationRequired!==true)process.exit(2);
+            });
+          '
+          curl -fsS http://127.0.0.1:3100/api/experience/messaging/readiness | node -e '
+            let s="";process.stdin.on("data",x=>s+=x).on("end",()=>{
+              const a=JSON.parse(s);
+              if(a.liveMessagingEnabled!==false||a.messagesSent!==0)process.exit(2);
+            });
+          '
+          npm run m7:smoke
+      - name: Existing safe non-destructive rollback rehearsal
+        run: npm run m8:rollback-rehearsal
+      - name: Disclose the independent acceptance limits
+        if: always()
+        run: |
+          echo "M25 CI uses disposable wallet signatures and PostgreSQL records. Actual two people, media provider, security auditor and restored backup were not witnessed by CI." >> "$GITHUB_STEP_SUMMARY"
+          echo "A separately signed evidence-reference acknowledgement CANNOT authorize public beta, tokens, claims, social posts, trading, E2EE or production." >> "$GITHUB_STEP_SUMMARY"
+          echo "17 M24 baseline tables have full-row restore comparison tooling; M25's new review ledger requires an additional signed archival decision." >> "$GITHUB_STEP_SUMMARY"
+          echo "No recurring builds, financial broadcasting, release flags, private keys or fabricated on-chain receipts." >> "$GITHUB_STEP_SUMMARY"
