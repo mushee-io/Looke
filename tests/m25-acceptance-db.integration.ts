@@ -9,7 +9,7 @@ import {query,socialDb} from "../src/lib/social/db";
 import {GET as m25GET,POST as m25POST} from "../src/app/api/social/ops/m25/route";
 import {POST as m23POST} from "../src/app/api/social/ops/m23/route";
 import {evidenceMessage} from "../src/lib/beta/m23-witness";
-import {m25ReviewMessage} from "../src/lib/beta/m25-register";
+import {m25ReviewMessage,m25Gate} from "../src/lib/beta/m25-register";
 import {digestFullDatabase,compareFullDatabase,tables} from "../src/lib/beta/m24-full-restore";
 const walletA=privateKeyToAccount(bytesToHex(randomBytes(32)));
 const walletB=privateKeyToAccount(bytesToHex(randomBytes(32)));
@@ -60,7 +60,7 @@ async function signedReview(gate:string,evidenceId:string,
  const source=await query<{evidence_sha256:string}>(`
   SELECT evidence_sha256 FROM social_beta_evidence_signatures WHERE id=$1`,[evidenceId]);
  const body={
-  action:"record_review" as const,gate,evidenceId,
+  action:"record_review" as const,gate:m25Gate.parse(gate),evidenceId,
   externalReviewer:reviewer.address.toLowerCase(),
   decision,observedAt:new Date().toISOString(),
  };
