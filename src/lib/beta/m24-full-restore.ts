@@ -48,7 +48,7 @@ export async function digestFullDatabase(client:Pick<PoolClient,"query">,params:
  const selected=params.tableSpec??tables;
  // Caller-selected extended schema MUST include every original M24 table, and
  // cannot introduce free-form SQL identifiers that could become SQL injection.
- const known=new Set([...tables.map(x=>x[0]),"social_beta_release_reviews"]);
+ const known=new Set([...tables.map(x=>x[0]),"social_beta_release_reviews","social_beta_release_witnesses"]);
  if(selected.length<tables.length || new Set(selected.map(x=>x[0])).size!==selected.length ||
     selected.some(([name,order])=>!known.has(name)||!/^[a-z_]+(?:,[a-z_]+)?$/.test(order)) ||
     tables.some(([name])=>!selected.some(x=>x[0]===name)))

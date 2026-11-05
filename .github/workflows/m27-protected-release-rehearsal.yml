@@ -1,0 +1,121 @@
+name: M27 full-source acceptance evidence and immutable protected release rehearsal
+on:
+  pull_request:
+    paths:
+      - "src/lib/beta/m27-*"
+      - "src/lib/beta/m24-full-restore.ts"
+      - "src/lib/social/m20-reconcile.ts"
+      - "src/app/api/social/ops/m27/**"
+      - "src/components/experience/M27*"
+      - "src/components/experience/m27.css"
+      - "src/app/social/**"
+      - "scripts/m27-*"
+      - "tests/m27-*"
+      - "deployment/M27_PROTECTED_RELEASE_REHEARSAL.md"
+      - "package.json"
+      - ".github/workflows/m27-protected-release-rehearsal.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  m27-closed-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      LOOKE_PUBLIC_BETA_ENABLED: "false"
+      LOOKE_M4_TRADING_ENABLED: "false"
+      LOOKE_SOCIAL_WRITES_ENABLED: "false"
+      LOOKE_MEDIA_UPLOADS_ENABLED: "false"
+      LOOKE_POINTS_ACCOUNTING_ENABLED: "false"
+      LOOKE_M20_INDEX_WRITES_ENABLED: "false"
+      LOOKE_M23_ACCEPTANCE_WRITES_ENABLED: "false"
+      LOOKE_M24_INCIDENT_WRITES_ENABLED: "false"
+      LOOKE_M25_REVIEW_WRITES_ENABLED: "false"
+      LOOKE_M26_WITNESS_WRITES_ENABLED: "false"
+      LOOKE_M6_EVIDENCE_ENABLED: "false"
+      LOOKE_M4_MARKETS_JSON: "[]"
+      LOOKE_SOCIAL_APP_ORIGIN: "https://looke-ci.invalid"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: Existing safe preflight and adversarial pure M27 security
+        run: |
+          npm run m7:preflight
+          npm test
+      - name: Typecheck and complete closed production-style build
+        run: |
+          npm run typecheck
+          npm run build
+      - name: Genuine Ultra read-only Testnet observations and explicit NO-GO
+        run: |
+          npm run m21:acceptance
+          npm run m22:preflight
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const x=JSON.parse(fs.readFileSync('artifacts/m22/preflight.json','utf8'));
+          if(x.report.releaseDecision!=='NO_GO'||x.report.publicBetaOpen!==false||
+             x.report.mayActivate!==false||x.report.flagsClosed!==true||
+             x.transactionsSent!==0)process.exit(2);
+          console.log('M27 stays NO-GO. No operator credentials, human witness or live restoration are claimed.');
+          NODE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: looke-m27-readonly-protected-no-go
+          path: |
+            artifacts/m21/acceptance.json
+            artifacts/m22/preflight.json
+          retention-days: 7
+          if-no-files-found: warn
+      - name: Anonymous access, write denial, claims, messaging and media safety
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run start -- -p 3100 >/tmp/m27-next.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 50); do
+            if curl -fsS http://127.0.0.1:3100/ >/dev/null; then break; fi
+            sleep 1
+          done
+          for route in ops/m27 ops/m26 ops/m25 ops/m24 ops/acceptance; do
+            code=$(curl -s -o /tmp/m27-private.json -w "%{http_code}" \
+              http://127.0.0.1:3100/api/social/"$route")
+            echo "M27 protected $route HTTP=$code"
+            test "$code" = "401"
+          done
+          code=$(curl -s -o /tmp/m27-post.json -w "%{http_code}" \
+            -X POST http://127.0.0.1:3100/api/social/ops/m27 \
+            -H 'Origin: https://looke-ci.invalid' -H 'Content-Type: application/json' \
+            -d '{"action":"release"}')
+          test "$code" = "405"
+          code=$(curl -s -o /tmp/m27-claim.json -w "%{http_code}" \
+            -X POST http://127.0.0.1:3100/api/social/points \
+            -H 'Origin: https://looke-ci.invalid' -H 'Content-Type: application/json' \
+            -d '{"action":"claim"}')
+          test "$code" = "405"
+          curl -fsS http://127.0.0.1:3100/api/experience/media | node -e '
+            let s="";process.stdin.on("data",x=>s+=x).on("end",()=>{
+              const a=JSON.parse(s);
+              if(a.enabled!==false||a.moderationRequired!==true)process.exit(2);
+            });
+          '
+          curl -fsS http://127.0.0.1:3100/api/experience/messaging/readiness | node -e '
+            let s="";process.stdin.on("data",x=>s+=x).on("end",()=>{
+              const a=JSON.parse(s);
+              if(a.liveMessagingEnabled!==false||a.messagesSent!==0)process.exit(2);
+            });
+          '
+          npm run m7:smoke
+      - name: Existing non-destructive rollback preflight
+        run: npm run m8:rollback-rehearsal
+      - name: Explicit external evidence disclaimer
+        if: always()
+        run: |
+          echo "M27 CI uses real read-only RPC observations and DISPOSABLE PostgreSQL/wallet fixtures, not independently witnessed human acceptance." >> "$GITHUB_STEP_SUMMARY"
+          echo "The full 19-table recovery audit requires a separate actual TLS-restored database and independent human witness. CI does not execute a restoration." >> "$GITHUB_STEP_SUMMARY"
+          echo "A read-only Vercel alias rehearsal requires an actual operator token, intentionally unavailable to this workflow; CI does not claim to verify it." >> "$GITHUB_STEP_SUMMARY"
+          echo "Production, beta, social/media writes, Points, mint, claims, trading, E2EE and recurring automations remain unchanged/disabled." >> "$GITHUB_STEP_SUMMARY"
