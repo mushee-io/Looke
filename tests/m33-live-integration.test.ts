@@ -4,6 +4,7 @@ import {readFileSync} from "node:fs";
 import {NextRequest} from "next/server";
 import {parseM33ProofInput,m33Configuration,m33ProofResult,M33InvalidInput} from "../src/lib/beta/m33-live-integration";
 import {GET} from "../src/app/api/experience/m33-live/route";
+import {ULTRA_NATIVE_TESTNET} from "../src/lib/ultra-native";
 const address="0x1111111111111111111111111111111111111111";
 const tx="0x"+"a".repeat(64);
 const parse=(q:string)=>parseM33ProofInput(new URLSearchParams(q));
@@ -42,7 +43,7 @@ test("Source proof response is bounded and never infers a human or release autho
  assert.throws(()=>m33ProofResult({kind:"factory",address,tx},
   {chainId:18881,address,transactionHash:tx,confirmations:1}));
  const native=m33ProofResult({kind:"uniq",owner:"alice",factoryId:"1",tokenId:"2"},{
-  owner:"alice",factoryId:"1",tokenId:"2",chainId:"canonical-native-chain",
+  owner:"alice",factoryId:"1",tokenId:"2",chainId:ULTRA_NATIVE_TESTNET.chainId,
   irreversibleBlock:100,hugeUntrustedMetadata:"hide"});
  assert.equal(native.verified,true);
  assert.ok(!JSON.stringify(native).includes("hide"));
