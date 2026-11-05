@@ -90,3 +90,10 @@ jobs:
           LOOKE_SOCIAL_APP_ORIGIN: http://localhost:3000
           LOOKE_SOCIAL_WRITES_ENABLED: 'true'
           LOOKE_POINTS_ACCOUNTING_ENABLED: 'true'
+      - name: Verify M20 indexed creator events, transactional replay and real Points reconciliation
+        run: npm run test:m20-db
+        env:
+          DATABASE_URL: postgres://looke_ci:ci_only_password@localhost:5432/looke_social_ci
+          LOOKE_SOCIAL_APP_ORIGIN: http://localhost:3000
+          LOOKE_SOCIAL_WRITES_ENABLED: 'true'
+          LOOKE_M20_INDEX_WRITES_ENABLED: 'true'

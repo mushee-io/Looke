@@ -1,6 +1,6 @@
 {
   "name": "looke-ultra",
-  "version": "0.19.0",
+  "version": "0.20.0",
   "private": true,
   "license": "MIT",
   "engines": {
@@ -39,7 +39,8 @@
     "test:m16-db": "node --import tsx --test tests/m16-social-db.integration.ts",
     "test:m17-db": "node --import tsx --test tests/m17-engagement-db.integration.ts",
     "test:m18-db": "node --import tsx --test tests/m18-creator-db.integration.ts",
-    "test:m19-db": "node --import tsx --test tests/m19-points-db.integration.ts"
+    "test:m19-db": "node --import tsx --test tests/m19-points-db.integration.ts",
+    "test:m20-db": "node --import tsx --test tests/m20-index-db.integration.ts"
   },
   "dependencies": {
     "next": "^15.5.0",
