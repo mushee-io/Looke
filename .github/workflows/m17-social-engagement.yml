@@ -1,0 +1,72 @@
+name: M17 real creator engagement and account-scoped activity
+on:
+  pull_request:
+    paths:
+      - "src/app/api/social/**"
+      - "src/app/api/experience/notifications/**"
+      - "src/app/social/**"
+      - "src/components/experience/**"
+      - "src/lib/social/**"
+      - "db/migrations/004_creator_engagement.sql"
+      - "scripts/social-migrate.ts"
+      - "tests/m17-*"
+      - "package.json"
+      - "deployment/M17_CREATOR_ENGAGEMENT.md"
+      - ".github/workflows/m17-social-engagement.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  engagement-security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    env:
+      LOOKE_PUBLIC_BETA_ENABLED: "false"
+      LOOKE_M4_TRADING_ENABLED: "false"
+      LOOKE_SOCIAL_WRITES_ENABLED: "false"
+      LOOKE_M6_EVIDENCE_ENABLED: "false"
+      LOOKE_MEDIA_UPLOADS_ENABLED: "false"
+      LOOKE_M4_MARKETS_JSON: "[]"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: Closed-beta and no-broadcast flags
+        run: npm run m7:preflight
+      - name: Complete pure security regression suite
+        run: npm test
+      - name: TypeScript and Next.js production build
+        run: |
+          npm run typecheck
+          npm run build
+      - name: Closed-preview smoke (anonymous activity and messaging unavailable)
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run start -- -p 3100 >/tmp/m17-next.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 50); do
+            if curl -fsS http://127.0.0.1:3100/ >/dev/null; then break; fi
+            sleep 1
+          done
+          status=$(curl -s -o /tmp/m17-get.json -w "%{http_code}"             http://127.0.0.1:3100/api/social/engagement?view=activity)
+          test "$status" = "401"
+          status=$(curl -s -o /tmp/m17-post.json -w "%{http_code}"             -X POST http://127.0.0.1:3100/api/social/engagement             -H 'Origin: http://localhost:3000'             -H 'Content-Type: application/json'             -d '{"action":"like","postId":"11111111-1111-4111-8111-111111111111"}')
+          test "$status" = "503"
+          curl -fsS http://127.0.0.1:3100/api/experience/messaging/readiness | node -e '
+            let s="";process.stdin.on("data",x=>s+=x).on("end",()=>{
+              const v=JSON.parse(s);if(v.liveMessagingEnabled!==false||v.messagesSent!==0)process.exit(2);
+            });
+          '
+          npm run m7:smoke
+      - name: In-memory rollback rehearsal
+        run: npm run m8:rollback-rehearsal
+      - name: Publish explicit safety status
+        if: always()
+        run: |
+          echo "M17 uses only genuine user-scoped Postgres engagement records; no synthetic likes or follows." >> "$GITHUB_STEP_SUMMARY"
+          echo "Likes and reposts cannot escape moderation/block filters; bookmarks are private." >> "$GITHUB_STEP_SUMMARY"
+          echo "Public beta, social writes, token transactions and private messages remain disabled." >> "$GITHUB_STEP_SUMMARY"

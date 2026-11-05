@@ -1,6 +1,6 @@
 {
   "name": "looke-ultra",
-  "version": "0.16.0",
+  "version": "0.17.0",
   "private": true,
   "license": "MIT",
   "engines": {
@@ -36,7 +36,8 @@
     "m11:acceptance": "tsx scripts/m11-acceptance.ts",
     "m13:acceptance": "tsx scripts/m13-acceptance.ts",
     "test:m15-db": "node --import tsx --test tests/m15-media-db.integration.ts",
-    "test:m16-db": "node --import tsx --test tests/m16-social-db.integration.ts"
+    "test:m16-db": "node --import tsx --test tests/m16-social-db.integration.ts",
+    "test:m17-db": "node --import tsx --test tests/m17-engagement-db.integration.ts"
   },
   "dependencies": {
     "next": "^15.5.0",

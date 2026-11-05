@@ -6,6 +6,8 @@ import type {DiscoverFeed,DiscoverMarket} from "../../lib/discover";
 import {compactOnChainNumber} from "../../lib/discover";
 import {shortAddress, testnetAddressUrl} from "../../lib/ultra";
 import {AssetEvidence,ApprovedPostMedia} from "./AssetEvidence";
+import {EngagementActions} from "./EngagementActions";
+import "./m17.css";
 import "./m15.css";
 import "./m16.css";
 
@@ -14,13 +16,16 @@ type SocialPost={
   asset_id:string|null;asset_type:string|null;asset_chain:string|null;
   avatar_url:string|null;created_at:string;comment_count:number;follower_count:number;
   media_url?:string|null;media_kind?:string|null;
+  event_id?:string;reposted_by_handle?:string|null;
+  like_count:number;repost_count:number;liked_by_me:boolean;
+  reposted_by_me:boolean;bookmarked_by_me:boolean;
 };
 type SocialProfile={
   address:string;handle:string;display_name:string;bio:string;avatar_url:string|null;
   follower_count?:number;following_count?:number;created_at?:string;
 };
-type FeedResponse={posts:SocialPost[];nextCursor:string|null;error?:string};
-type EventType="Comments"|"Follows";
+type FeedResponse={posts:SocialPost[];nextCursor:string|null;authenticated?:boolean;error?:string};
+type EventType="Comments"|"Follows"|"Likes"|"Reposts";
 type NotificationEvent={id:string;type:EventType;actorHandle:string;actorName:string;
   text:string;timestamp:string;postId:string|null;unread?:boolean};
 type NotificationResult={authenticated:boolean;events:NotificationEvent[];unreadCount?:number;error?:string};
@@ -50,6 +55,7 @@ function ProfileAvatar({name,large=false}:{name:string;large?:boolean}){
 export function TrendingFeed({search,onCreate}:{search:string;onCreate:()=>void}){
   const [markets,setMarkets]=useState<DiscoverMarket[]>([]);
   const [posts,setPosts]=useState<SocialPost[]>([]);
+  const [socialSignedIn,setSocialSignedIn]=useState(false);
   const [cursor,setCursor]=useState<string|null>(null);
   const [marketNotice,setMarketNotice]=useState("");
   const [socialNotice,setSocialNotice]=useState("");
@@ -72,9 +78,10 @@ export function TrendingFeed({search,onCreate}:{search:string;onCreate:()=>void}
       if(!response.ok)throw new Error("The social database is not ready for public posts.");
       const data=await response.json() as FeedResponse;
       if(!Array.isArray(data.posts))throw new Error("Unverified feed response.");
-      setPosts(old=>nextCursor?[...old,...data.posts.filter(p=>!old.some(x=>x.id===p.id))]:data.posts);
+      setPosts(old=>nextCursor?[...old,...data.posts.filter(p=>!old.some(x=>x.event_id===p.event_id))]:data.posts);
+      setSocialSignedIn(Boolean(data.authenticated));
       setCursor(data.nextCursor);setSocialNotice("");
-    }catch(e){if(!nextCursor){setPosts([]);setCursor(null);}
+    }catch(e){if(!nextCursor){setPosts([]);setCursor(null);setSocialSignedIn(false);}
       setSocialNotice(e instanceof Error?e.message:"Social feed unavailable.");}
     finally{setBusy(false);}
   },[feedMode,serverSearch]);
@@ -120,7 +127,8 @@ export function TrendingFeed({search,onCreate}:{search:string;onCreate:()=>void}
         <Link href="/social">Explore social ↗</Link>
         <button onClick={onCreate} type="button">Create something ＋</button>
       </div>
-    </div>:filtered.map(post=><article className="lk-feed-post" key={post.id}>
+    </div>:filtered.map(post=><article className="lk-feed-post" key={post.event_id??post.id}>
+      {post.reposted_by_handle&&<div className="lk-m17-repost-banner">↻ @{post.reposted_by_handle} reposted</div>}
       <div className="lk-feed-post-head">
         <ProfileAvatar name={post.display_name||post.handle}/>
         <div><strong>{post.display_name||post.handle}</strong><small>@{post.handle}</small></div>
@@ -138,7 +146,8 @@ export function TrendingFeed({search,onCreate}:{search:string;onCreate:()=>void}
       {post.asset_id&&post.asset_type&&
         <AssetEvidence kind={post.asset_type==="token"?"token":"uniq"} id={post.asset_id}/>}
       <div className="lk-post-actions">
-        <span>♡</span>
+        <EngagementActions postId={post.id} initial={post} authenticated={socialSignedIn}
+          onChanged={()=>{void load();}}/>
         <Link href="/social">◯ {post.comment_count} comments</Link>
         <Link href="/social">↗ Share</Link>
         <span className="lk-post-verified">Real database post</span>
@@ -192,7 +201,7 @@ export function MessagesPanel(){
   </div>;
 }
 
-const NOTIFICATION_TABS=["All","Subscriptions","Mentions","Trades","Comments","Follows","Other"] as const;
+const NOTIFICATION_TABS=["All","Subscriptions","Mentions","Trades","Comments","Follows","Likes","Reposts","Other"] as const;
 type NotificationTab=typeof NOTIFICATION_TABS[number];
 export function NotificationsPanel({onCreate}:{onCreate:()=>void}){
   const [tab,setTab]=useState<NotificationTab>("All");
@@ -245,7 +254,7 @@ export function NotificationsPanel({onCreate}:{onCreate:()=>void}){
       <button type="button" onClick={()=>setSettings(v=>!v)} aria-label="Notification settings">⚙</button></div></div>
     {checkedAt&&<small className="lk-m15-checked">Checked {new Date(checkedAt).toLocaleTimeString()} · no invented alerts</small>}
     {settings&&<div className="lk-notification-settings"><strong>Notification preferences</strong>
-      <p>On-platform notifications show actual social follows and comments. Push/email subscriptions are not activated.</p>
+      <p>On-platform notifications show genuine follows, comments, likes and reposts. Push/email subscriptions are not activated.</p>
       <button type="button" onClick={()=>setSettings(false)}>Close</button></div>}
     <div className="lk-notification-tabs" role="tablist" aria-label="Notification categories">
       {NOTIFICATION_TABS.map(t=><button type="button" key={t} role="tab" aria-selected={tab===t}
@@ -330,7 +339,7 @@ export function ProfilePanel({address,onCreate}:{address:string;onCreate:()=>voi
     {tab==="Posts"?(posts.length?
       <><div className="lk-profile-posts">{posts.map(p=><article key={p.id}><p>{p.body}</p>
         <ApprovedPostMedia url={p.media_url??null} kind={p.media_kind??null}/>
-        <small>{relativeDate(p.created_at)} · {p.comment_count} replies</small></article>)}</div>
+        <small>{relativeDate(p.created_at)} · {p.comment_count} replies · {p.like_count??0} likes · {p.repost_count??0} reposts</small></article>)}</div>
       {nextProfileCursor&&<button className="lk-m15-profile-load" type="button"
         disabled={moreBusy} onClick={()=>{void loadMoreProfilePosts();}}>
         {moreBusy?"Loading…":"Load older verified posts ↓"}</button>}</>:

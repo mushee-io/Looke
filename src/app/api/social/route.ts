@@ -29,28 +29,57 @@ export async function GET(req:NextRequest){
     if(action==="feed"){
       const scope=p.get("scope")==="following"?"following":"global";
       const search=z.string().trim().max(64).parse(p.get("search")??"").toLowerCase();
+      // Every repost is a genuine, uniquely ordered event referencing its original post.
+      // A single UUID cursor works across creator posts and one-per-wallet reposts.
       const result=await query(`
+        WITH events AS (
+          SELECT p.id AS event_id,p.id AS post_id,p.created_at AS event_at,
+            NULL::text AS reposter FROM social_posts p
+          UNION ALL
+          SELECT r.id AS event_id,r.post_id,r.created_at AS event_at,
+            r.actor AS reposter FROM social_post_reposts r
+        )
         SELECT p.id,p.author,p.body,p.asset_chain,p.asset_type,p.asset_id,p.created_at,
+          e.event_id,e.event_at,rep.handle AS reposted_by_handle,
           CASE WHEN p.media_status='approved' THEN p.media_url ELSE NULL END AS media_url,
           CASE WHEN p.media_status='approved' THEN p.media_kind ELSE NULL END AS media_kind,
           pr.handle,pr.display_name,pr.avatar_url,
-          (SELECT count(*)::integer FROM social_comments c WHERE c.post_id=p.id AND c.hidden=false) AS comment_count,
-          (SELECT count(*)::integer FROM social_follows f WHERE f.followed=p.author) AS follower_count
-        FROM social_posts p JOIN social_profiles pr ON pr.address=p.author
+          (SELECT count(*)::integer FROM social_comments c
+            WHERE c.post_id=p.id AND c.hidden=false) AS comment_count,
+          (SELECT count(*)::integer FROM social_follows f WHERE f.followed=p.author) AS follower_count,
+          (SELECT count(*)::integer FROM social_post_likes l WHERE l.post_id=p.id) AS like_count,
+          (SELECT count(*)::integer FROM social_post_reposts r WHERE r.post_id=p.id) AS repost_count,
+          EXISTS(SELECT 1 FROM social_post_likes l WHERE l.post_id=p.id AND l.actor=$2) AS liked_by_me,
+          EXISTS(SELECT 1 FROM social_post_reposts r WHERE r.post_id=p.id AND r.actor=$2) AS reposted_by_me,
+          EXISTS(SELECT 1 FROM social_post_bookmarks b WHERE b.post_id=p.id AND b.actor=$2) AS bookmarked_by_me
+        FROM events e
+        JOIN social_posts p ON p.id=e.post_id
+        JOIN social_profiles pr ON pr.address=p.author
+        LEFT JOIN social_profiles rep ON rep.address=e.reposter
         WHERE p.hidden=false AND p.deleted_at IS NULL AND pr.suspended=false
           AND (p.media_url IS NULL OR p.media_status='approved')
-          AND ($1::uuid IS NULL OR (p.created_at,p.id) <
-            (SELECT created_at,id FROM social_posts WHERE id=$1))
+          AND (e.reposter IS NULL OR rep.suspended=false)
+          AND ($1::uuid IS NULL OR (e.event_at,e.event_id) <
+            (SELECT event_at,event_id FROM events WHERE event_id=$1))
           AND ($2::text IS NULL OR NOT EXISTS(
             SELECT 1 FROM social_blocks b WHERE
-              (b.blocker=$2 AND b.blocked=p.author) OR (b.blocked=$2 AND b.blocker=p.author)))
-          AND ($3::text <> 'following' OR ($2::text IS NOT NULL AND
-            (p.author=$2 OR EXISTS(SELECT 1 FROM social_follows f WHERE f.follower=$2 AND f.followed=p.author))))
+              (b.blocker=$2 AND b.blocked=p.author) OR (b.blocked=$2 AND b.blocker=p.author)
+              OR (e.reposter IS NOT NULL AND
+                ((b.blocker=$2 AND b.blocked=e.reposter) OR
+                 (b.blocked=$2 AND b.blocker=e.reposter)))))
+          AND ($3::text <> 'following' OR ($2::text IS NOT NULL AND (
+            p.author=$2 OR e.reposter=$2
+            OR EXISTS(SELECT 1 FROM social_follows f WHERE
+              f.follower=$2 AND (f.followed=p.author OR f.followed=e.reposter)))))
           AND ($4::text='' OR position($4::text in lower(p.body))>0
             OR position($4::text in lower(pr.handle))>0
-            OR position($4::text in lower(pr.display_name))>0)
-        ORDER BY p.created_at DESC,p.id DESC LIMIT 21`,[cursor,wallet,scope,search]);
-      return cacheData({posts:result.rows.slice(0,20),nextCursor:result.rows.length>20?result.rows[19]?.id:null});
+            OR position($4::text in lower(pr.display_name))>0
+            OR position($4::text in lower(COALESCE(rep.handle,'')))>0)
+        ORDER BY e.event_at DESC,e.event_id DESC LIMIT 21
+      `,[cursor,wallet,scope,search]);
+      return cacheData({posts:result.rows.slice(0,20),
+        nextCursor:result.rows.length>20?result.rows[19]?.event_id:null,
+        authenticated:Boolean(current&&!current.suspended)});
     }
     if(action==="profile"){
       const id=handle.parse(p.get("handle")||"");

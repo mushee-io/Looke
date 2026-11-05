@@ -7,13 +7,22 @@ import "./social.css";
 import "../../components/experience/m15.css";
 import "../../components/experience/m16.css";
 import {AssetEvidence,ApprovedPostMedia} from "../../components/experience/AssetEvidence";
+import {EngagementActions} from "../../components/experience/EngagementActions";
+import "../../components/experience/m17.css";
 
 type Wallet = {request:(args:{method:string;params?:unknown[]})=>Promise<unknown>};
 type User = {address:string;handle:string;suspended:boolean};
 type Profile = {address:string;handle:string;display_name:string;bio:string;avatar_url:string|null;created_at:string;follower_count?:number;following_count?:number;is_following?:boolean};
-type Post = {id:string;author:string;body:string;asset_chain:string|null;asset_type:string|null;asset_id:string|null;media_url?:string|null;media_kind?:string|null;created_at:string;handle:string;display_name:string;avatar_url:string|null;comment_count:number;follower_count:number};
+type Post = {id:string;author:string;body:string;asset_chain:string|null;asset_type:string|null;asset_id:string|null;media_url?:string|null;media_kind?:string|null;created_at:string;handle:string;display_name:string;avatar_url:string|null;comment_count:number;follower_count:number;
+ event_id?:string;reposted_by_handle?:string|null;like_count:number;repost_count:number;
+ liked_by_me:boolean;reposted_by_me:boolean;bookmarked_by_me:boolean};
 type Comment = {id:string;post_id:string;author:string;body:string;created_at:string;handle:string;display_name:string};
-type Tab = "feed"|"discover"|"profile"|"messages";
+type Tab = "feed"|"discover"|"profile"|"activity"|"messages";
+type ActivityFilter="all"|"likes"|"reposts"|"bookmarks"|"following";
+type ActivityEvent={event_id:string;kind:"likes"|"reposts"|"bookmarks";created_at:string;
+ post_id:string;body:string;handle:string;display_name:string;author:string;
+ media_url:string|null;media_kind:string|null};
+type FollowingProfile={address:string;handle:string;display_name:string;created_at:string;avatar_url:string|null};
 
 function injected():Wallet|null {return typeof window==="undefined"?null:((window as Window&{ethereum?:Wallet}).ethereum??null);}
 function errText(error:unknown){return error instanceof Error?error.message:"Request failed. Try again.";}
@@ -46,6 +55,10 @@ function AssetBadge({item}:{item:Post}){
 export default function SocialPage(){
   const [user,setUser]=useState<User|null>(null);
   const [tab,setTab]=useState<Tab>("feed");
+  const [activityFilter,setActivityFilter]=useState<ActivityFilter>("all");
+  const [activityEvents,setActivityEvents]=useState<ActivityEvent[]>([]);
+  const [followingProfiles,setFollowingProfiles]=useState<FollowingProfile[]>([]);
+  const [activityNotice,setActivityNotice]=useState("");
   const [mode,setMode]=useState<"global"|"following">("global");
   const [working,setWorking]=useState(false);
   const [notice,setNotice]=useState("");
@@ -176,6 +189,30 @@ export default function SocialPage(){
     }catch(error){if(!append){setFeed([]);setCursor(null);}setBackendStatus("unconfigured");setNotice(errText(error));}
   },[mode,feedSearch]);
 
+  const loadPersonalActivity=useCallback(async()=>{
+    if(!user?.address){setActivityEvents([]);setFollowingProfiles([]);return;}
+    setActivityNotice("");
+    try{
+      const params=new URLSearchParams();
+      params.set("view",activityFilter==="following"?"following":"activity");
+      if(activityFilter!=="following")params.set("kind",activityFilter);
+      const response=await fetch("/api/social/engagement?"+params.toString(),
+        {cache:"no-store",credentials:"same-origin"});
+      const value=await response.json() as {
+        events?:ActivityEvent[];profiles?:FollowingProfile[];error?:string;
+      };
+      if(!response.ok)throw new Error(value.error||"Your creator activity is unavailable.");
+      if(activityFilter==="following"){
+        if(!Array.isArray(value.profiles))throw new Error("Unverified following data.");
+        setFollowingProfiles(value.profiles);setActivityEvents([]);
+      }else{
+        if(!Array.isArray(value.events))throw new Error("Unverified creator activity.");
+        setActivityEvents(value.events);setFollowingProfiles([]);
+      }
+    }catch(e){setActivityEvents([]);setFollowingProfiles([]);
+      setActivityNotice(errText(e));}
+  },[user?.address,activityFilter]);
+  useEffect(()=>{if(tab==="activity")void loadPersonalActivity();},[tab,loadPersonalActivity]);
   const lookupDirectory=useCallback(async(value:string)=>{
     try{
       const r=await get<{profiles:Profile[]}>({action:"directory",search:value});
@@ -225,7 +262,8 @@ export default function SocialPage(){
 
   async function signOut(){
     setWorking(true);setNotice("");
-    try{await post("auth",{action:"logout"});setUser(null);setMyProfile(null);setFocused(null);setNotice("Signed out.");}
+    try{await post("auth",{action:"logout"});setUser(null);setMyProfile(null);setFocused(null);
+      setActivityEvents([]);setFollowingProfiles([]);setNotice("Signed out.");}
     catch(e){setNotice(errText(e));}finally{setWorking(false);}
   }
 
@@ -313,7 +351,7 @@ export default function SocialPage(){
       <aside className="social-aside">
         <span className="social-eyebrow">LOOKE COMMUNITY</span>
         <nav>
-          {([["feed","⌂ Feed"],["discover","◇ Discover"],["profile","◎ Profile"],["messages","▤ Messages"]] as const)
+          {([["feed","⌂ Feed"],["discover","◇ Discover"],["profile","◎ Profile"],["activity","♡ My Activity"],["messages","▤ Messages"]] as const)
             .map(([key,label])=><button key={key} type="button" className={tab===key?"selected":""} onClick={()=>{setTab(key);setFocused(null);}}>{label}<span>↗</span></button>)}
         </nav>
         <div className="social-sidefoot"><strong>For the creators.</strong><p>Follow projects, talk about tokens and Uniq NFTs, and build real communities.</p>
@@ -321,7 +359,7 @@ export default function SocialPage(){
       </aside>
       <section className="social-main">
         <div className="social-overline">M5 / SOCIAL NETWORK FOUNDATION</div>
-        <div className="social-hero"><h1>{tab==="feed"?"People. Ideas. Culture.":tab==="discover"?"Find your people.":tab==="messages"?"Conversations.":"Your identity."}</h1>
+        <div className="social-hero"><h1>{tab==="feed"?"People. Ideas. Culture.":tab==="discover"?"Find your people.":tab==="messages"?"Conversations.":tab==="activity"?"Your real activity.":"Your identity."}</h1>
           <p>Share what you create. Discover the people shaping Ultra. All displayed activity comes from the Looke social database.</p></div>
         {backendStatus==="unconfigured"&&<div className="social-warning"><strong>Backend not ready.</strong> Social database or sign-in configuration is unavailable. No demo profiles or fake posts are shown.</div>}
         {notice&&<div className="social-notice" role="status">{notice}</div>}
@@ -367,15 +405,18 @@ export default function SocialPage(){
             <button className={mode==="global"?"chosen":""} onClick={()=>setMode("global")}>Latest</button>
             <button className={mode==="following"?"chosen":""} disabled={!user} onClick={()=>setMode("following")}>Following</button></div></div>
           {feed.length===0?<div className="social-empty">No real posts to show yet. New posts will appear after a creator publishes and the backend is enabled.</div>
-            :feed.map(item=><article key={item.id} className="social-card social-post">
+            :feed.map(item=><article key={item.event_id??item.id} className="social-card social-post">
+              {item.reposted_by_handle&&<div className="lk-m17-repost-banner">↻ @{item.reposted_by_handle} reposted this creator post</div>}
               <div className="social-post-top"><div className="social-avatar">{(item.display_name||item.handle).slice(0,1).toUpperCase()}</div><div>
                 <button onClick={()=>void openProfile(item.handle)} className="social-handle">{item.display_name||item.handle} <span>@{item.handle}</span></button>
-                <small>{dateLabel(item.created_at)} · {abbrev(item.author)}</small></div></div>
+                <small>{dateLabel(item.created_at)} · {abbrev(item.author)} · {item.follower_count} followers</small></div></div>
               <p className="social-post-body">{item.body}</p>
               <ApprovedPostMedia url={item.media_url??null} kind={item.media_kind??null}/>
               <AssetBadge item={item}/>
               {item.asset_type&&item.asset_id&&
                 <AssetEvidence kind={item.asset_type==="token"?"token":"uniq"} id={item.asset_id}/>}
+              <EngagementActions postId={item.id} initial={item}
+                authenticated={!!user} onChanged={()=>{void loadFeed();}}/>
               <div className="social-post-actions">
                 <button onClick={()=>void viewComments(item.id)}>◉ {item.comment_count} comments</button>
                 <button disabled={!user||user.address===item.author||working} onClick={()=>void reportPost(item.id)}>⚑ Report</button>
@@ -400,6 +441,32 @@ export default function SocialPage(){
             <button onClick={()=>void openProfile(p.handle)}>View profile ↗</button>
           </div>)}
         </div>}
+        {tab==="activity"&&(user?<section className="social-card">
+          <div className="social-card-title"><h2>My creator activity</h2><span>WALLET-SCOPED · REAL RECORDS</span></div>
+          <p className="social-muted">Likes, reposts and saved posts belong to your current signed-in wallet. Bookmarks are private and never counted publicly.</p>
+          <div className="lk-m17-activity-switch" aria-label="Activity category">
+            {(["all","likes","reposts","bookmarks","following"] as const).map(kind=>
+              <button type="button" key={kind} className={activityFilter===kind?"active":""}
+                onClick={()=>setActivityFilter(kind)}>
+                {kind==="all"?"All":kind==="following"?"Following":kind==="bookmarks"?"Saved":kind==="reposts"?"Reposts":"Likes"}
+              </button>)}
+          </div>
+          {activityNotice&&<p role="status" className="social-warning">{activityNotice}</p>}
+          {activityFilter==="following"?(followingProfiles.length?
+            followingProfiles.map(p=><div key={p.address} className="lk-m17-activity-row">
+              <strong>@{p.handle}</strong><p>{p.display_name}</p>
+              <small>Following since {dateLabel(p.created_at)}</small>
+              <button type="button" onClick={()=>void openProfile(p.handle)}>View creator ↗</button>
+            </div>):<div className="social-empty">You are not following any visible creators yet.</div>):
+            (activityEvents.length?activityEvents.map(item=>
+              <article key={item.event_id} className="lk-m17-activity-row">
+                <strong>{item.kind==="likes"?"♥ Liked":item.kind==="reposts"?"↻ Reposted":"▣ Saved"} · @{item.handle}</strong>
+                <p>{item.body}</p>
+                <ApprovedPostMedia url={item.media_url} kind={item.media_kind}/>
+                <small>{dateLabel(item.created_at)} · verified account activity</small>
+                <button type="button" onClick={()=>void openProfile(item.handle)}>View creator ↗</button>
+              </article>):<div className="social-empty">No real {activityFilter==="all"?"account activity":activityFilter} found for this wallet.</div>)}
+        </section>:<div className="social-signin-note">Sign in with your Ultra EVM Testnet wallet to view your private bookmarks and engagement history.</div>)}
         {tab==="profile"&&(focused?<div className="social-card social-profile">
           <div className="social-profile-avatar">{(focused.display_name||focused.handle).slice(0,1).toUpperCase()}</div>
           <h2>{focused.display_name}</h2><span>@{focused.handle}</span><p>{focused.bio||"This creator hasn't written a bio yet."}</p>
