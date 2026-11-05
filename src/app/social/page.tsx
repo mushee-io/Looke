@@ -24,6 +24,7 @@ import {M29OperatorEvidence} from "../../components/experience/M29OperatorEviden
 import {M30OperatorRun} from "../../components/experience/M30OperatorRun";
 import {M31SourcesLab} from "../../components/experience/M31SourcesLab";
 import {M32ReconciliationLab} from "../../components/experience/M32ReconciliationLab";
+import {M33LiveIntegrationLab} from "../../components/experience/M33LiveIntegrationLab";
 import "../../components/experience/m17.css";
 
 type Wallet = {request:(args:{method:string;params?:unknown[]})=>Promise<unknown>};
@@ -33,7 +34,7 @@ type Post = {id:string;author:string;body:string;asset_chain:string|null;asset_t
  event_id?:string;reposted_by_handle?:string|null;like_count:number;repost_count:number;
  liked_by_me:boolean;reposted_by_me:boolean;bookmarked_by_me:boolean};
 type Comment = {id:string;post_id:string;author:string;body:string;created_at:string;handle:string;display_name:string};
-type Tab = "feed"|"discover"|"profile"|"activity"|"analytics"|"points"|"points-review"|"integrity"|"backend"|"security"|"beta"|"acceptance"|"audit"|"operations"|"verification"|"rehearsal"|"real-evidence"|"operator-evidence"|"operator-run"|"source-gates"|"source-reconcile"|"controls"|"moderation"|"messages";
+type Tab = "feed"|"discover"|"profile"|"activity"|"analytics"|"points"|"points-review"|"integrity"|"backend"|"security"|"beta"|"acceptance"|"audit"|"operations"|"verification"|"rehearsal"|"real-evidence"|"operator-evidence"|"operator-run"|"source-gates"|"source-reconcile"|"live-integrations"|"controls"|"moderation"|"messages";
 type ActivityFilter="all"|"likes"|"reposts"|"bookmarks"|"following";
 type ActivityEvent={event_id:string;kind:"likes"|"reposts"|"bookmarks";created_at:string;
  post_id:string;body:string;handle:string;display_name:string;author:string;
@@ -372,15 +373,15 @@ export default function SocialPage(){
       <aside className="social-aside">
         <span className="social-eyebrow">LOOKE COMMUNITY</span>
         <nav>
-          {([["feed","⌂ Feed"],["discover","◇ Discover"],["profile","◎ Profile"],["activity","♡ My Activity"],["analytics","▥ Analytics"],["points","◆ Looke Points"],["points-review","⊞ Points review"],["integrity","▤ Integrity"],["backend","◈ Backend checks"],["security","⛨ Security acceptance"],["beta","◈ Testnet beta prep"],["acceptance","⛨ Controlled acceptance"],["audit","⛨ Launch audit"],["operations","◈ Final acceptance"],["verification","⛨ External verification"],["rehearsal","◈ M27 release rehearsal"],["real-evidence","◈ M28 real evidence"],["operator-evidence","⛨ M29 evidence collection"],["operator-run","⛨ M30 live acceptance"],["source-gates","◈ M31 real source compatibility"],["source-reconcile","◈ M32 source reconciliation"],["controls","⚙ Account controls"],["moderation","⚑ Moderation"],["messages","▤ Messages"]] as const)
+          {([["feed","⌂ Feed"],["discover","◇ Discover"],["profile","◎ Profile"],["activity","♡ My Activity"],["analytics","▥ Analytics"],["points","◆ Looke Points"],["points-review","⊞ Points review"],["integrity","▤ Integrity"],["backend","◈ Backend checks"],["security","⛨ Security acceptance"],["beta","◈ Testnet beta prep"],["acceptance","⛨ Controlled acceptance"],["audit","⛨ Launch audit"],["operations","◈ Final acceptance"],["verification","⛨ External verification"],["rehearsal","◈ M27 release rehearsal"],["real-evidence","◈ M28 real evidence"],["operator-evidence","⛨ M29 evidence collection"],["operator-run","⛨ M30 live acceptance"],["source-gates","◈ M31 real source compatibility"],["source-reconcile","◈ M32 source reconciliation"],["live-integrations","◇ M33 live integrations"],["controls","⚙ Account controls"],["moderation","⚑ Moderation"],["messages","▤ Messages"]] as const)
             .map(([key,label])=><button key={key} type="button" className={tab===key?"selected":""} onClick={()=>{setTab(key);setFocused(null);}}>{label}<span>↗</span></button>)}
         </nav>
         <div className="social-sidefoot"><strong>For the creators.</strong><p>Follow projects, talk about tokens and Uniq NFTs, and build real communities.</p>
           <p>Posts reference assets; they do not verify holdings or represent investment advice.</p></div>
       </aside>
       <section className="social-main">
-        <div className="social-overline">M32 / REAL SOURCE RECONCILIATION AND RELEASE NO-GO</div>
-        <div className="social-hero"><h1>{tab==="feed"?"People. Ideas. Culture.":tab==="discover"?"Find your people.":tab==="messages"?"Conversations.":tab==="activity"?"Your real activity.":tab==="analytics"?"Creator analytics.":tab==="points"?"Looke Points.":tab==="points-review"?"Points evidence review.":tab==="integrity"?"Account integrity.":tab==="backend"?"Backend verification.":tab==="security"?"Testnet & security.":tab==="beta"?"Protected Testnet beta.":tab==="acceptance"?"Controlled Testnet acceptance.":tab==="audit"?"Independent launch audit.":tab==="operations"?"Operator acceptance.":tab==="verification"?"External acceptance verification.":tab==="rehearsal"?"Protected release rehearsal.":tab==="real-evidence"?"Real independent evidence.":tab==="operator-evidence"?"Original operator evidence collection.":tab==="operator-run"?"Real operator acceptance prerequisites.":tab==="source-gates"?"Current source compatibility and blockers.":tab==="source-reconcile"?"Real database lineage reconciliation.":tab==="controls"?"Your account.":tab==="moderation"?"Review queue.":"Your identity."}</h1>
+        <div className="social-overline">M33 / ACTUAL ULTRA AND POSTGRES INTEGRATION · NO-GO</div>
+        <div className="social-hero"><h1>{tab==="feed"?"People. Ideas. Culture.":tab==="discover"?"Find your people.":tab==="messages"?"Conversations.":tab==="activity"?"Your real activity.":tab==="analytics"?"Creator analytics.":tab==="points"?"Looke Points.":tab==="points-review"?"Points evidence review.":tab==="integrity"?"Account integrity.":tab==="backend"?"Backend verification.":tab==="security"?"Testnet & security.":tab==="beta"?"Protected Testnet beta.":tab==="acceptance"?"Controlled Testnet acceptance.":tab==="audit"?"Independent launch audit.":tab==="operations"?"Operator acceptance.":tab==="verification"?"External acceptance verification.":tab==="rehearsal"?"Protected release rehearsal.":tab==="real-evidence"?"Real independent evidence.":tab==="operator-evidence"?"Original operator evidence collection.":tab==="operator-run"?"Real operator acceptance prerequisites.":tab==="source-gates"?"Current source compatibility and blockers.":tab==="source-reconcile"?"Real database lineage reconciliation.":tab==="live-integrations"?"Live Ultra integration proof console.":tab==="controls"?"Your account.":tab==="moderation"?"Review queue.":"Your identity."}</h1>
           <p>Share what you create. Discover the people shaping Ultra. All displayed activity comes from the Looke social database.</p></div>
         {backendStatus==="unconfigured"&&<div className="social-warning"><strong>Backend not ready.</strong> Social database or sign-in configuration is unavailable. No demo profiles or fake posts are shown.</div>}
         {notice&&<div className="social-notice" role="status">{notice}</div>}
@@ -510,6 +511,7 @@ export default function SocialPage(){
         {tab==="operator-run"&&<M30OperatorRun/>}
         {tab==="source-gates"&&<M31SourcesLab/>}
         {tab==="source-reconcile"&&<M32ReconciliationLab/>}
+        {tab==="live-integrations"&&<M33LiveIntegrationLab/>}
         {tab==="controls"&&(user?<AccountControls onChanged={()=>{void loadFeed();}}/>:
           <div className="social-signin-note">Sign in to change private notification preferences and muted accounts.</div>)}
         {tab==="moderation"&&(user?<ModerationConsole/>:

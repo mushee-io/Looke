@@ -1,0 +1,111 @@
+name: M33 real Ultra and hosted media integration verification with immutable NO-GO
+on:
+  pull_request:
+    paths:
+      - "src/lib/beta/m33-*"
+      - "src/app/api/experience/m33-live/**"
+      - "src/components/experience/M33*"
+      - "src/app/social/**"
+      - "tests/m33-*"
+      - "deployment/M33_LIVE_INTEGRATION_RUNBOOK.md"
+      - "package.json"
+      - ".github/workflows/m33-live-integrations.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+env:
+  LOOKE_PUBLIC_BETA_ENABLED: "false"
+  LOOKE_M4_TRADING_ENABLED: "false"
+  LOOKE_SOCIAL_WRITES_ENABLED: "false"
+  LOOKE_MEDIA_UPLOADS_ENABLED: "false"
+  LOOKE_POINTS_ACCOUNTING_ENABLED: "false"
+  LOOKE_M20_INDEX_WRITES_ENABLED: "false"
+  LOOKE_M23_ACCEPTANCE_WRITES_ENABLED: "false"
+  LOOKE_M24_INCIDENT_WRITES_ENABLED: "false"
+  LOOKE_M25_REVIEW_WRITES_ENABLED: "false"
+  LOOKE_M26_WITNESS_WRITES_ENABLED: "false"
+  LOOKE_M6_EVIDENCE_ENABLED: "false"
+  LOOKE_M4_MARKETS_JSON: "[]"
+  LOOKE_SOCIAL_APP_ORIGIN: "https://looke-ci.invalid"
+jobs:
+  m33-preview-and-security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      VERCEL_ENV: preview
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: All existing and M33 pure/adversarial security checks
+        run: |
+          npm run m7:preflight
+          npm test
+          npm run typecheck
+          npm run build
+      - name: Protected Preview test: real integration API config, illegal request denial and NO-GO
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run start -- -p 3100 >/tmp/m33-next.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:3100/ >/dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS 'http://127.0.0.1:3100/api/experience/m33-live?mode=config' | node -e '
+            let t="";process.stdin.on("data",x=>t+=x).on("end",()=>{
+              const a=JSON.parse(t);
+              if(a.milestone!=="M33"||a.releaseDecision!=="NO_GO"||
+                 a.publicBetaOpen!==false||a.flagsClosed!==true||
+                 a.liveRPCChecksPerformed!==false||a.postgresQueried!==false||
+                 a.cloudinaryAssetsQueried!==false||a.transactionsSent!==0)
+                process.exit(2);
+            });
+          '
+          code=$(curl -s -o /tmp/m33-invalid.json -w "%{http_code}"             'http://127.0.0.1:3100/api/experience/m33-live?mode=proof&kind=factory&address=bad&tx=bad')
+          test "$code" = "400"
+          code=$(curl -s -o /tmp/m33-mutation.json -w "%{http_code}"             -X POST 'http://127.0.0.1:3100/api/experience/m33-live'             -H 'Content-Type: application/json' -d '{"broadcast":true}')
+          test "$code" = "405"
+          npm run m7:smoke
+      - name: Read-only rollback and prior independent beta NO-GO
+        run: |
+          npm run m8:rollback-rehearsal
+          npm run m22:preflight
+      - name: Never infer actual external assets from CI fixtures
+        run: |
+          echo "M33 CI tests fixed protocol parsers and an unconfigured protected Preview. No genuine wallet/coin/Uniq receipt or hosted asset was invented." >> "$GITHUB_STEP_SUMMARY"
+          echo "Live chain verification and authenticated provider search are invoked ONLY by explicit protected Preview requests with real public proof identifiers or operator server credentials." >> "$GITHUB_STEP_SUMMARY"
+  m33-disposable-postgresql:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: looke_social_ci
+          POSTGRES_USER: looke_ci
+          POSTGRES_PASSWORD: ci_only_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U looke_ci -d looke_social_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://looke_ci:ci_only_password@localhost:5432/looke_social_ci
+      LOOKE_M33_DISPOSABLE_DB_TESTS: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: Migrate only disposable PostgreSQL fixture
+        run: npm run db:migrate
+      - name: Real PostgreSQL read-only schema compatibility, TLS denial and mutation guard
+        run: npm run test:m33-db

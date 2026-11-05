@@ -234,3 +234,13 @@ jobs:
           LOOKE_M24_INCIDENT_WRITES_ENABLED: 'false'
           LOOKE_M25_REVIEW_WRITES_ENABLED: 'false'
           LOOKE_M26_WITNESS_WRITES_ENABLED: 'false'
+
+      - name: M33 genuine current Postgres source inspection, TLS denial and no-write integration
+        run: npm run test:m33-db
+        env:
+          DATABASE_URL: postgres://looke_ci:ci_only_password@localhost:5432/looke_social_ci
+          LOOKE_M33_DISPOSABLE_DB_TESTS: 'true'
+          LOOKE_PUBLIC_BETA_ENABLED: 'false'
+          LOOKE_SOCIAL_WRITES_ENABLED: 'false'
+          LOOKE_MEDIA_UPLOADS_ENABLED: 'false'
+          LOOKE_POINTS_ACCOUNTING_ENABLED: 'false'
