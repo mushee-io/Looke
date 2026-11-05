@@ -1,6 +1,6 @@
 {
   "name": "looke-ultra",
-  "version": "0.30.0",
+  "version": "0.31.0",
   "private": true,
   "license": "MIT",
   "engines": {
@@ -55,6 +55,8 @@
     "test:m28-db": "node --import tsx --test tests/m28-real-evidence-db.integration.ts",
     "test:m29-db": "node --import tsx --test tests/m29-operator-db.integration.ts",
     "test:m30-db": "node --import tsx --test tests/m30-source-db.integration.ts",
+    "test:m31-db": "node --import tsx --test tests/m31-source-db.integration.ts",
+    "m31:source-schema-audit": "tsx scripts/m31-source-schema-audit.ts",
     "m30:operator-acceptance": "tsx scripts/m30-operator-acceptance.ts",
     "m29:verify-wallet-sessions": "tsx scripts/m29-verify-wallet-sessions.ts",
     "m29:verify-evidence-bundle": "tsx scripts/m29-verify-evidence-bundle.ts",

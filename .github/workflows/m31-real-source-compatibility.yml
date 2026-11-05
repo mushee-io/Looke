@@ -1,0 +1,137 @@
+name: M31 connected legacy vs current 19-table schema acceptance and strict NO-GO
+on:
+  pull_request:
+    paths:
+      - "src/lib/beta/m31-*"
+      - "src/app/api/experience/m31-source-readiness/**"
+      - "src/components/experience/M31*"
+      - "src/components/experience/m31.css"
+      - "src/app/social/**"
+      - "scripts/m31-*"
+      - "tests/m31-*"
+      - "deployment/M31_REAL_CONNECTION_READINESS.md"
+      - "package.json"
+      - ".github/workflows/m31-real-source-compatibility.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  m31-safe-connection-readiness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      LOOKE_PUBLIC_BETA_ENABLED: "false"
+      LOOKE_M4_TRADING_ENABLED: "false"
+      LOOKE_SOCIAL_WRITES_ENABLED: "false"
+      LOOKE_MEDIA_UPLOADS_ENABLED: "false"
+      LOOKE_POINTS_ACCOUNTING_ENABLED: "false"
+      LOOKE_M20_INDEX_WRITES_ENABLED: "false"
+      LOOKE_M23_ACCEPTANCE_WRITES_ENABLED: "false"
+      LOOKE_M24_INCIDENT_WRITES_ENABLED: "false"
+      LOOKE_M25_REVIEW_WRITES_ENABLED: "false"
+      LOOKE_M26_WITNESS_WRITES_ENABLED: "false"
+      LOOKE_M6_EVIDENCE_ENABLED: "false"
+      LOOKE_M4_MARKETS_JSON: "[]"
+      LOOKE_SOCIAL_APP_ORIGIN: "https://looke-ci.invalid"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: No real source connection in CI must remain explicitly BLOCKED
+        run: |
+          npm run m31:source-schema-audit
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const a=JSON.parse(fs.readFileSync('artifacts/m31/source-compatibility.json','utf8'));
+          if(a.decision.releaseDecision!=='NO_GO'||a.source!==null||
+             a.restore!==null||a.liveSourceConfigured!==false||
+             a.actualBackupCreatedOrRestoredByThisTool!==false||
+             a.financiallyRelevantWrites!==0||
+             !a.decision.blocked.includes('current_19_table_primary_schema_missing_or_legacy_only'))
+            process.exit(2);
+          console.log('M31 actual production sources unavailable to CI; no fabricated activity.');
+          NODE
+      - name: All security tests, typecheck and authenticated Preview-style build
+        run: |
+          npm run m7:preflight
+          npm test
+          npm run typecheck
+          npm run build
+      - name: Existing read-only Ultra Testnet RPC head observations and beta NO-GO
+        run: |
+          npm run m21:acceptance
+          npm run m22:preflight
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const p=JSON.parse(fs.readFileSync('artifacts/m22/preflight.json','utf8'));
+          if(p.report.releaseDecision!=='NO_GO'||p.report.publicBetaOpen!==false||
+             p.report.flagsClosed!==true||p.transactionsSent!==0)process.exit(2);
+          console.log('No M31 connections or RPC observations can approve launch.');
+          NODE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: looke-m31-actual-source-compatibility-blocked-no-go
+          path: |
+            artifacts/m31/source-compatibility.json
+            artifacts/m21/acceptance.json
+            artifacts/m22/preflight.json
+          retention-days: 7
+          if-no-files-found: warn
+      - name: Real Preview source status, moderator denial, no write or financial execution
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run start -- -p 3100 >/tmp/m31-next.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 50); do
+            if curl -fsS http://127.0.0.1:3100/ >/dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:3100/api/experience/m31-source-readiness | node -e '
+            let s="";process.stdin.on("data",x=>s+=x).on("end",()=>{
+              const a=JSON.parse(s);
+              if(a.sourceStatus!=="not_connected"||a.schemaCompatible!==false||
+                 a.releaseDecision!=="NO_GO"||a.publicBetaOpen!==false||
+                 a.userSessionsRead!==0||a.transactionsSent!==0)process.exit(2);
+            });
+          '
+          for route in ops/m30 ops/m29 ops/m28 ops/m27 ops/acceptance; do
+            code=$(curl -s -o /tmp/m31-private.json -w "%{http_code}" \
+              http://127.0.0.1:3100/api/social/"$route")
+            echo "Source operator $route HTTP=$code"
+            test "$code" = "401"
+          done
+          code=$(curl -s -o /tmp/m31-post.json -w "%{http_code}" \
+            -X POST http://127.0.0.1:3100/api/social/ops/m30 \
+            -H 'Origin: https://looke-ci.invalid' -H 'Content-Type: application/json' \
+            -d '{"action":"force_go"}')
+          test "$code" = "405"
+          code=$(curl -s -o /tmp/m31-claims.json -w "%{http_code}" \
+            -X POST http://127.0.0.1:3100/api/social/points \
+            -H 'Origin: https://looke-ci.invalid' -H 'Content-Type: application/json' \
+            -d '{"action":"claim"}')
+          test "$code" = "405"
+          curl -fsS http://127.0.0.1:3100/api/experience/media | node -e '
+            let s="";process.stdin.on("data",x=>s+=x).on("end",()=>{
+              const a=JSON.parse(s);if(a.enabled!==false||a.moderationRequired!==true)process.exit(2);
+            });
+          '
+          curl -fsS http://127.0.0.1:3100/api/experience/messaging/readiness | node -e '
+            let s="";process.stdin.on("data",x=>s+=x).on("end",()=>{
+              const a=JSON.parse(s);if(a.liveMessagingEnabled!==false||a.messagesSent!==0)process.exit(2);
+            });
+          '
+          npm run m7:smoke
+      - name: Existing strictly non-destructive incident and rollback preflight
+        run: npm run m8:rollback-rehearsal
+      - name: Real provider/Neon observations must never be replaced by CI fixtures
+        if: always()
+        run: |
+          echo "On Nov 5, actual connected Looke Neon staging had 25 legacy looke_* tables, ZERO social_* tables and zero user/session/media/coin records. This workflow does not connect to that personal Neon source." >> "$GITHUB_STEP_SUMMARY"
+          echo "Actual connected Cloudinary search on Looke public IDs returned zero matching assets; no real media content was certified." >> "$GITHUB_STEP_SUMMARY"
+          echo "CI's disposable PostgreSQL has genuine current migrated schema for tests ONLY; never treat it as end-user acceptance, real restored backup or human witness." >> "$GITHUB_STEP_SUMMARY"
+          echo "M31 Never creates credentials, migrates legacy sources, opens public beta, broadcasts transactions, issues tokens/Points, changes production or schedules a build." >> "$GITHUB_STEP_SUMMARY"
