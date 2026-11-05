@@ -93,10 +93,14 @@ export async function GET(request:NextRequest){
     verified:false,releaseDecision:"NO_GO",transactionsSent:0},400);
   }
   try{
-   const proof=input.kind==="factory"?
-    await inspectEvmFactory(input.address,input.tx):
-    input.kind==="coin"?await inspectEvmCoin(input.address,input.tx):
-    await inspectNativeUniq(input.factoryId,input.owner,input.tokenId);
+   let proof:unknown;
+   if(input.kind==="uniq"){
+    proof=await inspectNativeUniq(input.factoryId,input.owner,input.tokenId);
+   }else if(input.kind==="factory"){
+    proof=await inspectEvmFactory(input.address,input.tx);
+   }else{
+    proof=await inspectEvmCoin(input.address,input.tx);
+   }
    return answer({...cfg,mode,proof:m33ProofResult(input,proof as unknown as Record<string,unknown>),
     independentHumanApproval:false,sourceRecordsCreated:0});
   }catch{
