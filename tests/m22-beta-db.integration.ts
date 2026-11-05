@@ -169,7 +169,7 @@ test("M22 witness rejects stale proofs and unconfigured Preview identity",async(
  delete process.env.LOOKE_M22_PREVIEW_ORIGIN;
  try{
   assert.equal((await witnessPOST(request(moderator,"POST",
-   "/api/social/ops/beta/witness",{challenge,signature})).status,503);
+   "/api/social/ops/beta/witness",{challenge,signature}))).status,503);
  }finally{if(original!==undefined)process.env.LOOKE_M22_PREVIEW_ORIGIN=original;}
 });
 test("Real disposable database snapshots are read-only, bounded, and never accepted as restored-backup witnesses",async()=>{
