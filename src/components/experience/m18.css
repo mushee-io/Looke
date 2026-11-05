@@ -1,0 +1,26 @@
+.lk-m18-section{padding:24px;display:flex;flex-direction:column;gap:12px}
+.lk-m18-section h2{font-size:22px;margin:0}.lk-m18-section h3{font-size:15px;margin:16px 0 0}
+.lk-m18-section p{line-height:1.6}.lk-m18-section small{font-size:11px;color:#8490a2}
+.lk-m18-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:10px}
+.lk-m18-metrics>div{background:#f5f7fd;border:1px solid #e8eefa;border-radius:11px;padding:13px}
+.lk-m18-metrics strong{font-size:25px;display:block;color:#25324f;padding-top:5px}
+.lk-m18-plot{display:flex;align-items:end;justify-content:space-between;gap:5px;height:150px;padding:10px;border-bottom:1px solid #e3e8ef}
+.lk-m18-day{height:100%;display:flex;flex:1;align-items:center;justify-content:flex-end;flex-direction:column;min-width:7px;gap:5px}
+.lk-m18-bar{min-height:1px;max-height:100%;width:80%;border-radius:5px 5px 0 0;background:#3d62e5}
+.lk-m18-list{padding:13px;background:#f9faff;border:1px solid #e5ebf7;border-radius:11px;overflow-wrap:anywhere}
+.lk-m18-list a{font-size:12px;color:#365dd5;text-decoration:underline}
+.lk-m18-list small{display:block;margin-top:7px}
+.lk-m18-list p{margin:8px 0;font-size:13px}
+.lk-m18-inline{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:9px}
+.lk-m18-inline input{flex:1;min-width:175px;padding:10px;border:1px solid #dce4f1;border-radius:8px}
+.lk-m18-inline button,.lk-m18-settings button{background:#3158db;border:0;border-radius:8px;color:white;padding:10px;font-size:12px;font-weight:700;cursor:pointer}
+.lk-m18-inline button:disabled,.lk-m18-settings button:disabled{opacity:.45;cursor:not-allowed}
+.lk-m18-settings{border:1px solid #e5ebf7;border-radius:10px;display:flex;flex-direction:column;align-items:flex-start;gap:10px;padding:15px}
+.lk-m18-settings label{display:flex;align-items:center;gap:8px;font-size:13px}
+.lk-m18-reason{display:flex;flex-direction:column;gap:9px;font-size:12px;font-weight:700}
+.lk-m18-reason textarea{min-height:74px;border:1px solid #d5dce8;border-radius:8px;padding:10px;resize:vertical}
+.lk-m18-report-text{border-left:2px solid #cfdaeb;padding-left:12px}
+.lk-m18-sort{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.lk-m18-sort button{border:1px solid #dce5fa;border-radius:9px;background:#f5f8ff;padding:8px 12px}
+.lk-m18-sort button.active{background:#3158db;color:white}
+.lk-m18-counts{color:#74819b;font-size:11px}

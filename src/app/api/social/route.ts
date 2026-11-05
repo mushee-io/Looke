@@ -67,6 +67,8 @@ export async function GET(req:NextRequest){
               OR (e.reposter IS NOT NULL AND
                 ((b.blocker=$2 AND b.blocked=e.reposter) OR
                  (b.blocked=$2 AND b.blocker=e.reposter)))))
+          AND ($2::text IS NULL OR NOT EXISTS(SELECT 1 FROM social_mutes m
+            WHERE m.muter=$2 AND (m.muted=p.author OR m.muted=e.reposter)))
           AND ($3::text <> 'following' OR ($2::text IS NOT NULL AND (
             p.author=$2 OR e.reposter=$2
             OR EXISTS(SELECT 1 FROM social_follows f WHERE
@@ -95,15 +97,46 @@ export async function GET(req:NextRequest){
       return cacheData({profile:r.rows[0]});
     }
     if(action==="directory"){
-      const q=z.string().trim().max(30).parse(p.get("search")||"").toLowerCase();
+      const search=z.string().trim().max(30).parse(p.get("search")||"").toLowerCase();
+      const sort=z.enum(["recent","engaged"]).parse(p.get("sort")||"recent");
+      // 30-day engagement is derived only from real, visible posts and mutations.
+      // No paid ranking, seeded popularity, sample followers or fake creator scores.
       const r=await query(`
-        SELECT address,handle,display_name,bio,avatar_url FROM social_profiles
-        WHERE suspended=false AND (handle LIKE $1 OR lower(display_name) LIKE $1)
-          AND ($2::text IS NULL OR NOT EXISTS(SELECT 1 FROM social_blocks b
-            WHERE (b.blocker=$2 AND b.blocked=social_profiles.address)
-               OR (b.blocked=$2 AND b.blocker=social_profiles.address)))
-        ORDER BY created_at DESC LIMIT 20`,[`%${q}%`,wallet]);
-      return cacheData({profiles:r.rows});
+        WITH ranked AS (
+          SELECT pr.address,pr.handle,pr.display_name,pr.bio,pr.avatar_url,pr.created_at,
+            (SELECT count(*)::integer FROM social_follows f WHERE f.followed=pr.address) AS follower_count,
+            (SELECT count(*)::integer FROM social_posts post
+              WHERE post.author=pr.address AND post.hidden=false AND post.deleted_at IS NULL
+                AND (post.media_url IS NULL OR post.media_status='approved')) AS post_count,
+            (SELECT count(*)::integer FROM social_post_likes l
+              JOIN social_posts post ON post.id=l.post_id
+              WHERE post.author=pr.address AND l.created_at>now()-interval '30 days'
+                AND post.hidden=false AND post.deleted_at IS NULL
+                AND (post.media_url IS NULL OR post.media_status='approved'))+
+            (SELECT count(*)::integer FROM social_post_reposts rp
+              JOIN social_posts post ON post.id=rp.post_id
+              WHERE post.author=pr.address AND rp.created_at>now()-interval '30 days'
+                AND post.hidden=false AND post.deleted_at IS NULL
+                AND (post.media_url IS NULL OR post.media_status='approved'))+
+            (SELECT count(*)::integer FROM social_comments c
+              JOIN social_posts post ON post.id=c.post_id
+              WHERE post.author=pr.address AND c.created_at>now()-interval '30 days'
+                AND c.hidden=false AND post.hidden=false AND post.deleted_at IS NULL
+                AND (post.media_url IS NULL OR post.media_status='approved')) AS engagement_30d
+          FROM social_profiles pr
+          WHERE pr.suspended=false
+            AND (pr.handle LIKE $1 OR lower(pr.display_name) LIKE $1)
+            AND ($2::text IS NULL OR NOT EXISTS(SELECT 1 FROM social_blocks b
+              WHERE (b.blocker=$2 AND b.blocked=pr.address)
+                 OR (b.blocked=$2 AND b.blocker=pr.address)))
+            AND ($2::text IS NULL OR NOT EXISTS(SELECT 1 FROM social_mutes m
+              WHERE m.muter=$2 AND m.muted=pr.address))
+        )
+        SELECT * FROM ranked
+        ORDER BY CASE WHEN $3::text='engaged' THEN engagement_30d ELSE NULL END DESC NULLS LAST,
+          created_at DESC,address ASC LIMIT 20
+      `,[`%${search}%`,wallet,sort]);
+      return cacheData({profiles:r.rows,sort,source:"real-postgres-creator-activity"});
     }
     if(action==="comments"){
       const id=uuid.parse(p.get("postId"));
@@ -116,6 +149,8 @@ export async function GET(req:NextRequest){
           AND (original.media_url IS NULL OR original.media_status='approved')
           AND ($2::text IS NULL OR NOT EXISTS(SELECT 1 FROM social_blocks b
             WHERE (b.blocker=$2 AND b.blocked=c.author) OR (b.blocked=$2 AND b.blocker=c.author)))
+          AND ($2::text IS NULL OR NOT EXISTS(SELECT 1 FROM social_mutes m
+            WHERE m.muter=$2 AND m.muted=c.author))
         ORDER BY c.created_at ASC LIMIT 50`,[id,wallet]);
       return cacheData({comments:r.rows});
     }

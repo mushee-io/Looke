@@ -254,7 +254,7 @@ export function NotificationsPanel({onCreate}:{onCreate:()=>void}){
       <button type="button" onClick={()=>setSettings(v=>!v)} aria-label="Notification settings">⚙</button></div></div>
     {checkedAt&&<small className="lk-m15-checked">Checked {new Date(checkedAt).toLocaleTimeString()} · no invented alerts</small>}
     {settings&&<div className="lk-notification-settings"><strong>Notification preferences</strong>
-      <p>On-platform notifications show genuine follows, comments, likes and reposts. Push/email subscriptions are not activated.</p>
+      <p>On-platform notifications show genuine follows, comments, likes and reposts. Push/email subscriptions are not activated. Manage category preferences under Social → Account controls.</p>
       <button type="button" onClick={()=>setSettings(false)}>Close</button></div>}
     <div className="lk-notification-tabs" role="tablist" aria-label="Notification categories">
       {NOTIFICATION_TABS.map(t=><button type="button" key={t} role="tab" aria-selected={tab===t}

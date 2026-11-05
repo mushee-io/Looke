@@ -1,0 +1,76 @@
+name: M18 creator analytics, moderator review and account isolation
+on:
+  pull_request:
+    paths:
+      - "src/app/social/**"
+      - "src/app/api/social/**"
+      - "src/app/api/experience/notifications/**"
+      - "src/components/experience/**"
+      - "src/lib/social/**"
+      - "db/migrations/005_creator_insights_and_moderation.sql"
+      - "scripts/social-migrate.ts"
+      - "tests/m18-*"
+      - "deployment/M18_CREATOR_REVIEW.md"
+      - "package.json"
+      - ".github/workflows/m18-creator-analytics-moderation.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  m18-preview-security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 23
+    env:
+      LOOKE_PUBLIC_BETA_ENABLED: "false"
+      LOOKE_M4_TRADING_ENABLED: "false"
+      LOOKE_SOCIAL_WRITES_ENABLED: "false"
+      LOOKE_M6_EVIDENCE_ENABLED: "false"
+      LOOKE_MEDIA_UPLOADS_ENABLED: "false"
+      LOOKE_M4_MARKETS_JSON: "[]"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: Fail-closed flags and nonfinancial preflight
+        run: npm run m7:preflight
+      - name: Pure security, moderation and regression tests
+        run: npm test
+      - name: TypeScript and production build
+        run: |
+          npm run typecheck
+          npm run build
+      - name: Running Preview denial smoke (anonymous reads, writes and messaging blocked)
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run start -- -p 3100 >/tmp/m18-next.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 50); do
+            if curl -fsS http://127.0.0.1:3100/ >/dev/null; then break; fi
+            sleep 1
+          done
+          for route in analytics controls moderation; do
+            code=$(curl -s -o /tmp/m18-"$route".json -w "%{http_code}"               http://127.0.0.1:3100/api/social/"$route")
+            test "$code" = "401"
+          done
+          code=$(curl -s -o /tmp/m18-write.json -w "%{http_code}"             -X POST http://127.0.0.1:3100/api/social/moderation             -H 'Origin: http://localhost:3000' -H 'Content-Type: application/json'             -d '{"action":"resolve_report","reportId":"11111111-1111-4111-8111-111111111111","decision":"dismissed","explanation":"No action permitted here"}')
+          test "$code" = "503"
+          curl -fsS http://127.0.0.1:3100/api/experience/messaging/readiness | node -e '
+            let s="";process.stdin.on("data",x=>s+=x).on("end",()=>{
+              const a=JSON.parse(s);
+              if(a.liveMessagingEnabled!==false||a.messagesSent!==0)process.exit(2);
+            });
+          '
+          npm run m7:smoke
+      - name: Existing rollback rehearsal
+        run: npm run m8:rollback-rehearsal
+      - name: Safety handoff
+        if: always()
+        run: |
+          echo "M18 creator analytics show only real, account-scoped Postgres counts." >> "$GITHUB_STEP_SUMMARY"
+          echo "Report moderation requires explicitly enrolled wallets and reasoned, atomic audit records." >> "$GITHUB_STEP_SUMMARY"
+          echo "Actual external provider scans and operator acceptance remain required before media activation." >> "$GITHUB_STEP_SUMMARY"
+          echo "Social writes, private messages, financial transactions and public beta remain off in Preview." >> "$GITHUB_STEP_SUMMARY"
