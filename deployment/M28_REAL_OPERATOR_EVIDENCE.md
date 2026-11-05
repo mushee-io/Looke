@@ -1,0 +1,43 @@
+# Looke M28 — actual operational evidence checks, NOT a public beta activation
+
+## Verified M27 baseline and production safety
+M27 PR #29 exact head `3572d0c48b31a515605fad9a915b185e80633674` passed all **23 GitHub workflows and 29 individual jobs**. Squash-merged into main as `8f25a117871927c602ee8a82d3517d458461c362`. Immediately after merge, `looke-alpha.vercel.app` was independently confirmed on protected production deployment `dpl_29EdVrfrJNTC5Q7gkZMcpaxLhQiG`. Keep M28 on a separate SSO-protected Preview branch and do not promote or merge without external launch approval.
+
+## Why M28 focuses on genuine source evidence rather than extra signatures
+Previous milestones can validate EIP-191 signatures or signed evidence hashes, but cannot establish that a real person attended, that a provider supplied the actual content, that an external auditor reviewed findings, or that an operator genuinely restored a backup. M28 adds actual read-only source checks and **deliberately continues returning NO_GO** until human approvals exist.
+
+### 1. Actual two-wallet acceptance and independently observed human sessions
+- `npm run m28:verify-wallet-evidence -- --file /secure/location/witness.json` consumes a **real, operator-supplied** JSON packet with exact HTTPS authenticated Preview origin, full immutable SHA, Ultra EVM Testnet chain ID 18881 and exactly two distinct wallet session records. No seed wallet, private key or mock proof is supplied by the product.
+- Each session has `wallet`, `walletSignature`, `observer`, `observerSignature`, `nonce`, `sessionId`, `observedAt`. The wallet signs `walletSessionMessage`, an original nonfinancial EIP-191 challenge bound to SHA, origin, session UUID, unique nonce, address and timestamp. The separate witness signs `observerMessage` including the SHA-256 of that same wallet signature. Four public keys must be distinct; both nonces/session IDs unique; all signatures must be under five minutes old at inspection.
+- A valid packet proves cryptographic control by four distinct keys **only**. It does not prove there are four different people, that any person actually witnessed a signing, that a prior nonce was consumed server-side, or that the wallets were controlled by separate users. An actual human must independently observe real sessions and inspect offline evidence. Retain identity-safe operator attestations outside the public repository. Never place raw personal details or signing secrets in CI or Preview.
+- The CLI writes only an aggregate SHA-256 and bounded verification result under `artifacts/m28/wallet-evidence.json`, permissions 0600. Even a positive result is **not** authorization to enable public beta.
+
+### 2. Genuine authenticated hosted-media provider and moderator records
+- Moderator-only `GET /api/social/ops/m28?inspectProvider=true` queries at most three actual attached uploads with non-hidden approved posts and exact verified source URLs, then requires a real `approve_media` moderation audit record for each. It calls the authenticated Cloudinary API with operator-owned credentials and compares actual resource public ID, wallet-owner namespace, resource type, bytes, MIME/format and HTTPS URL against signed upload source metadata using the original provider validator.
+- Missing provider credentials, no eligible approved uploads, absent moderator decisions, network errors, owner mismatches and format/URL drift all remain **blocked**. A successful provider API match verifies metadata and moderation record existence, **not** content safety, independent moderator judgment, legal rights or the true person behind a wallet. The original content still needs independent human inspection.
+- Never turn on `LOOKE_MEDIA_UPLOADS_ENABLED` or `LOOKE_SOCIAL_WRITES_ENABLED` merely to inspect authenticated existing assets; the endpoint is read-only.
+
+### 3. Independently confirmed canonical Ultra creator coin and native Uniq
+- To check both assets in one request, supply `tokenFactory`, `coinTx`, `uniqFactoryId`, `uniqTokenId`, and `uniqOwner` to `GET /api/social/ops/m28`.
+- The EVM path requires a nonzero factory and canonical nonzero receipt; checks Ultra EVM Testnet **18881**, CoinCreated event, minimum two confirmations and live deployed coin state through existing independent RPC helper. The native path requires actual factory/token/current owner proven on the Ultra native Testnet at irreversible block. Invalid or unavailable sources are **blocked**, never declared real assets.
+- Checking one asset does not establish the other. Neither path creates tokens or broadcasts a transaction. Supply only genuine Testnet public evidence; do not manufacture fake coin or Uniq IDs.
+
+### 4. Complete existing PostgreSQL, Points and anti-sybil checks
+- M28 reuses full source reconciliation from M27; each approved Points entry is checked against its existing eligible source, creator/actor and season in a read-only transaction. Online scan cap 250 entries, and the operator CLI `npm run m27:full-points-audit` covers up to 20,000 before safely refusing incomplete coverage.
+- Actual independent anti-sybil review must examine wallet-control independence, counterparty clustering and suspicious engagement. Zero source drift does not mean human uniqueness is established.
+- `npm run m27:full-restore-audit` covers **19 existing source/evidence tables**, including M25 reviews and M26 external witness references. The operator must personally create a real consistent backup, independently restore it to a different TLS PostgreSQL host with correct trust roots and comparable data cutoff, then use separate restricted read-only connection identities to compare full row/schema digests. The CLI does not create the backup, restore, or verify a second human attended. Human witness and true backup provenance must be independently documented.
+
+### 5. External security audit report bytes and real findings
+- Use `npm run m24:verify-evidence -- --file /secure/report.pdf --evidence-id REAL_UUID --commit PREVIEW_SHA` with real original report bytes and actual M23 signed evidence reference. It hashes the actual regular file and checks the stored SHA-256 without trusting a URL or screenshot.
+- Matching bytes is **not** independent security approval. A different qualified auditor must actually review the report contents, test the current protected deployment and verify that critical findings were remediated. Record the auditor's independent decision outside the Preview; never infer approval from signature count alone.
+
+### 6. Protected release rehearsal and rollback
+- Use `VERCEL_TOKEN=... LOOKE_M27_PREVIEW_SHA=EXACT_SHA npm run m27:release-rehearsal` from an operator host. This calls **GET only** to verify `looke-alpha.vercel.app` still resolves to `dpl_29EdVrfrJNTC5Q7gkZMcpaxLhQiG`. It never requests promotion or rollback. Independently verify Vercel SSO, exact Preview SHA and READY state. A genuine signed-out browser challenge is a separate manual acceptance step.
+- A real incident rollback rehearsal requires a human observer and an authorized plan; these scripts cannot perform or attest to a rollback.
+- Public beta must stay **NO_GO**, and no endpoint can enable production, social/media writes, Points, mint/claim, trading, rewards or E2EE/private messaging. No recurring builds.
+
+## CI, Preview deployment, human acceptance gates
+- Test `npm test`, `npm run typecheck`, `npm run build`, all historical workflows and disposable PostgreSQL16 integration `npm run test:m28-db`. Adversarial tests check genuine disposable four-key signature verification, altered origin, nonce duplication, expiry, forged observer signature, missing moderation, invalid chain identifiers, live database source drift, 19-table integrity and NO_GO even with every technical field true.
+- The dedicated M28 workflow runs read-only RPC head probes and a close-state HTTP smoke; synthetic CI fixtures must never be presented as real independent user/provider/audit evidence.
+- Deploy **only final passing SHA** to the existing SSO-authenticated Looke Preview (`target:null`). Check READY and exact source SHA. Keep production pinned to `dpl_29EdVrfrJNTC5Q7gkZMcpaxLhQiG`.
+- Keep `LOOKE_PUBLIC_BETA_ENABLED=false`, `LOOKE_M4_TRADING_ENABLED=false`, `LOOKE_SOCIAL_WRITES_ENABLED=false`, `LOOKE_MEDIA_UPLOADS_ENABLED=false`, `LOOKE_POINTS_ACCOUNTING_ENABLED=false`, `LOOKE_M20_INDEX_WRITES_ENABLED=false`, `LOOKE_M23_ACCEPTANCE_WRITES_ENABLED=false`, `LOOKE_M24_INCIDENT_WRITES_ENABLED=false`, `LOOKE_M25_REVIEW_WRITES_ENABLED=false`, `LOOKE_M26_WITNESS_WRITES_ENABLED=false`, `LOOKE_M6_EVIDENCE_ENABLED=false`, `LOOKE_M4_MARKETS_JSON=[]`. Missing flags remain default-deny.
