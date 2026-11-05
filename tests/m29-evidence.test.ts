@@ -98,7 +98,7 @@ test("Observer must acknowledge the genuine one-use nonce, original signature di
   {observer:keys[1].address.toLowerCase(),observedAt:new Date().toISOString()});
  assert.match(message,/Original server nonce:/);
  assert.match(message,/Original wallet signature SHA-256:/);
- assert.match(message,/NO public beta/);
+ assert.match(message,/No public beta/);
  assert.throws(()=>m29WalletPacket.parse({origin:"https://looke-m29-ci.vercel.app",
   commit:"a".repeat(40),sessions:[],releaseApproved:true}));
 });
