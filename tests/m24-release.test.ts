@@ -49,7 +49,7 @@ test("Incident recording is strict, optional and cannot submit actions or releas
  }finally{if(prev===undefined)delete process.env.LOOKE_M24_INCIDENT_WRITES_ENABLED;
   else process.env.LOOKE_M24_INCIDENT_WRITES_ENABLED=prev;}
 });
-test("All 16 required database tables need complete matching row digests AND schema hashes",()=>{
+test("All 17 required database tables need complete matching row digests AND schema hashes",()=>{
  assert.equal(tables.length,16);
  const a=tables.map(([table])=>({table,rows:2,sha256:"a".repeat(64),
   schemaSha256:"b".repeat(64),complete:true as const}));

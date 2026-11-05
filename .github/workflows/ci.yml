@@ -129,7 +129,7 @@ jobs:
           LOOKE_M20_INDEX_WRITES_ENABLED: 'false'
           LOOKE_M23_ACCEPTANCE_WRITES_ENABLED: 'true'
 
-      - name: M24 full 16-table PostgreSQL restore digests, linked evidence and incident no-execution review
+      - name: M24 full 17-table PostgreSQL restore digests, linked evidence and incident no-execution review
         run: npm run test:m24-db
         env:
           DATABASE_URL: postgres://looke_ci:ci_only_password@localhost:5432/looke_social_ci

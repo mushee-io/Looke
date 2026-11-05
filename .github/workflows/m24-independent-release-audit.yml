@@ -120,6 +120,6 @@ jobs:
         if: always()
         run: |
           echo "M24 CI checks disposable wallets and local PostgreSQL. It cannot claim that an independent security audit, full operational restore, or two real humans have passed." >> "$GITHUB_STEP_SUMMARY"
-          echo "Full 16-table restore verification is a separate manual TLS pair CLI, not an actual CI disaster-recovery witness." >> "$GITHUB_STEP_SUMMARY"
+          echo "Full 17-table restore verification is a separate manual TLS pair CLI, not an actual CI disaster-recovery witness." >> "$GITHUB_STEP_SUMMARY"
           echo "Signed external evidence references do not establish document contents, human approval or release authorization." >> "$GITHUB_STEP_SUMMARY"
           echo "Production alias and public beta unchanged; no finance, claims, E2EE, media/social writes, automation or token creation activated." >> "$GITHUB_STEP_SUMMARY"
