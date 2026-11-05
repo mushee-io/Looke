@@ -9,7 +9,9 @@ type Reviewed={
  points_like_received:number;points_repost_received:number;
 };
 export type Drift={ledgerId:string;kind:SourceKind;reason:string};
-export async function reconcileApproved(conn:Pick<PoolClient,"query">,max=40){
+export async function reconcileApproved(conn:Pick<PoolClient,"query">,max=40,offset=0){
+ if(!Number.isInteger(max)||max<1||max>500||!Number.isInteger(offset)||offset<0)
+  throw Error("Invalid bounded Points reconciliation page.");
  const count=await conn.query<{total:number}>(`
   SELECT count(*)::integer AS total FROM social_points_ledger WHERE status='approved'`);
  const items=await conn.query<Reviewed>(`
@@ -17,8 +19,8 @@ export async function reconcileApproved(conn:Pick<PoolClient,"query">,max=40){
     l.points,l.season_id,s.starts_at,s.ends_at,
     s.points_post,s.points_comment,s.points_like_received,s.points_repost_received
   FROM social_points_ledger l JOIN social_points_seasons s ON s.id=l.season_id
-  WHERE l.status='approved' ORDER BY l.reviewed_at DESC,l.id DESC LIMIT $1
- `,[max]);
+  WHERE l.status='approved' ORDER BY l.reviewed_at DESC,l.id DESC LIMIT $1 OFFSET $2
+ `,[max,offset]);
  const issues:Drift[]=[];
  for(const r of items.rows){
   const current=await lookupEvidence(conn,r.source_kind,r.source_id);
@@ -36,7 +38,7 @@ export async function reconcileApproved(conn:Pick<PoolClient,"query">,max=40){
   }
  }
  return {scanned:items.rows.length,totalApproved:count.rows[0].total,
-  complete:count.rows[0].total===items.rows.length,issues,
-  status:issues.length?"attention":count.rows[0].total===items.rows.length?"sample_clean":"incomplete",
+  complete:offset===0&&count.rows[0].total===items.rows.length,issues,
+  status:issues.length?"attention":offset===0&&count.rows[0].total===items.rows.length?"sample_clean":"incomplete",
   note:"Read-only current-source checks. No balances, approvals or reversals were changed."};
 }
