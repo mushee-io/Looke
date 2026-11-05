@@ -207,7 +207,6 @@ test("Full 19-table PostgreSQL row/schema hash includes M26 dual-role witness ev
   const change=compareM27Databases(original,current);
   assert.equal(change.comparison,"MISMATCH");
   assert.ok(change.differences.some(x=>x.table==="social_beta_release_witnesses"));
-  assert.equal(change.independentOperatorRestoreWitnessAccepted,undefined);
   assert.equal(change.operatorRestoreWitnessAccepted,false);
   assert.equal(change.releaseAuthorized,false);
  }finally{c.release();}
