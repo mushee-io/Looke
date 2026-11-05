@@ -1,0 +1,132 @@
+name: M23 controlled Testnet acceptance and replay security
+on:
+  pull_request:
+    paths:
+      - "db/migrations/008_controlled_beta_acceptance.sql"
+      - "src/app/api/social/ops/m23/**"
+      - "src/lib/beta/m23-*"
+      - "src/components/experience/M23*"
+      - "src/components/experience/m23.css"
+      - "src/app/social/**"
+      - "scripts/social-migrate.ts"
+      - "tests/m23-*"
+      - "deployment/M23_CONTROLLED_ACCEPTANCE.md"
+      - "package.json"
+      - ".github/workflows/m23-controlled-testnet-acceptance.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  m23-protected-acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      LOOKE_PUBLIC_BETA_ENABLED: "false"
+      LOOKE_M4_TRADING_ENABLED: "false"
+      LOOKE_SOCIAL_WRITES_ENABLED: "false"
+      LOOKE_MEDIA_UPLOADS_ENABLED: "false"
+      LOOKE_POINTS_ACCOUNTING_ENABLED: "false"
+      LOOKE_M20_INDEX_WRITES_ENABLED: "false"
+      LOOKE_M23_ACCEPTANCE_WRITES_ENABLED: "false"
+      LOOKE_M6_EVIDENCE_ENABLED: "false"
+      LOOKE_M4_MARKETS_JSON: "[]"
+      LOOKE_SOCIAL_APP_ORIGIN: "https://looke-ci.invalid"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: Existing nonfinancial policies and pure signed-proof security tests
+        run: |
+          npm run m7:preflight
+          npm test
+      - name: Typecheck and closed release build
+        run: |
+          npm run typecheck
+          npm run build
+      - name: Independent read-only Testnet observations never count as human signoff
+        run: |
+          npm run m21:acceptance
+          npm run m22:preflight
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const x=JSON.parse(fs.readFileSync('artifacts/m22/preflight.json','utf8'));
+          if(x.report.releaseDecision!=='NO_GO'||
+             x.report.mayActivate!==false||x.publicBetaActivated!==false||
+             x.report.publicBetaOpen!==false||x.transactionsSent!==0||
+             x.report.flagsClosed!==true)process.exit(2);
+          console.log('M23 closed Preview: M22 public-beta release stays NO-GO.');
+          NODE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: looke-m23-testnet-readonly-no-go
+          path: |
+            artifacts/m21/acceptance.json
+            artifacts/m22/preflight.json
+          retention-days: 7
+          if-no-files-found: warn
+      - name: Deny anonymous operator routes, session writes, trading and claims
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run start -- -p 3100 >/tmp/m23-next.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 50); do
+            if curl -fsS http://127.0.0.1:3100/ >/dev/null; then break; fi
+            sleep 1
+          done
+          for route in ops/m23 ops/beta ops/acceptance; do
+            code=$(curl -s -o /tmp/m23-get.json -w "%{http_code}" \
+              http://127.0.0.1:3100/api/social/"$route")
+            echo "$route unauthenticated HTTP $code"
+            test "$code" = "401"
+          done
+          code=$(curl -s -o /tmp/m23-witness.json -w "%{http_code}" \
+            -X POST http://127.0.0.1:3100/api/social/ops/m23 \
+            -H 'Origin: https://looke-ci.invalid' \
+            -H 'Content-Type: application/json' \
+            -d '{"action":"issue","wallet":"0x1111111111111111111111111111111111111111"}')
+          echo "M23 operator write gate HTTP $code"
+          test "$code" = "503"
+          code=$(curl -s -o /tmp/m23-foreign.json -w "%{http_code}" \
+            -X POST http://127.0.0.1:3100/api/social/ops/m23 \
+            -H 'Origin: https://untrusted.example' -H 'Content-Type: application/json' \
+            -d '{}')
+          test "$code" = "403"
+          code=$(curl -s -o /tmp/m23-challenge.json -w "%{http_code}" \
+            -X POST http://127.0.0.1:3100/api/social/auth \
+            -H 'Origin: https://looke-ci.invalid' \
+            -H 'Content-Type: application/json' \
+            -d '{"action":"challenge","address":"0x1111111111111111111111111111111111111111"}')
+          test "$code" = "503"
+          code=$(curl -s -o /tmp/m23-claim.json -w "%{http_code}" \
+            -X POST http://127.0.0.1:3100/api/social/points \
+            -H 'Origin: https://looke-ci.invalid' \
+            -H 'Content-Type: application/json' \
+            -d '{"action":"claim"}')
+          test "$code" = "405"
+          curl -fsS http://127.0.0.1:3100/api/experience/media | node -e '
+            let s="";process.stdin.on("data",x=>s+=x).on("end",()=>{
+              const a=JSON.parse(s);
+              if(a.enabled!==false||a.moderationRequired!==true)process.exit(2);
+            });
+          '
+          curl -fsS http://127.0.0.1:3100/api/experience/messaging/readiness | node -e '
+            let s="";process.stdin.on("data",x=>s+=x).on("end",()=>{
+              const a=JSON.parse(s);
+              if(a.liveMessagingEnabled!==false||a.messagesSent!==0)process.exit(2);
+            });
+          '
+          npm run m7:smoke
+      - name: Existing read-only rollback rehearsal
+        run: npm run m8:rollback-rehearsal
+      - name: Acceptance limitations and security gates
+        if: always()
+        run: |
+          echo "Only CI EIP-191 ephemeral wallets and disposable PostgreSQL are exercised; no real human or provider witness is claimed." >> "$GITHUB_STEP_SUMMARY"
+          echo "M23 separately audits consumed one-use challenges and signed external artifact hashes in a protected optional operator path; it never creates social sessions or beta permission." >> "$GITHUB_STEP_SUMMARY"
+          echo "Real hosted media, Ultra creator coins and native Uniqs must be independently observed; restore and external audit contents require human review." >> "$GITHUB_STEP_SUMMARY"
+          echo "Production, public beta, social/media writes, Points claims, E2EE, financial broadcasting and periodic build automation stay unchanged/disabled." >> "$GITHUB_STEP_SUMMARY"
