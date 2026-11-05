@@ -3,9 +3,9 @@ import {test} from "node:test";
 import {inspectM33HostedMedia} from "../src/lib/beta/m33-live-integration";
 const provider={cloudName:"looke_test",apiKey:"123456789",apiSecret:"private-test-string-do-not-publish"};
 test("M33 calls the actual authenticated Cloudinary Search endpoint for Looke assets without returning private rows",async()=>{
- let requested="",options:RequestInit|null=null;
+ const captured:{requested?:string;options?:RequestInit}={};
  const mock=async(input:RequestInfo|URL,init?:RequestInit)=>{
-  requested=String(input);options=init||{};
+  captured.requested=String(input);captured.options=init||{};
   return new Response(JSON.stringify({total_count:0,resources:[]}),{status:200});
  };
  const result=await inspectM33HostedMedia(provider,mock as typeof fetch);
@@ -14,10 +14,10 @@ test("M33 calls the actual authenticated Cloudinary Search endpoint for Looke as
  assert.equal(result.matchingLookePrefixAssets,0);
  assert.equal(result.approvedCreatorUploads,0);
  assert.equal(result.realModerationVerified,false);
- assert.equal(requested,"https://api.cloudinary.com/v1_1/looke_test/resources/search");
- assert.equal(options?.method,"POST");
- assert.equal(options?.redirect,"error");
- const body=JSON.parse(String(options?.body));
+ assert.equal(captured.requested,"https://api.cloudinary.com/v1_1/looke_test/resources/search");
+ assert.equal(captured.options?.method,"POST");
+ assert.equal(captured.options?.redirect,"error");
+ const body=JSON.parse(String(captured.options?.body));
  assert.equal(body.expression,"public_id:looke*");
  assert.equal(body.max_results,1);
  assert.ok(!JSON.stringify(result).includes(provider.apiSecret));
