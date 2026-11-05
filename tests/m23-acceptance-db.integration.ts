@@ -68,7 +68,7 @@ before(async()=>{
  process.env.LOOKE_POINTS_ACCOUNTING_ENABLED="false";
  for(const wallet of members){
   await query(`INSERT INTO social_profiles(address,handle,display_name,created_at)
-    VALUES($1,$2,'M23 disposable verification',now()-interval '1 day')`,
+    VALUES($1,$2,'M23 disposable verification',now()-interval '2 days')`,
     [wallet,"u"+wallet.slice(2,17)]);
  }
  token=randomBytes(32).toString("hex");
