@@ -63,14 +63,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          npm run start -- -p 3120 >/tmp/m32-next.log 2>&1 &
+          npm run start -- -p 3100 >/tmp/m32-next.log 2>&1 &
           pid=$!
           trap 'kill "$pid" 2>/dev/null || true' EXIT
           for i in $(seq 1 50); do
-            if curl -fsS http://127.0.0.1:3120/ >/dev/null; then break; fi
+            if curl -fsS http://127.0.0.1:3100/ >/dev/null; then break; fi
             sleep 1
           done
-          curl -fsS http://127.0.0.1:3120/api/experience/m32-reconciliation | node -e '
+          curl -fsS http://127.0.0.1:3100/api/experience/m32-reconciliation | node -e '
             let s="";process.stdin.on("data",x=>s+=x).on("end",()=>{
               const r=JSON.parse(s);
               if(r.sourceStatus!=="missing_authorized_dual_source"||
@@ -80,7 +80,7 @@ jobs:
             });
           '
           status=$(curl -s -o /tmp/m32-post.json -w "%{http_code}" \
-            -X POST http://127.0.0.1:3120/api/experience/m32-reconciliation \
+            -X POST http://127.0.0.1:3100/api/experience/m32-reconciliation \
             -H 'Content-Type: application/json' -d '{"migrate":true}')
           test "$status" = "405"
           npm run m7:smoke
