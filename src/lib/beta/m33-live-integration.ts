@@ -2,7 +2,7 @@
  * No operator signature, wallet transaction or financial execution.
  */
 import {validEvmAddress,validHash} from "./policy";
-import {positiveId,validateNativeAccount} from "../ultra-native";
+import {positiveId,validateNativeAccount,ULTRA_NATIVE_TESTNET} from "../ultra-native";
 import {m30ReleaseFlagsClosed} from "./m30-operator-readiness";
 
 export type M33ProofInput=
@@ -60,7 +60,7 @@ export function m33ProofResult(input:M33ProofInput,proof:Record<string,unknown>)
   const irreversible=proof.irreversibleBlock;
   if(!Number.isSafeInteger(irreversible)||Number(irreversible)<1||
    proof.owner!==input.owner||proof.factoryId!==input.factoryId||
-   proof.tokenId!==input.tokenId||typeof proof.chainId!=="string")
+   proof.tokenId!==input.tokenId||proof.chainId!==ULTRA_NATIVE_TESTNET.chainId)
    throw Error("Independent native Uniq evidence mismatch.");
   return {kind:"uniq",verified:true,network:"Ultra native Testnet",
    source:"canonical-ultra-testnet",reference:input.tokenId,
@@ -73,7 +73,9 @@ export function m33ProofResult(input:M33ProofInput,proof:Record<string,unknown>)
  const txHash=input.kind==="factory"?proof.transactionHash:proof.txHash;
  if(proof.chainId!==18881||!Number.isSafeInteger(confirmations)||
     Number(confirmations)<2||typeof address!=="string"||
-    !validEvmAddress(address)||txHash!==input.tx)
+    !validEvmAddress(address)||txHash!==input.tx||
+    (input.kind==="factory"&&address.toLowerCase()!==input.address.toLowerCase())||
+    (input.kind==="coin"&&!validEvmAddress(String(proof.creator||""))))
   throw Error("Canonical EVM receipt and Testnet confirmations do not match.");
  return {kind:input.kind,verified:true,network:"Ultra EVM Testnet 18881",
   source:"canonical-ultra-testnet",reference:address,
