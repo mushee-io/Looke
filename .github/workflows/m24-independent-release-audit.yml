@@ -1,0 +1,125 @@
+name: M24 independent audit readiness and full restore-integrity security
+on:
+  pull_request:
+    paths:
+      - "db/migrations/009_independent_release_review.sql"
+      - "src/app/api/social/ops/m24/**"
+      - "src/lib/beta/m24-*"
+      - "src/components/experience/M24*"
+      - "src/components/experience/m24.css"
+      - "src/app/social/**"
+      - "scripts/m24-*"
+      - "tests/m24-*"
+      - "scripts/social-migrate.ts"
+      - "deployment/M24_INDEPENDENT_RELEASE_AUDIT.md"
+      - "package.json"
+      - ".github/workflows/m24-independent-release-audit.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  m24-review-no-go:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      LOOKE_PUBLIC_BETA_ENABLED: "false"
+      LOOKE_M4_TRADING_ENABLED: "false"
+      LOOKE_SOCIAL_WRITES_ENABLED: "false"
+      LOOKE_MEDIA_UPLOADS_ENABLED: "false"
+      LOOKE_POINTS_ACCOUNTING_ENABLED: "false"
+      LOOKE_M20_INDEX_WRITES_ENABLED: "false"
+      LOOKE_M23_ACCEPTANCE_WRITES_ENABLED: "false"
+      LOOKE_M24_INCIDENT_WRITES_ENABLED: "false"
+      LOOKE_M6_EVIDENCE_ENABLED: "false"
+      LOOKE_M4_MARKETS_JSON: "[]"
+      LOOKE_SOCIAL_APP_ORIGIN: "https://looke-ci.invalid"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: Existing release gate and adversarial M24 pure tests
+        run: |
+          npm run m7:preflight
+          npm test
+      - name: Static typecheck and production-mode build
+        run: |
+          npm run typecheck
+          npm run build
+      - name: Real external read-only Ultra Testnet heads and explicit closed-beta report
+        run: |
+          npm run m21:acceptance
+          npm run m22:preflight
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const x=JSON.parse(fs.readFileSync('artifacts/m22/preflight.json','utf8'));
+          if(x.report.releaseDecision!=='NO_GO'||
+             x.report.publicBetaOpen!==false||x.report.mayActivate!==false||
+             x.report.flagsClosed!==true||x.transactionsSent!==0)
+            process.exit(2);
+          console.log('M24 NO-GO: independent external audit and restore evidence not authorized by CI.');
+          NODE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: looke-m24-closed-review-no-go
+          path: |
+            artifacts/m21/acceptance.json
+            artifacts/m22/preflight.json
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Verify closed auth, release, incident, media, messaging and financial routes
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run start -- -p 3100 >/tmp/m24-next.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 50); do
+            if curl -fsS http://127.0.0.1:3100/ >/dev/null; then break; fi
+            sleep 1
+          done
+          for route in ops/m24 ops/m23 ops/beta ops/acceptance; do
+            code=$(curl -s -o /tmp/m24-get.json -w "%{http_code}" \
+              http://127.0.0.1:3100/api/social/"$route")
+            echo "Unauthenticated $route HTTP=$code"
+            test "$code" = "401"
+          done
+          code=$(curl -s -o /tmp/m24-incident.json -w "%{http_code}" \
+            -X POST http://127.0.0.1:3100/api/social/ops/m24 \
+            -H 'Origin: https://looke-ci.invalid' -H 'Content-Type: application/json' \
+            -d '{"action":"record_incident","eventType":"incident","severity":"high","observation":"Invalid unauthenticated attempt."}')
+          test "$code" = "503"
+          code=$(curl -s -o /tmp/m24-bad-origin.json -w "%{http_code}" \
+            -X POST http://127.0.0.1:3100/api/social/ops/m24 \
+            -H 'Origin: https://evil.example' -H 'Content-Type: application/json' \
+            -d '{}')
+          test "$code" = "403"
+          code=$(curl -s -o /tmp/m24-claim.json -w "%{http_code}" \
+            -X POST http://127.0.0.1:3100/api/social/points \
+            -H 'Origin: https://looke-ci.invalid' -H 'Content-Type: application/json' \
+            -d '{"action":"claim"}')
+          test "$code" = "405"
+          curl -fsS http://127.0.0.1:3100/api/experience/media | node -e '
+            let s="";process.stdin.on("data",x=>s+=x).on("end",()=>{
+              const a=JSON.parse(s);
+              if(a.enabled!==false||a.moderationRequired!==true)process.exit(2);
+            });
+          '
+          curl -fsS http://127.0.0.1:3100/api/experience/messaging/readiness | node -e '
+            let s="";process.stdin.on("data",x=>s+=x).on("end",()=>{
+              const a=JSON.parse(s);
+              if(a.liveMessagingEnabled!==false||a.messagesSent!==0)process.exit(2);
+            });
+          '
+          npm run m7:smoke
+      - name: Existing non-destructive recovery rehearsal
+        run: npm run m8:rollback-rehearsal
+      - name: Disclose operational acceptance limitations
+        if: always()
+        run: |
+          echo "M24 CI checks disposable wallets and local PostgreSQL. It cannot claim that an independent security audit, full operational restore, or two real humans have passed." >> "$GITHUB_STEP_SUMMARY"
+          echo "Full 17-table restore verification is a separate manual TLS pair CLI, not an actual CI disaster-recovery witness." >> "$GITHUB_STEP_SUMMARY"
+          echo "Signed external evidence references do not establish document contents, human approval or release authorization." >> "$GITHUB_STEP_SUMMARY"
+          echo "Production alias and public beta unchanged; no finance, claims, E2EE, media/social writes, automation or token creation activated." >> "$GITHUB_STEP_SUMMARY"

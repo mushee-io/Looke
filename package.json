@@ -1,6 +1,6 @@
 {
   "name": "looke-ultra",
-  "version": "0.23.0",
+  "version": "0.24.0",
   "private": true,
   "license": "MIT",
   "engines": {
@@ -47,7 +47,10 @@
     "m22:witness": "tsx scripts/m22-witness.ts",
     "m22:restore-audit": "tsx scripts/m22-restore-audit.ts",
     "m22:preflight": "tsx scripts/m22-preflight.ts",
-    "test:m23-db": "node --import tsx --test tests/m23-acceptance-db.integration.ts"
+    "test:m23-db": "node --import tsx --test tests/m23-acceptance-db.integration.ts",
+    "test:m24-db": "node --import tsx --test tests/m24-release-db.integration.ts",
+    "m24:full-restore-audit": "tsx scripts/m24-full-restore-audit.ts",
+    "m24:verify-evidence": "tsx scripts/m24-verify-evidence.ts"
   },
   "dependencies": {
     "next": "^15.5.0",
